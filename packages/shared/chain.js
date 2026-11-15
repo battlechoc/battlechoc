@@ -18,10 +18,11 @@ const COLLATERAL_LOVELACE = 2_000_000;
 const CHANGE_RESERVE_LOVELACE = 1_000_000;
 // What a mint and a burn cost, the "about" numbers the game shows before the wallet opens: each
 // network fee is its largest measured case × 1.1, the deposit its largest measured case as it
-// is, both rounded up to 10_000 lovelace. Measured 2026-11-15 by apps/api/scripts/chain/measure-costs.js (every item, serial 1_000_000, in four
-// wallets, and a fee split 9:1 to two receivers) against the fixed preprod parameters (minFeeA
-// 44, minFeeB 155_381, coinsPerUtxoByte 4310, priceMem 0.0577, priceStep 0.0000721) with the
-// local evaluator; apps/api/test/chain.costs.test.js fails when one drifts. Largest cases:
+// is, both rounded up to 10_000 lovelace. Measured 2026-11-15 by
+// apps/api/scripts/chain/measure-costs.js (every item, serial 1_000_000, in four wallets, and a
+// fee split 9:1 to two receivers) against the fixed preprod parameters (minFeeA 44, minFeeB
+// 155_381, coinsPerUtxoByte 4310, priceMem 0.0577, priceStep 0.0000721) with the local
+// evaluator; apps/api/test/chain.costs.test.js fails when one drifts. Largest cases:
 // - mint network fee 442_539 (an EPIC item, the split fee, six inputs at two wallet keys with
 //   tokens in the change); 413_757 with one key and one input; 409_025 at the least
 // - deposit 3_710_910 = reference 2_448_080 (SUGAR_FERTILIZER, MARZIPAN_CARROTS: their key and

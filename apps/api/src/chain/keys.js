@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const util = require('util');
 const { KeyHash, PrivateKey } = require('@evolution-sdk/evolution');
 
 // one bech32 line of a 32-byte key (an extended key is `ed25519e_sk1…`), with one newline or none
@@ -59,8 +60,31 @@ const maskKeys = (text, known = []) =>
         .replace(HEX_KEY_64_BYTES, KEY_MASK)
         .replace(WORD_RUN, WORDS_MASK);
 
+// What a printed key shows instead of its bytes
+const HIDDEN = '<a private key, not shown>';
+
+// `privateKey` (the SDK's PrivateKey) made safe to print: the SDK's toJSON writes the key in hex,
+// and its toString and util.inspect print what toJSON answers; a toJSON on the object itself
+// answers HIDDEN instead (chain.keys.test.js prints the key each way, so an SDK that changes
+// this shows). The key and the SDK's functions on it stay as they are.
+const unprintable = privateKey => Object.defineProperty(privateKey, 'toJSON', { value: () => HIDDEN });
+
+// The loaded key: `keyHash` its one enumerable field, so JSON.stringify and a spread leave
+// `privateKey` (unprintable, not enumerable) out; util.inspect, which shows what is not
+// enumerable too (showHidden), shows the hash alone.
+const loadedKey = (privateKey, keyHash) =>
+    Object.defineProperties(
+        { keyHash },
+        {
+            privateKey: { value: unprintable(privateKey) },
+            [util.inspect.custom]: { value: () => ({ keyHash }) },
+        }
+    );
+
 /**
  * The key in `file`: { privateKey (the SDK's PrivateKey), keyHash (hex, of its public key) }.
+ * Printing it shows `keyHash` alone: `privateKey` is not enumerable, and JSON.stringify,
+ * util.inspect and String of the key or of its `privateKey` show no key bytes.
  * Refuses a missing file, one that group or others may read or write (mode & 077), and one that
  * is not exactly one `ed25519_sk1…` line; and, without repeating it, a `file` that is itself a
  * key or recovery words (given instead of the path).
@@ -97,7 +121,7 @@ const loadKey = file => {
     if (privateKey === undefined || PrivateKey.toBytes(privateKey).length !== 32) {
         throw new KeyFileError(`${file} is not a key file (one line ed25519_sk1…)`);
     }
-    return { privateKey, keyHash: KeyHash.toHex(KeyHash.fromVKey(PrivateKey.toPublicKey(privateKey))) };
+    return loadedKey(privateKey, KeyHash.toHex(KeyHash.fromVKey(PrivateKey.toPublicKey(privateKey))));
 };
 
 /**

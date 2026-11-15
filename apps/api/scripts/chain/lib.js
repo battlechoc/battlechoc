@@ -17,11 +17,13 @@ const {
     InlineDatum,
     KeyHash,
     PolicyId,
+    PrivateKey,
     ScriptHash,
     Time,
     Transaction,
     TransactionBody,
     TransactionHash,
+    TransactionWitnessSet,
     preprod: preprodChain,
 } = require('@evolution-sdk/evolution');
 // public subpaths of the package (its `./*` export), not in the root index
@@ -31,7 +33,6 @@ const { createAikenEvaluator } = require('@evolution-sdk/aiken-uplc');
 const { cardano, chain } = require('@battlechoc/battlechoc-shared-functions');
 const { decodeConfigDatum, encodeConfigDatum, isFeeAsset } = require('../../src/chain/blueprint');
 const { maskKeys, secretShapeOf } = require('../../src/chain/keys');
-const { addServerWitness } = require('../../src/chain/tx');
 
 const { preprod } = cardano.Networks;
 
@@ -410,8 +411,25 @@ const spendableOf = utxos => utxos.filter(utxo => utxo.address.paymentCredential
 /** The id (the body hash) of the transaction `cbor` (hex). */
 const txIdOf = cbor => TransactionHash.toHex(TransactionBody.toHashFromBytes(Transaction.extractBodyBytes(Buffer.from(cbor, 'hex'))));
 
-/** `cbor` with the witness of `key` ({ privateKey }, loadKey) added. */
-const signWith = (cbor, key) => addServerWitness({ cbor, bodyHash: txIdOf(cbor), key }).cbor;
+// the body bytes of the transaction `cbor` (hex)
+const bodyBytesOf = cbor => Buffer.from(Transaction.extractBodyBytes(Buffer.from(cbor, 'hex')));
+
+/**
+ * `cbor` with the witness of `key` ({ privateKey }, loadKey) added: a plain signature over its
+ * body, for the scripts' own transactions (the deploy, a config update, the e2e transfer), which
+ * name no server key. tx.addServerWitness, the API's last signature, is not this: it signs only
+ * a body that requires its key, once. The splice rewrites only the vkey witnesses; a ScriptError
+ * if the body bytes changed all the same.
+ */
+const signWith = (cbor, key) => {
+    const message = TransactionHash.toBytes(TransactionHash.fromHex(txIdOf(cbor)));
+    const witness = new TransactionWitnessSet.VKeyWitness({ vkey: PrivateKey.toPublicKey(key.privateKey), signature: PrivateKey.sign(key.privateKey, message) });
+    const signed = Transaction.addVKeyWitnessesHex(cbor, TransactionWitnessSet.toCBORHex(TransactionWitnessSet.fromVKeyWitnesses([witness])));
+    if (!bodyBytesOf(signed).equals(bodyBytesOf(cbor))) {
+        throw new ScriptError('signing changed the transaction body: nothing is submitted');
+    }
+    return signed;
+};
 
 // the SDK's message and, for a failed evaluation, where it failed (never a key)
 const reasonOf = error => [error?.message ?? String(error), ...(error?.cause?.failures ?? []).map(failure => failure.validationError)].filter(Boolean).join('; ');

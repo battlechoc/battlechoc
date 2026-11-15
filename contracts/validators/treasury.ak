@@ -6,8 +6,8 @@
 use aiken/collection/list
 use battlechoc/fixtures.{
   admin_a, admin_b, admin_c, base_config, config_nft_input, config_nft_output,
-  config_policy, config_ref, other_policy, owner_key, script_address, server_1,
-  treasury_ref, valid_treasury_spend_tx,
+  config_policy as fixture_config_policy, config_ref, other_policy, owner_key,
+  script_address, server_1, treasury_ref, valid_treasury_spend_tx,
 }
 use battlechoc/rules.{count_signed, find_config}
 use battlechoc/types.{ConfigDatum, config_token_name}
@@ -37,7 +37,7 @@ validator treasury(config_policy: PolicyId) {
 // Tests
 
 fn run_spend(datum: Option<Data>, tx: Transaction) -> Bool {
-  treasury.spend(config_policy, datum, Void, treasury_ref, tx)
+  treasury.spend(fixture_config_policy, datum, Void, treasury_ref, tx)
 }
 
 test treasury_spend_with_threshold_ok() {
@@ -147,5 +147,42 @@ test treasury_spend_with_one_admin_and_others_fails() fail {
       ..valid_treasury_spend_tx(),
       extra_signatories: [admin_a, server_1, owner_key],
     },
+  )
+}
+
+// The parameter, not the fixture, names the config policy: a treasury applied
+// to another policy reads the config under that policy, and only there.
+fn other_policy_config() -> Input {
+  Input {
+    output_reference: config_ref,
+    output: Output {
+      ..config_nft_output(base_config()),
+      address: script_address(other_policy),
+      value: assets.from_lovelace(2_000_000)
+        |> assets.add(other_policy, config_token_name, 1),
+    },
+  }
+}
+
+test treasury_spend_under_another_config_policy_ok() {
+  treasury.spend(
+    other_policy,
+    None,
+    Void,
+    treasury_ref,
+    Transaction {
+      ..valid_treasury_spend_tx(),
+      reference_inputs: [other_policy_config()],
+    },
+  )
+}
+
+test treasury_under_another_policy_ignores_the_fixture_config_fails() fail {
+  treasury.spend(
+    other_policy,
+    None,
+    Void,
+    treasury_ref,
+    valid_treasury_spend_tx(),
   )
 }

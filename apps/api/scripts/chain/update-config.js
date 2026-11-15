@@ -82,7 +82,8 @@ const changeOf = (args, readFile = file => fs.readFileSync(file, 'utf8')) => {
 /**
  * The config datum after `change` (changeOf's form) to `current` (decodeConfigDatum's form),
  * checked by checkConfigDatum on `network`. Refuses a change that changes nothing, removing the
- * last server key, a malformed key hash and a malformed fee list.
+ * last server key, an admin's key hash as a server key (as deploy.js does), a malformed key hash
+ * and a malformed fee list.
  */
 const nextConfigDatum = (current, change, network = cardano.Networks.preprod) => {
     const kinds = Object.values(CHANGES).filter(kind => change[kind] !== undefined);
@@ -110,6 +111,11 @@ const nextConfigDatum = (current, change, network = cardano.Networks.preprod) =>
         if (kind === 'addServerKey') {
             if (known) {
                 throw new ScriptError(`${key} is already a server key of the config`);
+            }
+            if (current.admins.includes(key)) {
+                throw new ScriptError(
+                    `${key} is an admin key's hash: give the key hash new-key.js printed for a server key (preprod-server.sk). An admin key signs the config updates and stays on your machine; a server key co-signs the mints on the VPS`
+                );
             }
             next = { ...current, serverKeys: [...current.serverKeys, key] };
         } else {
@@ -247,7 +253,7 @@ const main = async ({ argv, env, log, client, deploymentFile = DEPLOYMENT_FILE, 
     log(`CHAIN_CONFIG_REF=${built.configRef}`);
 };
 
-module.exports = { OPTIONS, changeOf, nextConfigDatum, buildConfigUpdate, main };
+module.exports = { OPTIONS, changeOf, nextConfigDatum, buildConfigUpdate, deploymentOf, main };
 
 if (require.main === module) {
     runScript(main);

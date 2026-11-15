@@ -6,8 +6,9 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const util = require('util');
 const { spawnSync } = require('child_process');
-const { Address, KeyHash, PrivateKey } = require('@evolution-sdk/evolution');
+const { Address, KeyHash, PrivateKey, VKey } = require('@evolution-sdk/evolution');
 const { wordlist } = require('@scure/bip39/wordlists/english.js');
 const { loadKey, maskKeys, secretShapeOf, writeKeyFile } = require('../src/chain/keys');
 const { fixtureKey } = require('./helpers/chain');
@@ -112,6 +113,44 @@ describe('the key files', () => {
         const key = loadKey(file);
         expect(key.keyHash).toBe(admin.keyHash);
         expect(PrivateKey.toHex(key.privateKey)).toBe(PrivateKey.toHex(admin.privateKey));
+    });
+
+    test('the loaded key prints as its hash alone: JSON, util.inspect and a template string show no key bytes', () => {
+        const file = path.join(dir, 'admin.sk');
+        writeKeyFile(file, admin.privateKey);
+        const key = loadKey(file);
+        const bytes = Buffer.from(PrivateKey.toBytes(admin.privateKey));
+        // the key in each form a printout may take: hex, bech32, base64, the bytes as numbers
+        const leaks = text => [
+            text.toLowerCase().includes(bytes.toString('hex')),
+            text.includes(bech32),
+            text.includes(bytes.toString('base64')),
+            new RegExp([...bytes.subarray(0, 6)].join(',\\s*')).test(text),
+        ];
+        const printouts = {
+            'JSON.stringify(key)': JSON.stringify(key),
+            'util.inspect(key)': util.inspect(key, { depth: 5, showHidden: true }),
+            'a template string of key': `${key}`,
+            'JSON.stringify of an object holding it': JSON.stringify({ context: { key } }),
+            'util.inspect of an object holding it': util.inspect({ context: { key } }, { depth: 5, showHidden: true }),
+            'JSON.stringify(key.privateKey)': JSON.stringify(key.privateKey),
+            'util.inspect(key.privateKey)': util.inspect(key.privateKey, { depth: 5, showHidden: true }),
+            'String(key.privateKey)': String(key.privateKey),
+            'a template string of key.privateKey': `${key.privateKey}`,
+        };
+        for (const [name, text] of Object.entries(printouts)) {
+            expect([name, leaks(text)]).toEqual([name, [false, false, false, false]]);
+        }
+        expect(JSON.parse(JSON.stringify(key))).toEqual({ keyHash: admin.keyHash });
+        expect(util.inspect(key, { showHidden: true })).toBe(util.inspect({ keyHash: admin.keyHash }));
+        expect(Object.keys(key)).toEqual(['keyHash']);
+        // and it still signs: the signature verifies under the key's hash
+        const message = Buffer.alloc(32, 7);
+        const signature = PrivateKey.sign(key.privateKey, message);
+        const vkey = PrivateKey.toPublicKey(key.privateKey);
+        expect(VKey.verify(vkey, message, signature.bytes)).toBe(true);
+        expect(KeyHash.toHex(KeyHash.fromVKey(vkey))).toBe(key.keyHash);
+        expect(PrivateKey.toHex(key.privateKey)).toBe(bytes.toString('hex'));
     });
 
     test('writeKeyFile does not overwrite a file', () => {

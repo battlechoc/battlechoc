@@ -100,3 +100,12 @@ describe('the fee of one mint', () => {
         expect(gameFeeOf(configWith([]), { tier: 1, fee: 3 })).toBeNull();
     });
 });
+
+describe('where the later plans find them', () => {
+    test('tx.js exports gameFeesOf and gameFeeOf, the same functions, and the same ChainTxError', () => {
+        const tx = require('../src/chain/tx');
+        expect(tx.gameFeesOf).toBe(gameFeesOf);
+        expect(tx.gameFeeOf).toBe(gameFeeOf);
+        expect(tx.ChainTxError).toBe(ChainTxError);
+    });
+});

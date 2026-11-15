@@ -22,9 +22,9 @@ const { Address, AssetName, Assets, Data, InlineDatum, KeyHash, Mint, ScriptHash
 const { chain, cardano } = require('@battlechoc/battlechoc-shared-functions');
 const { ChainConfigError, CONFIG_TOKEN_NAME, loadBlueprint, mintItemRedeemer } = require('../src/chain/blueprint');
 const { assetNamesOf, itemDatum, outRef } = require('../src/chain/names');
-const { ChainTxError, buildMint, fundsCheck, ownerOf, readConfig } = require('../src/chain/tx');
+const { ChainTxError, addServerWitness, buildMint, fundsCheck, ownerOf, readConfig, verifyWitness } = require('../src/chain/tx');
 const { gameFeeOf } = require('../src/chain/fees');
-const { TIP, TEAM_ADDRESS, loadParams, fixtureKey, fixtureContracts, utxo } = require('./helpers/chain');
+const { TIP, TEAM_ADDRESS, loadParams, fixtureKey, fixtureContracts, utxo, walletWitness } = require('./helpers/chain');
 
 const preprod = cardano.Networks.preprod;
 const params = loadParams();
@@ -449,6 +449,47 @@ describe('the wallet a mint spends from', () => {
         const elsewhere = utxo({ address: second.baseAddress('owner-stake'), lovelace: 30_000_000n, txId: 'f2'.repeat(32), index: 0 });
         const result = await mint({ utxos: [elsewhere] });
         expect(result.requiredWitnesses).toEqual([owner.keyHash, second.keyHash].sort());
+    });
+
+    describe('what the node takes: maxValSize and maxTxSize', () => {
+        // a pure 3 ADA UTxO and three of `count` tokens each (32-byte names under one policy) on
+        // 9.2 ADA: the mint spends all four, and the change carries every token
+        const POLICY = 'c4'.repeat(28);
+        const tokenWallet = count => [
+            utxo({ address: ownerAddress, lovelace: 3_000_000n, txId: 'e0'.repeat(32), index: 0 }),
+            ...[0, 1, 2].map(i =>
+                utxo({
+                    address: ownerAddress,
+                    lovelace: 9_200_000n,
+                    tokens: Object.fromEntries(Array.from({ length: count }, (_, j) => [POLICY + (i * count + j).toString(16).padStart(64, '0'), 1n])),
+                    txId: `e${i + 1}`.repeat(32),
+                    index: 0,
+                })
+            ),
+        ];
+        const largestValue = result => Math.max(...decoded(result).body.outputs.map(output => Assets.toCBORBytes(output.assets).length));
+
+        test('141 tokens in the change, a value of 4974 bytes: it builds (the fixture has maxValSize 5000)', async () => {
+            expect(params.maxValSize).toBe(5000);
+            const result = await mint({ utxos: tokenWallet(47) });
+            expect(decoded(result).body.inputs).toHaveLength(4);
+            expect(largestValue(result)).toBe(4974);
+        });
+
+        test('144 tokens, a value of 5079 bytes → TOO_MANY_TOKENS; with maxValSize 5079 it would build', async () => {
+            const error = await failure(mint({ utxos: tokenWallet(48) }));
+            expect(codeOf(error)).toBe('TOO_MANY_TOKENS');
+            expect(error.message).toBe('TOO_MANY_TOKENS');
+            expect(largestValue(await mint({ utxos: tokenWallet(48), params: { ...params, maxValSize: 5079 } }))).toBe(5079);
+        });
+
+        test('the signed transaction above maxTxSize → TX_TOO_LARGE; at it, it builds', async () => {
+            const built = await mint();
+            const walletSigned = verifyWitness({ cbor: built.cbor, bodyHash: built.bodyHash, witness: walletWitness(built.cbor, [owner.privateKey]), requiredWitnesses: built.requiredWitnesses });
+            const size = addServerWitness({ cbor: walletSigned.cbor, bodyHash: built.bodyHash, key: server }).cbor.length / 2;
+            expect(codeOf(await failure(mint({ params: { ...params, maxTxSize: size - 1 } })))).toBe('TX_TOO_LARGE');
+            expect((await mint({ params: { ...params, maxTxSize: size } })).cbor).toBe(built.cbor);
+        });
     });
 });
 

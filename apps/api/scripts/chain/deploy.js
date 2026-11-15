@@ -4,7 +4,7 @@
 //   CHAIN_PROVIDER_KEY=<project id> node apps/api/scripts/chain/deploy.js \
 //     --admin-key <file> --server-key-hash <hex> [--dry-run] [--again]
 //   … deploy.js --admin-key <file> --server-key-hash <hex> --new-seed [--dry-run]
-//   … deploy.js --confirm
+//   … deploy.js --confirm [--dry-run]
 //
 // One transaction, signed by the admin key and paid from its enterprise address: it spends the
 // seed (the admin's largest ADA-only UTxO), mints the config NFT under the config policy (the
@@ -22,9 +22,10 @@
 // confirmed") and the record is written with `status: 'submitted'` before the wait; once the
 // block is seen it is rewritten with `status: 'confirmed'` and the block height. Only a confirmed
 // record is committed and read for its ids. --confirm waits for the transaction of a submitted
-// record and confirms it, without a key and without a new transaction. While a record exists it
-// deploys again only with --again: over a submitted record that is the retry of the same seed
-// (the same policy ids), over a confirmed one a second config policy (the record is kept aside).
+// record and confirms it, without a key and without a new transaction (with --dry-run it only
+// says what it would confirm). While a record exists it deploys again only with --again: over a
+// submitted record that is the retry of the same seed (the same policy ids), over a confirmed one
+// a second config policy (the record is kept aside).
 // When the seed of a submitted record is spent, --again and --confirm look whether the recorded
 // transaction or one of an earlier attempt of the same deploy set aside (preprod.replaced-*.json:
 // still submitted, the same seed, admin key and network) is in a block and confirm that one; if
@@ -348,8 +349,9 @@ const adopt = ({ file, landed, log, now, dryRun = false }) => {
 };
 
 // deploy.js --confirm: confirms the submitted record in `file` once its transaction (or that of an
-// earlier attempt) is in a block, waiting for it while its seed is unspent
-const confirm = async ({ env, log, client, file, network, now, sleep }) => {
+// earlier attempt) is in a block, waiting for it while its seed is unspent; with `dryRun` it says
+// what it would confirm and changes no file
+const confirm = async ({ env, log, client, file, network, now, sleep, dryRun = false }) => {
     const record = readRecord(file);
     if (!record) {
         throw new ScriptError(`no deployment record at ${file}: nothing to confirm`);
@@ -370,7 +372,7 @@ const confirm = async ({ env, log, client, file, network, now, sleep }) => {
         if (lost) {
             throw lost;
         }
-        adopt({ file, landed, log, now });
+        adopt({ file, landed, log, now, dryRun });
     };
     const before = await fate();
     if (!before.open) {
@@ -384,7 +386,7 @@ const confirm = async ({ env, log, client, file, network, now, sleep }) => {
         throw new ScriptError(`waiting for the block failed: ${error.message}; the record stays submitted`);
     }
     if (block !== null) {
-        return adopt({ file, landed: { file, record, block }, log, now });
+        return adopt({ file, landed: { file, record, block }, log, now, dryRun });
     }
     const after = await fate();
     if (!after.open) {
@@ -408,7 +410,7 @@ const main = async ({ argv, env, log, client, deploymentFile = DEPLOYMENT_FILE, 
     const network = networkFromEnv(env);
     const args = argsOf(argv, OPTIONS);
     if (args.confirm) {
-        return confirm({ env, log, client, file: deploymentFile, network, now, sleep });
+        return confirm({ env, log, client, file: deploymentFile, network, now, sleep, dryRun: args['dry-run'] });
     }
     if (!args['admin-key'] || !args['server-key-hash']) {
         throw new ScriptError('usage: deploy.js --admin-key <file> --server-key-hash <hex> [--dry-run] [--again | --new-seed], or deploy.js --confirm');

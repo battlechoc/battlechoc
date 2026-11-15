@@ -229,6 +229,14 @@ describe('nextConfigDatum', () => {
         expect(() => nextConfigDatum(base, { pause: true, resume: true })).toThrow(/one change/);
     });
 
+    test("refuses an admin's key hash as a server key, as deploy.js does, saying which is which", () => {
+        const error = thrown(() => nextConfigDatum(base, { addServerKey: admin.keyHash }));
+        expect(error?.message).toMatch(/is an admin key's hash/);
+        expect(error?.message).toMatch(/preprod-server\.sk/);
+        const secondAdmin = fixtureKey('admin-2').keyHash;
+        expect(() => nextConfigDatum({ ...base, admins: [admin.keyHash, secondAdmin] }, { addServerKey: secondAdmin })).toThrow(/is an admin key's hash/);
+    });
+
     test('refuses a malformed fee list', () => {
         const option = base.fees[0];
         const receiver = option.receivers[0];
@@ -710,6 +718,26 @@ describe('the scripts', () => {
         expect(twice.error).toBeUndefined();
         expect(twice.output).toMatch(/confirmed already, in block/);
         expect(fs.readFileSync(deploymentFile, 'utf8')).toBe(text);
+    });
+
+    test('deploy --confirm --dry-run says what it would confirm and changes no file', async () => {
+        const deploymentFile = path.join(dir, 'preprod.json');
+        // the recorded transaction in a block
+        const text = writeRecord(recordOf('submitted'));
+        const shown = await run(deploy, ['--confirm', '--dry-run'], { deploymentFile });
+        expect(shown.error).toBeUndefined();
+        expect(shown.output).toMatch(/is in block \d+: that deploy reached the chain/);
+        expect(shown.output).toMatch(/dry run: .*preprod\.json is not changed/);
+        expect(shown.client.submitted).toEqual([]);
+        expect(fs.readFileSync(deploymentFile, 'utf8')).toBe(text);
+        // the seed spent by an earlier attempt set aside: neither file moves
+        const asideText = writeEarlier();
+        const earlier = await run(deploy, ['--confirm', '--dry-run'], { client: seedSpent({ [EARLIER_TX]: 3_000_150 }), deploymentFile });
+        expect(earlier.error).toBeUndefined();
+        expect(earlier.output).toMatch(/dry run: .*preprod\.json is not changed/);
+        expect(fs.readFileSync(deploymentFile, 'utf8')).toBe(text);
+        expect(fs.readFileSync(path.join(dir, EARLIER_FILE), 'utf8')).toBe(asideText);
+        expect(fs.readdirSync(dir).sort()).toEqual([EARLIER_FILE, 'preprod-admin.sk', 'preprod.json'].sort());
     });
 
     test('deploy --confirm with no block yet leaves the record submitted; without a record it has nothing to confirm', async () => {

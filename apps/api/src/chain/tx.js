@@ -35,10 +35,13 @@ const {
 // a public subpath of the package (its `./*` export), not in the root index
 const { makeTxBuilder } = require('@evolution-sdk/evolution/sdk/builders/TransactionBuilder');
 const { createAikenEvaluator } = require('@evolution-sdk/aiken-uplc');
+const { ed25519 } = require('@noble/curves/ed25519.js');
+const { bytesToNumberLE, concatBytes, equalBytes } = require('@noble/curves/utils.js');
+const { sha512 } = require('@noble/hashes/sha2.js');
 const { Items, chain, translateIn, translationKeys } = require('@battlechoc/battlechoc-shared-functions');
 const { CONFIG_TOKEN_NAME, ChainConfigError, contractsFor, mintItemRedeemer } = require('./blueprint');
 const { assetNamesOf, itemDatum, outRef } = require('./names');
-const { ChainTxError, gameFeeOf } = require('./fees');
+const { ChainTxError, gameFeeOf, gameFeesOf } = require('./fees');
 
 // the SDK's chain (slot config) of each network of shared/cardano/network.js
 const CHAINS = { preprod, mainnet };
@@ -281,6 +284,20 @@ const readConfig = async ({ provider, blueprint, policyId, network, configRef, c
 // validator that failed, never a key) and, for a failed evaluation, where it failed.
 const reasonOf = error => [error?.message ?? String(error), ...(error?.cause?.failures ?? []).map(failure => failure.validationError)].filter(Boolean).join('; ');
 
+// The SDK's refusal of a transaction above maxTxSize: it measures the transaction with a
+// witness for every key that must sign (the wallet's inputs and collateral, the required
+// signers), so its size is the signed one.
+const TOO_LARGE = /Transaction size \(\d+ bytes\) exceeds protocol maximum/;
+
+// A build's failure that is no shortfall, as a ChainTxError: one of tx.js's own as it is,
+// TX_TOO_LARGE for the SDK's size refusal, else BUILD_FAILED with the SDK's reason.
+const buildFailureOf = (error, reason = reasonOf(error)) => {
+    if (error instanceof ChainTxError) {
+        return error;
+    }
+    return TOO_LARGE.test(reason) ? new ChainTxError('TX_TOO_LARGE') : new ChainTxError('BUILD_FAILED', { cause: reason });
+};
+
 // The SDK's failures when the wallet's lovelace does not cover the transaction (coin selection,
 // a change below its minimum, tokens in the leftover without enough lovelace), each with how
 // much more it says it needs; undefined for any other failure.
@@ -309,10 +326,17 @@ const TOP_UP_TX = '00'.repeat(32);
 // The TTL of a transaction built at `tip`: TX_VALIDITY_MS later (1 slot = 1 s).
 const ttlOf = tip => tip.slot + chain.TX_VALIDITY_MS / 1000;
 
+// Whether every output of `body` and its collateral return holds a value of at most
+// `maxValSize` bytes (its CBOR), as the node requires. The SDK's builder does not look: a
+// change that merges the tokens of several UTxOs can pass it.
+const valuesFit = (body, maxValSize) => [...body.outputs, ...(body.collateralReturn ? [body.collateralReturn] : [])].every(output => Assets.toCBORBytes(output.assets).length <= maxValSize);
+
 // The transaction of `builder` (its inputs, scripts, mints and outputs added), valid until slot
 // `ttl`, required to be signed by `signers` (key hashes), balanced from `spendable` with the
 // change and the collateral return to `changeAddress` (bech32) and COLLATERAL_LOVELACE as the
-// collateral; the SDK evaluates the scripts on the way. The SDK's CBOR hex; its failure as it is.
+// collateral; the SDK evaluates the scripts on the way. The SDK's CBOR hex; its failure as it is,
+// and TOO_MANY_TOKENS for an output whose value is above `params.maxValSize` (the SDK refuses a
+// transaction above maxTxSize itself).
 const finished = async (builder, { network, ttl, signers, spendable, changeAddress, params }) => {
     builder.setValidity({ to: Time.slotToUnixTime(BigInt(ttl), CHAINS[network.name].slotConfig) });
     for (const signer of signers) {
@@ -325,7 +349,11 @@ const finished = async (builder, { network, ttl, signers, spendable, changeAddre
         evaluator,
         setCollateral: BigInt(chain.COLLATERAL_LOVELACE),
     });
-    return Transaction.toCBORHex(await result.toTransaction());
+    const transaction = await result.toTransaction();
+    if (!valuesFit(transaction.body, Number(params.maxValSize))) {
+        throw new ChainTxError('TOO_MANY_TOKENS');
+    }
+    return Transaction.toCBORHex(transaction);
 };
 
 // The lovelace a wallet that `build` (spendable UTxOs → a build) refused for want of lovelace
@@ -333,7 +361,7 @@ const finished = async (builder, { network, ttl, signers, spendable, changeAddre
 // address) for it to build: found by building with such a top-up, raised by what each failed try
 // says it lacks. It is at least the minimum UTxO of that output (no smaller UTxO exists), and
 // enough for the collateral to stay well formed. BUILD_FAILED when no top-up is found or the SDK
-// fails for another reason.
+// fails for another reason; a try that fails other than for lovelace as buildFailureOf says.
 const topUpOf = async ({ build, spendable, address: bech32, coinsPerUtxoByte, shortfall }) => {
     const address = Address.fromBech32(bech32);
     const pureMinimum = minUtxoLovelace({ address, assets: Assets.zero, coinsPerUtxoByte });
@@ -357,7 +385,7 @@ const topUpOf = async ({ build, spendable, address: bech32, coinsPerUtxoByte, sh
         } catch (error) {
             const more = shortfallOf(error);
             if (more === undefined) {
-                throw new ChainTxError('BUILD_FAILED', { cause: reasonOf(error) });
+                throw buildFailureOf(error);
             }
             failure = error;
             missing += more > 0n ? more : 1n;
@@ -368,14 +396,15 @@ const topUpOf = async ({ build, spendable, address: bech32, coinsPerUtxoByte, sh
 
 // What `build(spendable)` builds. The ADA is the build's to judge: a wallet it refuses for want of
 // lovelace is NOT_ENOUGH_ADA with the `missing` lovelace one more pure UTxO at `address` must
-// hold for it to build (topUpOf); any other refusal is BUILD_FAILED with the SDK's reason.
+// hold for it to build (topUpOf); TOO_MANY_TOKENS and TX_TOO_LARGE as they are (buildFailureOf);
+// any other refusal is BUILD_FAILED with the SDK's reason.
 const builtOrRefused = async ({ build, spendable, address, coinsPerUtxoByte }) => {
     try {
         return await build(spendable);
     } catch (error) {
-        const shortfall = shortfallOf(error);
+        const shortfall = error instanceof ChainTxError ? undefined : shortfallOf(error);
         if (shortfall === undefined) {
-            throw new ChainTxError('BUILD_FAILED', { cause: reasonOf(error) });
+            throw buildFailureOf(error);
         }
         throw new ChainTxError('NOT_ENOUGH_ADA', { missing: await topUpOf({ build, spendable, address, coinsPerUtxoByte, shortfall }) });
     }
@@ -460,7 +489,9 @@ const mintOf = async ({ mint, spendable }) => {
  * game does not know), BAD_ITEM (a serial that is not a positive safe integer, or an item without
  * an English name), NO_SUCH_FEE, FEE_ASSET_UNSUPPORTED, NO_COLLATERAL, NOT_ENOUGH_ADA (`missing`:
  * the lovelace one more pure UTxO at the owner's address must hold for the mint to build),
- * BUILD_FAILED (anything else the SDK refuses; its reason as `cause`).
+ * TOO_MANY_TOKENS (an output, the change with the wallet's tokens, above `params.maxValSize`),
+ * TX_TOO_LARGE (the signed transaction above `params.maxTxSize`), BUILD_FAILED (anything else the
+ * SDK refuses; its reason as `cause`).
  */
 const buildMint = async ({ item, fee, owner, utxos, params, tip, contracts, serverKeyHash }) => {
     const { config, policyId } = contracts;
@@ -564,7 +595,8 @@ const storesReference = (utxo, unit, { policyId, network }) => {
  *
  * Rejects with a ChainTxError: TOKEN_NOT_HELD (no spendable UTxO among `utxos` holds the user
  * token), REFERENCE_NOT_FOUND (`reference` is not the store of this item), NO_COLLATERAL,
- * NOT_ENOUGH_ADA (`missing`, as for a mint, at the holder's address), BUILD_FAILED.
+ * NOT_ENOUGH_ADA (`missing`, as for a mint, at the holder's address), TOO_MANY_TOKENS,
+ * TX_TOO_LARGE (as for a mint), BUILD_FAILED.
  */
 const buildBurn = async ({ assetName, holder, utxos, reference, params, tip, contracts, serverKeyHash = null }) => {
     const { policyId, network } = contracts;
@@ -653,13 +685,36 @@ const vkeyWitnessesOf = witness => {
     return set.vkeyWitnesses;
 };
 
+// Whether `signature` (64 bytes) by `publicKey` (32 bytes) verifies over `message` as the node
+// verifies it: libsodium's crypto_sign_verify_detached, which is cofactorless, R = [s]B − [k]A
+// byte for byte with k = sha512(R ‖ A ‖ message) mod ℓ, and refuses an R or a key of small order.
+// noble's ed25519.verify (the SDK's VKey.verify) is cofactored in both of its modes: it takes an
+// R with a small-order component, which the node refuses. Its strict mode (zip215: false) checks
+// the rest: the lengths, canonical encodings, s < ℓ, a key not of small order.
+const { Point } = ed25519;
+const verifiesStrictly = (signature, message, publicKey) => {
+    if (!ed25519.verify(signature, message, publicKey, { zip215: false })) {
+        return false;
+    }
+    const r = signature.subarray(0, 32);
+    if (Point.fromBytes(r, false).isSmallOrder()) {
+        return false;
+    }
+    const s = bytesToNumberLE(signature.subarray(32, 64));
+    const k = bytesToNumberLE(sha512(concatBytes(r, publicKey, message))) % Point.Fn.ORDER;
+    return equalBytes(Point.BASE.multiplyUnsafe(s).subtract(Point.fromBytes(publicKey, false).multiplyUnsafe(k)).toBytes(), r);
+};
+
 const signs = ({ vkey, signature }, message) => {
     try {
-        return VKey.verify(vkey, message, signature.bytes);
+        return verifiesStrictly(Uint8Array.from(signature.bytes), message, Uint8Array.from(VKey.toBytes(vkey)));
     } catch {
         return false;
     }
 };
+
+// key hashes as tx.js writes them: 28 bytes in lower-case hex
+const KEY_HASH = /^[0-9a-f]{56}$/;
 
 // `cbor` with `witnesses` (VKeyWitness) spliced in; BODY_CHANGED if its body bytes changed.
 const withWitnesses = (cbor, witnesses) => {
@@ -677,12 +732,17 @@ const withWitnesses = (cbor, witnesses) => {
  * in `requiredWitnesses` are taken, one each; the others are left out (the fee counts the
  * required ones only).
  *
- * Throws a ChainTxError: BODY_CHANGED (`cbor`'s body does not hash to `bodyHash`), BAD_WITNESS
- * (not hex, not a witness set, anything but vkey witnesses in it, or a signature that does not
- * verify over `bodyHash`, whoever's key it is), MISSING_SIGNATURE (a key of
- * `requiredWitnesses` without a witness).
+ * Throws a ChainTxError: BAD_REQUIRED_WITNESSES (`requiredWitnesses` is not a non-empty array of
+ * key hashes, 56 lower-case hex digits each, as buildMint and buildBurn answer it: with nothing
+ * required, the player's witnesses would all be left out), BODY_CHANGED (`cbor`'s body does not
+ * hash to `bodyHash`), BAD_WITNESS (not hex, not a witness set, anything but vkey witnesses in
+ * it, or a signature that does not verify over `bodyHash` as the node verifies it, whoever's key
+ * it is), MISSING_SIGNATURE (a key of `requiredWitnesses` without a witness).
  */
 const verifyWitness = ({ cbor, bodyHash, witness, requiredWitnesses }) => {
+    if (!Array.isArray(requiredWitnesses) || requiredWitnesses.length === 0 || !requiredWitnesses.every(keyHash => typeof keyHash === 'string' && KEY_HASH.test(keyHash))) {
+        throw new ChainTxError('BAD_REQUIRED_WITNESSES');
+    }
     if (!bodyMatches(cbor, bodyHash)) {
         throw new ChainTxError('BODY_CHANGED');
     }
@@ -708,16 +768,29 @@ const verifyWitness = ({ cbor, bodyHash, witness, requiredWitnesses }) => {
 
 /**
  * The stored transaction `cbor` with the server's witness added, last: `key` ({ privateKey },
- * from loadKey) signs the stored `bodyHash`. Resolves to { cbor }. BODY_CHANGED if `cbor`'s body
- * does not hash to `bodyHash`, or the splice changed its body bytes.
+ * from loadKey) signs the stored `bodyHash`. Resolves to { cbor }. Throws a ChainTxError:
+ * BODY_CHANGED if `cbor`'s body does not hash to `bodyHash`, or the splice changed its body
+ * bytes; SERVER_KEY_NOT_REQUIRED if the key is not a required signer of the body (the node would
+ * refuse the extra witness's fee, and a burn by the holder alone needs none);
+ * SERVER_ALREADY_SIGNED if `cbor` carries a witness of the key already.
  */
 const addServerWitness = ({ cbor, bodyHash, key }) => {
     if (!bodyMatches(cbor, bodyHash)) {
         throw new ChainTxError('BODY_CHANGED');
     }
+    const vkey = PrivateKey.toPublicKey(key.privateKey);
+    const keyHash = KeyHash.toHex(KeyHash.fromVKey(vkey));
+    const { body, witnessSet } = Transaction.fromCBORHex(cbor);
+    if (!(body.requiredSigners ?? []).some(signer => KeyHash.toHex(signer) === keyHash)) {
+        throw new ChainTxError('SERVER_KEY_NOT_REQUIRED');
+    }
+    if ((witnessSet.vkeyWitnesses ?? []).some(entry => KeyHash.toHex(KeyHash.fromVKey(entry.vkey)) === keyHash)) {
+        throw new ChainTxError('SERVER_ALREADY_SIGNED');
+    }
     const message = TransactionHash.toBytes(TransactionHash.fromHex(bodyHash));
-    const witness = new TransactionWitnessSet.VKeyWitness({ vkey: PrivateKey.toPublicKey(key.privateKey), signature: PrivateKey.sign(key.privateKey, message) });
+    const witness = new TransactionWitnessSet.VKeyWitness({ vkey, signature: PrivateKey.sign(key.privateKey, message) });
     return { cbor: withWitnesses(cbor, [witness]) };
 };
 
-module.exports = { ChainTxError, ownerOf, fundsCheck, readConfig, buildMint, buildBurn, verifyWitness, addServerWitness };
+// gameFeesOf and gameFeeOf live in fees.js (pure, no SDK) and are exported here as well
+module.exports = { ChainTxError, ownerOf, fundsCheck, readConfig, buildMint, buildBurn, verifyWitness, addServerWitness, minUtxoLovelace, gameFeesOf, gameFeeOf };

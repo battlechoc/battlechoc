@@ -8,8 +8,8 @@ const { Address, AssetName, Assets, Data, KeyHash, Mint, ScriptHash, Transaction
 const { chain, cardano } = require('@battlechoc/battlechoc-shared-functions');
 const { ChainConfigError } = require('../src/chain/blueprint');
 const { assetNamesOf, itemDatum, outRef } = require('../src/chain/names');
-const { ChainTxError, buildBurn, fundsCheck } = require('../src/chain/tx');
-const { TIP, loadParams, fixtureKey, fixtureContracts, scriptDataOf, utxo } = require('./helpers/chain');
+const { ChainTxError, addServerWitness, buildBurn, fundsCheck, verifyWitness } = require('../src/chain/tx');
+const { TIP, loadParams, fixtureKey, fixtureContracts, scriptDataOf, utxo, walletWitness } = require('./helpers/chain');
 
 const preprod = cardano.Networks.preprod;
 const params = loadParams();
@@ -229,5 +229,38 @@ describe('the wallet a burn spends from', () => {
         const result = await burn({ utxos: [spare, elsewhere] });
         expect(result.requiredWitnesses).toEqual([holder.keyHash, second.keyHash].sort());
         expect(result.deposits.user).toBe(1_200_000);
+    });
+
+    describe('what the node takes: maxValSize and maxTxSize', () => {
+        // the user token next to `count` other tokens on too little ADA (as above), two more UTxOs
+        // of `count` tokens on 9.2 ADA and a pure 3 ADA UTxO (the collateral): the burn spends the
+        // three with tokens and the store, and the change carries every token but the burned one
+        const POLICY = 'c4'.repeat(28);
+        const tokensOf = (from, count) => Object.fromEntries(Array.from({ length: count }, (_, j) => [POLICY + (from + j).toString(16).padStart(64, '0'), 1n]));
+        const tokenWallet = count => [
+            utxo({ address: holderAddress, lovelace: 3_000_000n, tokens: { [policyId + names.user]: 1n, ...tokensOf(1000, count) }, txId: 'e0'.repeat(32), index: 0 }),
+            utxo({ address: holderAddress, lovelace: 3_000_000n, txId: 'ec'.repeat(32), index: 0 }),
+            ...[0, 1].map(i => utxo({ address: holderAddress, lovelace: 9_200_000n, tokens: tokensOf(i * count, count), txId: `e${i + 1}`.repeat(32), index: 0 })),
+        ];
+        const largestValue = result => Math.max(...decoded(result).body.outputs.map(output => Assets.toCBORBytes(output.assets).length));
+
+        test('141 other tokens in the change, a value of 4974 bytes: it builds', async () => {
+            const result = await burn({ utxos: tokenWallet(47) });
+            expect(decoded(result).body.inputs).toHaveLength(4);
+            expect(largestValue(result)).toBe(4974);
+        });
+
+        test('144, a value of 5079 bytes → TOO_MANY_TOKENS; with maxValSize 5079 it would build', async () => {
+            expect(codeOf(await failure(burn({ utxos: tokenWallet(48) })))).toBe('TOO_MANY_TOKENS');
+            expect(largestValue(await burn({ utxos: tokenWallet(48), params: { ...params, maxValSize: 5079 } }))).toBe(5079);
+        });
+
+        test('the signed transaction above maxTxSize → TX_TOO_LARGE; at it, it builds', async () => {
+            const built = await burn();
+            const walletSigned = verifyWitness({ cbor: built.cbor, bodyHash: built.bodyHash, witness: walletWitness(built.cbor, [holder.privateKey]), requiredWitnesses: built.requiredWitnesses });
+            const size = addServerWitness({ cbor: walletSigned.cbor, bodyHash: built.bodyHash, key: server }).cbor.length / 2;
+            expect(codeOf(await failure(burn({ params: { ...params, maxTxSize: size - 1 } })))).toBe('TX_TOO_LARGE');
+            expect((await burn({ params: { ...params, maxTxSize: size } })).cbor).toBe(built.cbor);
+        });
     });
 });

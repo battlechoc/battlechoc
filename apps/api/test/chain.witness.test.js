@@ -4,6 +4,9 @@
 
 const { CBOR, Effect, KeyHash, PrivateKey, Transaction, TransactionBody, TransactionHash, TransactionWitnessSet, VKey, preprod: preprodChain } = require('@evolution-sdk/evolution');
 const { createAikenEvaluator } = require('@evolution-sdk/aiken-uplc');
+const { ED25519_TORSION_SUBGROUP, ed25519 } = require('@noble/curves/ed25519.js');
+const { bytesToNumberLE, concatBytes, numberToBytesLE } = require('@noble/curves/utils.js');
+const { sha256, sha512 } = require('@noble/hashes/sha2.js');
 const { ChainTxError, addServerWitness, buildBurn, buildMint, verifyWitness } = require('../src/chain/tx');
 const { assetNamesOf, itemDatum } = require('../src/chain/names');
 const { TIP, loadParams, fixtureKey, fixtureContracts, scriptDataOf, costModelsOf, ledgerMinimumFeeOf, utxo, walletWitness } = require('./helpers/chain');
@@ -66,6 +69,42 @@ const rawWitnessSet = (cbor, keys, entries = []) => {
 
 // The ledger's minimum fee of a signed transaction, with the fixture's parameters
 const minimumFeeOf = cbor => ledgerMinimumFeeOf(cbor, params);
+
+// A witness set of vkey witnesses given as bytes ({ vkey, signature }), in either form of a set
+const witnessSetOf = (witnesses, { tagged }) => {
+    const vkeys = witnesses.map(({ vkey, signature }) => [vkey, signature]);
+    return CBOR.toCBORHex(new Map([[0n, tagged ? CBOR.Tag.make({ tag: 258, value: vkeys }) : vkeys]]), CBOR.CANONICAL_OPTIONS);
+};
+
+// Signatures that a cofactored check (ZIP-215, and noble's strict mode as well) accepts and the
+// node (libsodium: cofactorless, R and the key not of small order) refuses, made by someone who
+// holds the key: the owner's (the fixture's seed sha256('owner')). [s]B = R + [k]A is the
+// node's equation, k = sha512(R ‖ A ‖ message) mod ℓ; the cofactored one is [8][s]B = [8]R + [8][k]A.
+const { Point } = ed25519;
+const ORDER = Point.Fn.ORDER;
+const scalarOf = bytes => bytesToNumberLE(bytes) % ORDER;
+const challengeOf = (r, a, message) => scalarOf(sha512(concatBytes(r, a, message)));
+const sBytes = s => numberToBytesLE(s % ORDER, 32);
+const NONCE = scalarOf(sha512(Buffer.from('a fixed nonce', 'utf8')));
+const ownerSecret = () => ed25519.utils.getExtendedPublicKey(sha256(Buffer.from('owner', 'utf8')));
+// a point of order 8, and the identity (order 1)
+const EIGHT = Point.fromHex(ED25519_TORSION_SUBGROUP[1]);
+const IDENTITY = Point.ZERO.toBytes();
+const SMALL_ORDER = {
+    // R = [r]B + T, T of order 8: [s]B − [k]A = R − T ≠ R
+    'R with a small-order component': message => {
+        const { scalar, pointBytes } = ownerSecret();
+        const r = Point.BASE.multiply(NONCE).add(EIGHT).toBytes();
+        return { vkey: pointBytes, signature: concatBytes(r, sBytes(NONCE + challengeOf(r, pointBytes, message) * scalar)) };
+    },
+    // R = the identity and s = k·a: [s]B − [k]A is the identity, so even the node's equation holds
+    'R of small order': message => {
+        const { scalar, pointBytes } = ownerSecret();
+        return { vkey: pointBytes, signature: concatBytes(IDENTITY, sBytes(challengeOf(IDENTITY, pointBytes, message) * scalar)) };
+    },
+    // the key is the identity: [k]A vanishes, any R = [s]B verifies (a key nobody owns, beside the owner's witness)
+    'a key of small order': () => ({ vkey: IDENTITY, signature: concatBytes(Point.BASE.multiply(NONCE).toBytes(), sBytes(NONCE)) }),
+};
 
 describe.each(Object.keys(TRANSACTIONS))('the signing of a %s', kind => {
     let built;
@@ -244,6 +283,92 @@ describe.each(Object.keys(TRANSACTIONS))('the signing of a %s', kind => {
         const error = thrown(() => verify(walletWitness(other.cbor, [owner.privateKey])));
         expect(error.message).toBe('BAD_WITNESS');
         expect(error.cause).toBeUndefined();
+    });
+
+    test('required witnesses that are not a non-empty list of key hashes → BAD_REQUIRED_WITNESSES, whatever the witness', () => {
+        // with nothing required, a stranger's good witness would leave the player's out: a body
+        // the server signs and the player completes alone
+        const witnesses = [walletWitness(built.cbor, [stranger.privateKey]), walletWitness(built.cbor, [owner.privateKey])];
+        const malformed = [
+            undefined,
+            null,
+            [],
+            owner.keyHash,
+            new Set([owner.keyHash]),
+            { 0: owner.keyHash, length: 1 },
+            [owner.keyHash, 'zz'],
+            [owner.keyHash, 42],
+            [owner.keyHash, owner.keyHash.toUpperCase()],
+            [owner.keyHash.slice(2)],
+            [`${owner.keyHash}00`],
+        ];
+        for (const requiredWitnesses of malformed) {
+            for (const witness of witnesses) {
+                expect([requiredWitnesses, refusal(witness, { requiredWitnesses })]).toEqual([requiredWitnesses, 'BAD_REQUIRED_WITNESSES']);
+            }
+        }
+    });
+
+    describe.each([
+        ['tagged (tag 258)', true],
+        ['untagged', false],
+    ])('a signature a cofactored check takes and the node refuses, %s → BAD_WITNESS', (_, tagged) => {
+        const message = () => Buffer.from(built.bodyHash, 'hex');
+        const ordinary = () => {
+            const [entry] = TransactionWitnessSet.fromCBORHex(walletWitness(built.cbor, [owner.privateKey])).vkeyWitnesses;
+            return { vkey: VKey.toBytes(entry.vkey), signature: entry.signature.bytes };
+        };
+
+        test('an ordinary signature in this form passes', () => {
+            expect(verify(witnessSetOf([ordinary()], { tagged })).signers).toEqual([owner.keyHash]);
+        });
+
+        test.each(Object.keys(SMALL_ORDER))('%s', name => {
+            const odd = SMALL_ORDER[name](message());
+            // what the SDK's VKey.verify (ZIP-215) answers for it
+            expect(VKey.verify(VKey.fromBytes(odd.vkey), message(), odd.signature)).toBe(true);
+            // the owner's ordinary witness beside a key nobody owns; else the owner's key itself
+            const witnesses = odd.vkey === IDENTITY ? [ordinary(), odd] : [odd];
+            expect(refusal(witnessSetOf(witnesses, { tagged }))).toBe('BAD_WITNESS');
+        });
+    });
+
+    describe('the server signs last, once, and only where the body requires it', () => {
+        const walletSigned = () => verify(walletWitness(built.cbor, [owner.privateKey])).cbor;
+        const serverSigns = (cbor, key = server) => codeOf(thrown(() => addServerWitness({ cbor, bodyHash: built.bodyHash, key })));
+
+        test('a second witness of its key → SERVER_ALREADY_SIGNED', () => {
+            const { cbor } = addServerWitness({ cbor: walletSigned(), bodyHash: built.bodyHash, key: server });
+            expect(serverSigns(cbor)).toBe('SERVER_ALREADY_SIGNED');
+            expect(signersOf(cbor)).toEqual([owner.keyHash, server.keyHash]);
+        });
+
+        test('a key that is not a required signer of the body → SERVER_KEY_NOT_REQUIRED', () => {
+            expect(serverSigns(walletSigned(), stranger)).toBe('SERVER_KEY_NOT_REQUIRED');
+            expect(serverSigns(built.cbor, stranger)).toBe('SERVER_KEY_NOT_REQUIRED');
+        });
+    });
+});
+
+describe("a holder's burn, without the server", () => {
+    test('requires no server witness: the server key → SERVER_KEY_NOT_REQUIRED', async () => {
+        const built = await buildBurn({ assetName: names.user, holder: ownerOfWallet, utxos: [spare, held], reference: store, params, tip: TIP, contracts, serverKeyHash: null });
+        const { cbor } = verifyWitness({ cbor: built.cbor, bodyHash: built.bodyHash, witness: walletWitness(built.cbor, [owner.privateKey]), requiredWitnesses: built.requiredWitnesses });
+        expect(codeOf(thrown(() => addServerWitness({ cbor, bodyHash: built.bodyHash, key: server })))).toBe('SERVER_KEY_NOT_REQUIRED');
+    });
+});
+
+describe("noble's strict mode (zip215: false) alone", () => {
+    // why verifyWitness checks more than ed25519.verify(…, { zip215: false }): noble's check is
+    // cofactored in both of its modes; its strict mode refuses only a key of small order
+    const message = sha256(Buffer.from('a message', 'utf8'));
+    test.each([
+        ['R with a small-order component', true],
+        ['R of small order', true],
+        ['a key of small order', false],
+    ])('%s: %s', (name, taken) => {
+        const { vkey, signature } = SMALL_ORDER[name](message);
+        expect(ed25519.verify(signature, message, vkey, { zip215: false })).toBe(taken);
     });
 });
 
