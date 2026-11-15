@@ -119,6 +119,33 @@ const scriptDataOf = (cborHex, params) => {
     };
 };
 
+// A decimal parameter (priceMem, priceStep) as an exact fraction [numerator, denominator]
+const fraction = number => {
+    const text = String(number);
+    if (!/^\d+(\.\d+)?$/.test(text)) {
+        throw new Error(`not a plain decimal: ${text}`);
+    }
+    const [whole, decimals = ''] = text.split('.');
+    return [BigInt(whole + decimals), 10n ** BigInt(decimals.length)];
+};
+
+/**
+ * The ledger's minimum fee of a signed transaction (CBOR hex) under `params`: minFeeA × size +
+ * minFeeB + ⌈priceMem × mem + priceStep × steps⌉ of its redeemers (no reference scripts), as a
+ * bigint.
+ */
+const ledgerMinimumFeeOf = (cborHex, params) => {
+    const redeemers = Transaction.fromCBORHex(cborHex).witnessSet.redeemers.toArray();
+    const mem = redeemers.reduce((sum, redeemer) => sum + redeemer.exUnits.mem, 0n);
+    const steps = redeemers.reduce((sum, redeemer) => sum + redeemer.exUnits.steps, 0n);
+    const [memN, memD] = fraction(params.priceMem);
+    const [stepN, stepD] = fraction(params.priceStep);
+    const numerator = memN * mem * stepD + stepN * steps * memD;
+    const denominator = memD * stepD;
+    const scripts = (numerator + denominator - 1n) / denominator;
+    return BigInt(params.minFeeA) * BigInt(cborHex.length / 2) + BigInt(params.minFeeB) + scripts;
+};
+
 /** The cost models of `params`, as the builder hands them to the evaluator. */
 const costModelsOf = ({ costModels }) =>
     new CostModel.CostModels({
@@ -170,4 +197,4 @@ const fixtureContracts = ({ paused = false, serverKeys = [fixtureKey('server').k
     return contractsFor({ blueprint, configUtxo, policyId, network: preprod });
 };
 
-module.exports = { TIP, TEAM_ADDRESS, loadParams, fixtureKey, utxo, walletWitness, scriptDataOf, costModelsOf, fixtureContracts };
+module.exports = { TIP, TEAM_ADDRESS, loadParams, fixtureKey, utxo, walletWitness, scriptDataOf, costModelsOf, ledgerMinimumFeeOf, fixtureContracts };

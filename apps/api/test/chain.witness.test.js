@@ -6,7 +6,7 @@ const { CBOR, Effect, KeyHash, PrivateKey, Transaction, TransactionBody, Transac
 const { createAikenEvaluator } = require('@evolution-sdk/aiken-uplc');
 const { ChainTxError, addServerWitness, buildBurn, buildMint, verifyWitness } = require('../src/chain/tx');
 const { assetNamesOf, itemDatum } = require('../src/chain/names');
-const { TIP, loadParams, fixtureKey, fixtureContracts, scriptDataOf, costModelsOf, utxo, walletWitness } = require('./helpers/chain');
+const { TIP, loadParams, fixtureKey, fixtureContracts, scriptDataOf, costModelsOf, ledgerMinimumFeeOf, utxo, walletWitness } = require('./helpers/chain');
 
 const params = loadParams();
 const owner = fixtureKey('owner');
@@ -64,26 +64,8 @@ const rawWitnessSet = (cbor, keys, entries = []) => {
     return CBOR.toCBORHex(new Map([...(keys.length > 0 ? [[0n, vkeys]] : []), ...entries]), CBOR.CANONICAL_OPTIONS);
 };
 
-// A decimal parameter (priceMem, priceStep) as an exact fraction [numerator, denominator]
-const fraction = number => {
-    const text = String(number);
-    expect(text).toMatch(/^\d+(\.\d+)?$/);
-    const [whole, decimals = ''] = text.split('.');
-    return [BigInt(whole + decimals), 10n ** BigInt(decimals.length)];
-};
-// The ledger's minimum fee of a signed transaction: minFeeA × size + minFeeB + ⌈priceMem × mem +
-// priceStep × steps⌉ (no reference scripts)
-const minimumFeeOf = cbor => {
-    const redeemers = Transaction.fromCBORHex(cbor).witnessSet.redeemers.toArray();
-    const mem = redeemers.reduce((sum, redeemer) => sum + redeemer.exUnits.mem, 0n);
-    const steps = redeemers.reduce((sum, redeemer) => sum + redeemer.exUnits.steps, 0n);
-    const [memN, memD] = fraction(params.priceMem);
-    const [stepN, stepD] = fraction(params.priceStep);
-    const numerator = memN * mem * stepD + stepN * steps * memD;
-    const denominator = memD * stepD;
-    const scripts = (numerator + denominator - 1n) / denominator;
-    return BigInt(params.minFeeA) * BigInt(cbor.length / 2) + BigInt(params.minFeeB) + scripts;
-};
+// The ledger's minimum fee of a signed transaction, with the fixture's parameters
+const minimumFeeOf = cbor => ledgerMinimumFeeOf(cbor, params);
 
 describe.each(Object.keys(TRANSACTIONS))('the signing of a %s', kind => {
     let built;

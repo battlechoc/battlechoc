@@ -17,7 +17,33 @@ describe('the minting constants', () => {
         expect(chain.CHANGE_RESERVE_LOVELACE).toBe(1_000_000);
         expect(typeof chain.COLLATERAL_LOVELACE).toBe('number');
         expect(typeof chain.CHANGE_RESERVE_LOVELACE).toBe('number');
-        expect(chain.MINT_NEEDED_ESTIMATE_LOVELACE).toBe(5_000_000);
+    });
+
+    test('the measured estimates: numbers, whole multiples of 10_000 lovelace', () => {
+        for (const name of ['MINT_NETWORK_FEE_ESTIMATE_LOVELACE', 'MINT_DEPOSIT_ESTIMATE_LOVELACE', 'BURN_NETWORK_FEE_ESTIMATE_LOVELACE']) {
+            expect(typeof chain[name]).toBe('number');
+            expect(chain[name]).toBeGreaterThan(0);
+            expect(chain[name] % 10_000).toBe(0);
+        }
+    });
+
+    test('what the funds check adds for a larger wallet: whole lovelace per input, key and change byte, beyond whole counts', () => {
+        for (const name of [
+            'MINT_FEE_PER_INPUT_LOVELACE',
+            'MINT_FEE_PER_WALLET_KEY_LOVELACE',
+            'MINT_FEE_PER_CHANGE_BYTE_LOVELACE',
+            'MINT_NETWORK_FEE_ESTIMATE_INPUTS',
+            'MINT_NETWORK_FEE_ESTIMATE_WALLET_KEYS',
+        ]) {
+            expect(Number.isSafeInteger(chain[name])).toBe(true);
+            expect(chain[name]).toBeGreaterThan(0);
+        }
+    });
+
+    test('what a mint needs: the network fee, the deposits and the change, at least the collateral', () => {
+        expect(chain.MINT_NEEDED_ESTIMATE_LOVELACE).toBe(
+            Math.max(chain.COLLATERAL_LOVELACE, chain.MINT_NETWORK_FEE_ESTIMATE_LOVELACE + chain.MINT_DEPOSIT_ESTIMATE_LOVELACE + chain.CHANGE_RESERVE_LOVELACE)
+        );
     });
 
     test('the tiers index a fee option amounts in the order of Tier', () => {

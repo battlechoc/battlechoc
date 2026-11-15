@@ -100,11 +100,11 @@ const minUtxoLovelace = ({ address, assets, coinsPerUtxoByte }) => {
     return lovelace;
 };
 
-// Whether the build will find collateral in `spendable`, by the SDK's own rule (its Collateral
-// phase): it takes the UTxOs pure ADA first, the largest first, until they hold
-// COLLATERAL_LOVELACE, at most three; what they hold beyond it (lovelace and tokens) goes back in
-// the collateral return to `address`, which must then hold the minimum UTxO.
-const collateralFits = (spendable, { address, coinsPerUtxoByte }) => {
+// The collateral the build takes from `spendable`, by the SDK's own rule (its Collateral phase):
+// the UTxOs pure ADA first, the largest first, until they hold COLLATERAL_LOVELACE, at most
+// three. And whether it fits: what they hold beyond it (lovelace and tokens) goes back in the
+// collateral return to `address`, which must then hold the minimum UTxO.
+const collateralInputsOf = spendable => {
     const target = BigInt(chain.COLLATERAL_LOVELACE);
     const candidates = [...spendable].sort((a, b) => (isPureAda(a) === isPureAda(b) ? byLovelaceDescending(a, b) : isPureAda(a) ? -1 : 1));
     const chosen = [];
@@ -114,6 +114,11 @@ const collateralFits = (spendable, { address, coinsPerUtxoByte }) => {
         }
         chosen.push(utxo);
     }
+    return chosen;
+};
+const collateralFits = (spendable, { address, coinsPerUtxoByte }) => {
+    const target = BigInt(chain.COLLATERAL_LOVELACE);
+    const chosen = collateralInputsOf(spendable);
     const back = sumLovelace(chosen) - target;
     if (back < 0n) {
         return false;
@@ -167,28 +172,89 @@ const ownerOf = ({ utxos, subject, network }) => {
     return { keyHash: richest.keyHash, address: richest.address };
 };
 
+// What the outputs of the battlechoc fee `gameFee` (gameFeeOf) hold: each receiver's due, raised
+// to the minimum UTxO at its address when smaller, as mintOf pays it. FEE_ASSET_UNSUPPORTED for a
+// fee in another asset than ADA, as buildMint.
+const feeOutputsLovelace = gameFee => {
+    if (!gameFee) {
+        return 0n;
+    }
+    if (gameFee.asset !== 'lovelace') {
+        throw new ChainTxError('FEE_ASSET_UNSUPPORTED');
+    }
+    return gameFee.payments
+        .filter(({ amount }) => amount > 0)
+        .reduce((sum, { address, amount }) => {
+            const minimum = minUtxoLovelace({ address: Address.fromBech32(address), assets: Assets.zero, coinsPerUtxoByte: ASSUMED_COINS_PER_UTXO_BYTE });
+            return sum + (BigInt(amount) > minimum ? BigInt(amount) : minimum);
+        }, 0n);
+};
+
+// The bytes `assets`' tokens add to an output at the sizing address (none for pure ADA): from the
+// minimum UTxO, which is coinsPerUtxoByte per byte.
+const tokenBytesOf = assets => {
+    const sized = assets => minUtxoLovelace({ address: SIZING_ADDRESS, assets, coinsPerUtxoByte: ASSUMED_COINS_PER_UTXO_BYTE });
+    return (sized(assets) - sized(Assets.zero)) / ASSUMED_COINS_PER_UTXO_BYTE;
+};
+const tokensOf = utxos => utxos.reduce((sum, utxo) => Assets.merge(sum, utxo.assets), Assets.zero);
+const beyond = (count, covered) => BigInt(count > covered ? count - covered : 0);
+
+// The network fee a mint from the wallet's `spendable` UTxOs may take: the estimate, which covers
+// up to MINT_NETWORK_FEE_ESTIMATE_INPUTS inputs at MINT_NETWORK_FEE_ESTIMATE_WALLET_KEYS keys,
+// and for a larger wallet (every UTxO may have to be spent) the measured cost of each input,
+// collateral input and key beyond those and of each byte of tokens in the change (all the
+// wallet's tokens) and in the collateral return (the tokens of the collateral).
+const mintNetworkFeeOf = spendable => {
+    const collateral = collateralInputsOf(spendable);
+    const keys = new Set(spendable.map(utxo => paymentKeyOf(utxo.address))).size;
+    const tokenBytes = tokenBytesOf(tokensOf(spendable)) + tokenBytesOf(tokensOf(collateral));
+    return (
+        BigInt(chain.MINT_NETWORK_FEE_ESTIMATE_LOVELACE) +
+        (beyond(spendable.length, chain.MINT_NETWORK_FEE_ESTIMATE_INPUTS) + beyond(collateral.length, 1)) * BigInt(chain.MINT_FEE_PER_INPUT_LOVELACE) +
+        beyond(keys, chain.MINT_NETWORK_FEE_ESTIMATE_WALLET_KEYS) * BigInt(chain.MINT_FEE_PER_WALLET_KEY_LOVELACE) +
+        tokenBytes * BigInt(chain.MINT_FEE_PER_CHANGE_BYTE_LOVELACE)
+    );
+};
+
 /**
- * Whether the wallet's `utxos` can pay for a transaction: { enough, missing (lovelace), collateral }.
- * Only spendable UTxOs count. `collateral`: the build will find it (collateralFits, with the
- * assumed coinsPerUtxoByte and a base address for the return). A mint also needs, in all,
- * MINT_NEEDED_ESTIMATE_LOVELACE, the ADA game fee and the change: at least
- * CHANGE_RESERVE_LOVELACE, more when the wallet's tokens must ride in it (the minimum UTxO of
- * all of them). A burn needs only the collateral. Without the protocol parameters and before
- * coin selection this errs towards `missing`: buildMint, which builds, has the last word.
+ * Whether the wallet's `utxos` can pay for a transaction: { enough, missing, needed (lovelace),
+ * collateral }. Only spendable UTxOs count. `needed` is what the wallet must hold in them for the
+ * transaction, `missing` = max(0, needed − what they hold), and `enough` says nothing is missing
+ * and the collateral fits. `collateral`: the build will find it (collateralFits, with the assumed
+ * coinsPerUtxoByte and a base address for the return).
+ *
+ * A mint needs the network fee (mintNetworkFeeOf: MINT_NETWORK_FEE_ESTIMATE_LOVELACE, more for a
+ * wallet larger than the measured ones), MINT_DEPOSIT_ESTIMATE_LOVELACE and the change: at least
+ * CHANGE_RESERVE_LOVELACE, more when the wallet's tokens must ride in it (the minimum UTxO of all
+ * of them); in all at least COLLATERAL_LOVELACE; and the outputs of the battlechoc fee `gameFee`
+ * (gameFeeOf's answer for the item's tier and the chosen option, null for none), a share below
+ * the minimum UTxO raised as the build raises it. For a wallet of pure ADA in at most
+ * MINT_NETWORK_FEE_ESTIMATE_INPUTS UTxOs at two keys, one of them the collateral, and a single
+ * receiver that clears its minimum UTxO, `needed` is MINT_NEEDED_ESTIMATE_LOVELACE plus the fee. A burn needs no lovelace of its own
+ * (the store's deposit comes back and pays its fee): `needed` 0, only the collateral.
+ *
+ * Without the protocol parameters and before coin selection this errs towards `missing`:
+ * buildMint, which builds, has the last word.
+ *
+ * Throws a ChainTxError FEE_ASSET_UNSUPPORTED for a mint whose `gameFee` is not in ADA (as
+ * buildMint refuses it); nothing else for a `gameFee` of gameFeeOf from a config that
+ * contractsFor read.
  */
-const fundsCheck = ({ utxos, kind, gameFeeLovelace = 0 }) => {
+const fundsCheck = ({ utxos, kind, gameFee = null }) => {
     const spendable = spendableOf(utxos);
     const collateral = collateralFits(spendable, { address: SIZING_ADDRESS, coinsPerUtxoByte: ASSUMED_COINS_PER_UTXO_BYTE });
     let needed = 0n;
     if (kind === 'mint') {
-        const tokens = spendable.reduce((sum, utxo) => Assets.merge(sum, utxo.assets), Assets.zero);
-        const change = minUtxoLovelace({ address: SIZING_ADDRESS, assets: tokens, coinsPerUtxoByte: ASSUMED_COINS_PER_UTXO_BYTE });
-        const reserve = change > BigInt(chain.CHANGE_RESERVE_LOVELACE) ? change : BigInt(chain.CHANGE_RESERVE_LOVELACE);
-        needed = BigInt(chain.MINT_NEEDED_ESTIMATE_LOVELACE + gameFeeLovelace) + reserve;
+        const feeOutputs = feeOutputsLovelace(gameFee);
+        const tokenChange = minUtxoLovelace({ address: SIZING_ADDRESS, assets: tokensOf(spendable), coinsPerUtxoByte: ASSUMED_COINS_PER_UTXO_BYTE });
+        const change = tokenChange > BigInt(chain.CHANGE_RESERVE_LOVELACE) ? tokenChange : BigInt(chain.CHANGE_RESERVE_LOVELACE);
+        const costs = mintNetworkFeeOf(spendable) + BigInt(chain.MINT_DEPOSIT_ESTIMATE_LOVELACE) + change;
+        const floor = BigInt(chain.COLLATERAL_LOVELACE);
+        needed = (costs > floor ? costs : floor) + feeOutputs;
     }
     const short = needed - sumLovelace(spendable);
     const missing = short > 0n ? Number(short) : 0;
-    return { enough: missing === 0 && collateral, missing, collateral };
+    return { enough: missing === 0 && collateral, missing, needed: Number(needed), collateral };
 };
 
 // ---------------------------------------------------------------------------------------------

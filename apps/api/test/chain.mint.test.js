@@ -23,6 +23,7 @@ const { chain, cardano } = require('@battlechoc/battlechoc-shared-functions');
 const { ChainConfigError, CONFIG_TOKEN_NAME, loadBlueprint, mintItemRedeemer } = require('../src/chain/blueprint');
 const { assetNamesOf, itemDatum, outRef } = require('../src/chain/names');
 const { ChainTxError, buildMint, fundsCheck, ownerOf, readConfig } = require('../src/chain/tx');
+const { gameFeeOf } = require('../src/chain/fees');
 const { TIP, TEAM_ADDRESS, loadParams, fixtureKey, fixtureContracts, utxo } = require('./helpers/chain');
 
 const preprod = cardano.Networks.preprod;
@@ -43,6 +44,9 @@ const seed = utxo({ address: ownerAddress, lovelace: 20_000_000n, txId: SEED_TX,
 const spare = utxo({ address: ownerAddress, lovelace: 8_000_000n, txId: 'a2'.repeat(32), index: 0 });
 
 const contracts = fixtureContracts();
+// the preprod fee of a COMMON (1 ADA) and a RARE item (2 ADA), as the funds check is given it
+const COMMON_FEE = gameFeeOf(contracts.config, { tier: 0, fee: 0 });
+const RARE_FEE = gameFeeOf(contracts.config, { tier: 1, fee: 0 });
 
 const mint = (overrides = {}) =>
     buildMint({ item: DARK_WALLS, fee: 0, owner: ownerOfWallet, utxos: [spare, seed], params, tip: TIP, contracts, serverKeyHash: server.keyHash, ...overrides });
@@ -238,12 +242,14 @@ describe('the battlechoc fee of a mint', () => {
     });
 
     test('the game fee counts towards not enough ADA', async () => {
-        // just the estimate: the RARE fee of 2 ADA and more is missing, and that much more builds
+        // just the estimate: the funds check misses the RARE fee of 2 ADA; the build, whose exact
+        // costs are a little below the estimate, misses a little less; that much more builds
         const exact = utxo({ address: ownerAddress, lovelace: chain.MINT_NEEDED_ESTIMATE_LOVELACE, txId: 'a3'.repeat(32), index: 0 });
-        expect(fundsCheck({ utxos: [exact], kind: 'mint', gameFeeLovelace: 2_000_000 }).missing).toBeGreaterThanOrEqual(2_000_000);
+        expect(fundsCheck({ utxos: [exact], kind: 'mint', gameFee: RARE_FEE }).missing).toBe(2_000_000);
         const error = await failure(mint({ utxos: [exact] }));
         expect(codeOf(error)).toBe('NOT_ENOUGH_ADA');
-        expect(error.missing).toBeGreaterThanOrEqual(2_000_000);
+        expect(error.missing).toBeGreaterThan(1_500_000);
+        expect(error.missing).toBeLessThanOrEqual(2_000_000);
         await expect(mint({ utxos: toppedUp([exact], error.missing) })).resolves.toMatchObject({ kind: 'mint' });
     });
 });
@@ -287,7 +293,7 @@ describe('the wallet a mint spends from', () => {
             // the review built it with the tests' old name "Dark Walls"; "Dark chocolate walls" makes
             // the reference token's deposit 43_100 lovelace larger, more than the 1.3k it had to spare
             const utxos = [utxo({ address: ownerAddress, lovelace: 7_000_000n, txId: 'd2'.repeat(32), index: 0 })];
-            expect(fundsCheck({ utxos, kind: 'mint', gameFeeLovelace: 2_000_000 })).toEqual({ enough: false, missing: chain.CHANGE_RESERVE_LOVELACE, collateral: true });
+            expect(fundsCheck({ utxos, kind: 'mint', gameFee: RARE_FEE })).toEqual({ enough: false, missing: chain.MINT_NEEDED_ESTIMATE_LOVELACE + 2_000_000 - 7_000_000, needed: chain.MINT_NEEDED_ESTIMATE_LOVELACE + 2_000_000, collateral: true });
             const error = await failure(mint({ utxos }));
             expect(codeOf(error)).toBe('NOT_ENOUGH_ADA');
             await expect(mint({ utxos: toppedUp(utxos, error.missing) })).resolves.toMatchObject({ kind: 'mint' });
@@ -295,14 +301,14 @@ describe('the wallet a mint spends from', () => {
 
         test('7.1 ADA in one pure UTxO builds, though the funds check (without the build) errs towards missing', async () => {
             const utxos = [utxo({ address: ownerAddress, lovelace: 7_100_000n, txId: 'd2'.repeat(32), index: 1 })];
-            expect(fundsCheck({ utxos, kind: 'mint', gameFeeLovelace: 2_000_000 })).toEqual({ enough: false, missing: 900_000, collateral: true });
+            expect(fundsCheck({ utxos, kind: 'mint', gameFee: RARE_FEE })).toEqual({ enough: false, missing: chain.MINT_NEEDED_ESTIMATE_LOVELACE + 2_000_000 - 7_100_000, needed: chain.MINT_NEEDED_ESTIMATE_LOVELACE + 2_000_000, collateral: true });
             await expect(mint({ utxos })).resolves.toMatchObject({ kind: 'mint' });
         });
 
         test('7 ADA next to a token: NOT_ENOUGH_ADA, and a top-up of `missing` builds', async () => {
             const utxos = [utxo({ address: ownerAddress, lovelace: 7_000_000n, tokens: { [OTHER_TOKEN]: 5n }, txId: 'd3'.repeat(32), index: 0 })];
-            // the change carries the token: more than the reserve
-            expect(fundsCheck({ utxos, kind: 'mint', gameFeeLovelace: 2_000_000 }).missing).toBeGreaterThan(chain.CHANGE_RESERVE_LOVELACE);
+            // the change carries the token: more than the reserve, more missing than without it
+            expect(fundsCheck({ utxos, kind: 'mint', gameFee: RARE_FEE }).missing).toBeGreaterThan(chain.MINT_NEEDED_ESTIMATE_LOVELACE + 2_000_000 - 7_000_000);
             const error = await failure(mint({ utxos }));
             expect(codeOf(error)).toBe('NOT_ENOUGH_ADA');
             expect(error.missing).toBeGreaterThan(0);
@@ -312,7 +318,7 @@ describe('the wallet a mint spends from', () => {
 
         test('5 ADA and 2 ADA, both pure: NOT_ENOUGH_ADA, and a top-up of `missing` builds', async () => {
             const utxos = [utxo({ address: ownerAddress, lovelace: 5_000_000n, txId: 'd4'.repeat(32), index: 0 }), utxo({ address: ownerAddress, lovelace: 2_000_000n, txId: 'd4'.repeat(32), index: 1 })];
-            expect(fundsCheck({ utxos, kind: 'mint', gameFeeLovelace: 2_000_000 })).toEqual({ enough: false, missing: chain.CHANGE_RESERVE_LOVELACE, collateral: true });
+            expect(fundsCheck({ utxos, kind: 'mint', gameFee: RARE_FEE })).toEqual({ enough: false, missing: chain.MINT_NEEDED_ESTIMATE_LOVELACE + 2_000_000 - 7_000_000, needed: chain.MINT_NEEDED_ESTIMATE_LOVELACE + 2_000_000, collateral: true });
             const error = await failure(mint({ utxos }));
             expect(codeOf(error)).toBe('NOT_ENOUGH_ADA');
             // the change lacks a few hundred lovelace, but no UTxO is smaller than its minimum
@@ -353,7 +359,7 @@ describe('the wallet a mint spends from', () => {
                 const lovelace = 1_000_000 + next(5_000_000) + (held.length > 0 ? 200_000 : 0);
                 return utxo({ address: ownerAddress, lovelace: BigInt(lovelace), tokens: Object.fromEntries(held.map(unit => [unit, BigInt(1 + next(100))])), txId: 'ab'.repeat(32), index });
             });
-            const funds = fundsCheck({ utxos, kind: 'mint', gameFeeLovelace: 2_000_000 });
+            const funds = fundsCheck({ utxos, kind: 'mint', gameFee: RARE_FEE });
             const outcome = await mint({ utxos }).then(
                 () => 'built',
                 error => codeOf(error)
@@ -392,19 +398,23 @@ describe('the wallet a mint spends from', () => {
 
         test('ten UTxOs of 0.7 ADA: enough ADA in all, but a return of 0.1 ADA → NO_COLLATERAL', async () => {
             const parts = Array.from({ length: 10 }, (_, index) => at(700_000, index));
-            expect(fundsCheck({ utxos: parts, kind: 'mint', gameFeeLovelace: 2_000_000 }).collateral).toBe(false);
+            expect(fundsCheck({ utxos: parts, kind: 'mint', gameFee: RARE_FEE }).collateral).toBe(false);
             expect(codeOf(await failure(mint({ utxos: parts })))).toBe('NO_COLLATERAL');
         });
 
+        // nine UTxOs, three of them the collateral: three inputs and two collateral inputs more
+        // than the network fee estimate covers
+        const NEEDED = chain.MINT_NEEDED_ESTIMATE_LOVELACE + 2_000_000 + (3 + 2) * chain.MINT_FEE_PER_INPUT_LOVELACE;
+
         test('a return one lovelace below the minimum → NO_COLLATERAL', async () => {
             const utxos = wallet(RETURN_MIN + 1);
-            expect(fundsCheck({ utxos, kind: 'mint', gameFeeLovelace: 2_000_000 })).toEqual({ enough: false, missing: 0, collateral: false });
+            expect(fundsCheck({ utxos, kind: 'mint', gameFee: RARE_FEE })).toEqual({ enough: false, missing: 0, needed: NEEDED, collateral: false });
             expect(codeOf(await failure(mint({ utxos })))).toBe('NO_COLLATERAL');
         });
 
         test('a return of exactly the minimum builds', async () => {
             const utxos = wallet(RETURN_MIN + 2);
-            expect(fundsCheck({ utxos, kind: 'mint', gameFeeLovelace: 2_000_000 })).toEqual({ enough: true, missing: 0, collateral: true });
+            expect(fundsCheck({ utxos, kind: 'mint', gameFee: RARE_FEE })).toEqual({ enough: true, missing: 0, needed: NEEDED, collateral: true });
             const { body } = decoded(await mint({ utxos }));
             expect(body.collateralInputs.map(outRef)).toEqual([0, 1, 2].map(index => outRef(utxos[index])));
             expect(Number(body.collateralReturn.assets.lovelace)).toBe(RETURN_MIN);
@@ -412,7 +422,7 @@ describe('the wallet a mint spends from', () => {
 
         test('no return at all builds: two UTxOs of exactly 1 ADA among many', async () => {
             const utxos = Array.from({ length: 8 }, (_, index) => at(1_000_000, index));
-            expect(fundsCheck({ utxos, kind: 'mint', gameFeeLovelace: 2_000_000 }).collateral).toBe(true);
+            expect(fundsCheck({ utxos, kind: 'mint', gameFee: RARE_FEE }).collateral).toBe(true);
             const { body } = decoded(await mint({ utxos }));
             expect(body.collateralInputs).toHaveLength(2);
             expect(body.collateralReturn).toBeUndefined();
@@ -548,16 +558,16 @@ describe('the owner of a subject', () => {
 describe('the funds check', () => {
     const ada = (lovelace, index, extra = {}) => utxo({ address: ownerAddress, lovelace, txId: '77'.repeat(32), index, ...extra });
 
-    test('a mint needs the estimate, the game fee and the change reserve, and collateral', () => {
-        const needed = chain.MINT_NEEDED_ESTIMATE_LOVELACE + chain.CHANGE_RESERVE_LOVELACE;
-        expect(fundsCheck({ utxos: [ada(needed + 1_000_000, 0)], kind: 'mint', gameFeeLovelace: 1_000_000 })).toEqual({ enough: true, missing: 0, collateral: true });
-        expect(fundsCheck({ utxos: [ada(needed, 0)], kind: 'mint', gameFeeLovelace: 1_000_000 })).toEqual({ enough: false, missing: 1_000_000, collateral: true });
-        expect(fundsCheck({ utxos: [ada(needed, 0)], kind: 'mint' })).toEqual({ enough: true, missing: 0, collateral: true });
+    test('a mint needs the estimate (the change reserve in it) and the game fee, and collateral', () => {
+        const needed = chain.MINT_NEEDED_ESTIMATE_LOVELACE;
+        expect(fundsCheck({ utxos: [ada(needed + 1_000_000, 0)], kind: 'mint', gameFee: COMMON_FEE })).toEqual({ enough: true, missing: 0, needed: needed + 1_000_000, collateral: true });
+        expect(fundsCheck({ utxos: [ada(needed, 0)], kind: 'mint', gameFee: COMMON_FEE })).toEqual({ enough: false, missing: 1_000_000, needed: needed + 1_000_000, collateral: true });
+        expect(fundsCheck({ utxos: [ada(needed, 0)], kind: 'mint' })).toEqual({ enough: true, missing: 0, needed, collateral: true });
     });
 
     test("the change must carry the wallet's tokens: more than the reserve when they need it", () => {
         const many = Object.fromEntries(Array.from({ length: 8 }, (_, i) => [`${'c7'.repeat(28)}0${i}`, 1n]));
-        const needed = chain.MINT_NEEDED_ESTIMATE_LOVELACE + chain.CHANGE_RESERVE_LOVELACE;
+        const needed = chain.MINT_NEEDED_ESTIMATE_LOVELACE;
         const { missing } = fundsCheck({ utxos: [ada(needed, 0, { tokens: many })], kind: 'mint' });
         expect(missing).toBeGreaterThan(0);
     });
@@ -565,7 +575,7 @@ describe('the funds check', () => {
     test('only spendable UTxOs count: not those with a datum or a reference script, nor script addresses', () => {
         const script = utxo({ address: contracts.itemsAddress, lovelace: 50_000_000n, txId: '78'.repeat(32), index: 0 });
         const utxos = [ada(50_000_000, 1, { datum: 42n }), ada(50_000_000, 2, { scriptRef: contracts.items.script }), script];
-        expect(fundsCheck({ utxos, kind: 'mint' })).toEqual({ enough: false, missing: chain.MINT_NEEDED_ESTIMATE_LOVELACE + chain.CHANGE_RESERVE_LOVELACE, collateral: false });
+        expect(fundsCheck({ utxos, kind: 'mint' })).toEqual({ enough: false, missing: chain.MINT_NEEDED_ESTIMATE_LOVELACE, needed: chain.MINT_NEEDED_ESTIMATE_LOVELACE, collateral: false });
     });
 
     test('collateral: the three largest UTxOs, pure ADA first, hold the collateral', () => {
@@ -579,8 +589,8 @@ describe('the funds check', () => {
     });
 
     test('a burn needs only collateral', () => {
-        expect(fundsCheck({ utxos: [ada(2_000_000, 0)], kind: 'burn' })).toEqual({ enough: true, missing: 0, collateral: true });
-        expect(fundsCheck({ utxos: [ada(1_900_000, 0)], kind: 'burn' })).toEqual({ enough: false, missing: 0, collateral: false });
+        expect(fundsCheck({ utxos: [ada(2_000_000, 0)], kind: 'burn' })).toEqual({ enough: true, missing: 0, needed: 0, collateral: true });
+        expect(fundsCheck({ utxos: [ada(1_900_000, 0)], kind: 'burn' })).toEqual({ enough: false, missing: 0, needed: 0, collateral: false });
     });
 });
 
