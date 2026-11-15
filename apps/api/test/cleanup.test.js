@@ -47,6 +47,29 @@ test('link codes (plan 3) are deleted once expired; the scheduled cleanup does i
     }
 });
 
+test('notices (plan C) go 30 days after they were seen, unseen ones after 180 days; the scheduled cleanup does it too', async () => {
+    const { cleanupNotices } = require('../src/chain/notices');
+    await pool.query("INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ('item', $1, 'LIGHT_BARREL', 1, $1)", [playerId]);
+    const notice = (id, createdAt, seenAt) => pool.query(
+        "INSERT INTO item_notices (id, player_id, item_id, kind, created_at, seen_at) VALUES ($1, $2, 'item', 'arrived', $3, $4)",
+        [id, playerId, new Date(createdAt), seenAt === null ? null : new Date(seenAt)]);
+    await notice('seen-31-days-ago', NOW - 40 * DAY, NOW - 31 * DAY);
+    await notice('seen-yesterday', NOW - 40 * DAY, NOW - DAY);
+    await notice('unseen-179-days', NOW - 179 * DAY, null);
+    await notice('unseen-181-days', NOW - 181 * DAY, null);
+    await notice('seen-181-days', NOW - 181 * DAY, NOW - DAY);
+    await cleanupNotices(pool, NOW);
+    const ids = async () => (await pool.query('SELECT id FROM item_notices ORDER BY id')).rows.map(row => row.id);
+    expect(await ids()).toEqual(['seen-yesterday', 'unseen-179-days']);
+    await pool.query('UPDATE item_notices SET seen_at = $1', [new Date(Date.now() - 31 * DAY)]);
+    const stop = scheduleCleanup(pool, { intervalMs: 60 * 60 * 1000 });
+    try {
+        await until(async () => (await count('item_notices')) === 0, 'the notices cleanup');
+    } finally {
+        stop();
+    }
+});
+
 test('the scheduled cleanup runs right away and then periodically, until stopped', async () => {
     const left = async () => (await count('pantry')) + (await count('reports'));
     // waits on real time until everything is gone: on Postgres in CI a cleanup can take longer

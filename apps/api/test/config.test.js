@@ -44,6 +44,8 @@ describe('configuration', () => {
             recipesFile: undefined,
             live: {},
             cardanoNetwork: null,
+            chain: null,
+            chainMissing: [],
         });
         expect(Object.isFrozen(loadConfig(development))).toBe(true);
     });
@@ -182,5 +184,129 @@ describe('configuration', () => {
     test('the server reads its environment through the configuration and stops before it opens anything', async () => {
         await expect(main({ env: { NODE_ENV: 'production' } })).rejects.toThrow(ConfigError);
         await expect(main({ env: { DATABASE_URL: 'memory' } })).rejects.toThrow(/JWT_SECRET/);
+    });
+});
+
+describe('the chain configuration', () => {
+    const PROVIDER_KEY = 'secret-key-value-123';
+    // the six variables that turn the chain features on, in the order the messages name them
+    const complete = {
+        CHAIN_POLICY_ID: 'ab'.repeat(28),
+        CHAIN_CONFIG_REF: `${'cd'.repeat(32)}#0`,
+        CHAIN_SERVER_KEY_FILE: '/run/secrets/chain-server.skey',
+        CHAIN_PROVIDER_URL: 'https://cardano-preprod.blockfrost.io/api/v0/',
+        CHAIN_PROVIDER_KEY: PROVIDER_KEY,
+        CHAIN_K_FINAL: '10',
+    };
+    const preprod = { ...development, CARDANO_NETWORK: 'preprod' };
+    const on = { ...preprod, ...complete };
+
+    test('without a Cardano network the chain is off and nothing is missing', () => {
+        const config = loadConfig({ ...development, ...complete });
+        expect(config.chain).toBeNull();
+        expect(config.chainMissing).toEqual([]);
+        expect(loadConfig(development).chainMissing).toEqual([]);
+    });
+
+    test('with a network but without the chain variables: off, and every missing one is named', () => {
+        const config = loadConfig(preprod);
+        expect(config.chain).toBeNull();
+        expect(config.chainMissing).toEqual(['CHAIN_POLICY_ID', 'CHAIN_CONFIG_REF', 'CHAIN_SERVER_KEY_FILE', 'CHAIN_PROVIDER_URL', 'CHAIN_PROVIDER_KEY', 'CHAIN_K_FINAL']);
+        // an empty variable counts as not set (docker compose passes `${NAME:-}`)
+        expect(loadConfig({ ...on, CHAIN_PROVIDER_KEY: '' }).chainMissing).toEqual(['CHAIN_PROVIDER_KEY']);
+    });
+
+    test('five of the six: still off, the sixth is named', () => {
+        const { CHAIN_K_FINAL, ...five } = on;
+        expect(CHAIN_K_FINAL).toBeDefined();
+        const config = loadConfig(five);
+        expect(config.chain).toBeNull();
+        expect(config.chainMissing).toEqual(['CHAIN_K_FINAL']);
+        // values of an incomplete configuration are not checked: the operator has not turned it on
+        expect(loadConfig({ ...five, CHAIN_POLICY_ID: 'nope' }).chain).toBeNull();
+    });
+
+    test('all six: on, with the defaults of the optional timings', () => {
+        const config = loadConfig(on);
+        expect(config.chainMissing).toEqual([]);
+        expect(config.chain).toEqual({
+            network: { name: 'preprod', networkId: 0 },
+            policyId: 'ab'.repeat(28),
+            configRef: `${'cd'.repeat(32)}#0`,
+            serverKeyFile: '/run/secrets/chain-server.skey',
+            providerUrl: 'https://cardano-preprod.blockfrost.io/api/v0',
+            providerKey: PROVIDER_KEY,
+            kFinal: 10,
+            watchIntervalMs: 20000,
+            indexMaxLagMs: 600000,
+        });
+        expect(config.chain.kFinal).toBe(10);
+        expect(config.chain.network.name).toBe('preprod');
+        expect(Object.isFrozen(config.chain)).toBe(true);
+        expect(loadConfig({ ...on, CARDANO_NETWORK: 'mainnet' }).chain.network).toEqual({ name: 'mainnet', networkId: 1 });
+        expect(loadConfig({ ...on, CHAIN_WATCH_INTERVAL_MS: '1000', CHAIN_INDEX_MAX_LAG_MS: '60000' }).chain)
+            .toMatchObject({ watchIntervalMs: 1000, indexMaxLagMs: 60000 });
+    });
+
+    test('the policy id: 56 lower-case hex characters', () => {
+        ['ab'.repeat(27) + 'a', 'AB'.repeat(28), 'ab'.repeat(29), 'zz'.repeat(28)]
+            .forEach(CHAIN_POLICY_ID => expect(problemsOf({ ...on, CHAIN_POLICY_ID })).toMatch(/CHAIN_POLICY_ID/));
+    });
+
+    test('the config reference: a transaction id and an output index', () => {
+        expect(loadConfig({ ...on, CHAIN_CONFIG_REF: `${'cd'.repeat(32)}#12` }).chain.configRef).toBe(`${'cd'.repeat(32)}#12`);
+        ['cd'.repeat(32), `${'cd'.repeat(31)}#0`, `${'cd'.repeat(32)}#x`, `${'cd'.repeat(32)}:0`]
+            .forEach(CHAIN_CONFIG_REF => expect(problemsOf({ ...on, CHAIN_CONFIG_REF })).toMatch(/CHAIN_CONFIG_REF/));
+    });
+
+    test('the finality depth: a whole number from 1 to 2160', () => {
+        expect(loadConfig({ ...on, CHAIN_K_FINAL: '1' }).chain.kFinal).toBe(1);
+        expect(loadConfig({ ...on, CHAIN_K_FINAL: '2160' }).chain.kFinal).toBe(2160);
+        ['0', 'abc', '2161', '-1', '2.5'].forEach(CHAIN_K_FINAL => expect(problemsOf({ ...on, CHAIN_K_FINAL })).toMatch(/CHAIN_K_FINAL/));
+    });
+
+    test('the provider: https, plain http only outside production', () => {
+        expect(loadConfig({ ...on, CHAIN_PROVIDER_URL: 'http://localhost:3001' }).chain.providerUrl).toBe('http://localhost:3001');
+        const productionOn = { ...production, CARDANO_NETWORK: 'preprod', ...complete };
+        expect(loadConfig(productionOn).chain.providerUrl).toBe('https://cardano-preprod.blockfrost.io/api/v0');
+        expect(problemsOf({ ...productionOn, CHAIN_PROVIDER_URL: 'http://cardano-preprod.blockfrost.io/api/v0' })).toMatch(/CHAIN_PROVIDER_URL/);
+        ['cardano-preprod.blockfrost.io', 'ftp://cardano-preprod.blockfrost.io', 'https://']
+            .forEach(CHAIN_PROVIDER_URL => expect(problemsOf({ ...on, CHAIN_PROVIDER_URL })).toMatch(/CHAIN_PROVIDER_URL/));
+    });
+
+    test('the provider URL: no user, no query, no fragment, and the message does not repeat it', () => {
+        [
+            'https://user:secret-in-url@cardano-preprod.blockfrost.io/api/v0',
+            'https://secret-in-url@cardano-preprod.blockfrost.io/api/v0',
+            'https://@cardano-preprod.blockfrost.io/api/v0',
+            'https://cardano-preprod.blockfrost.io/api/v0?project_id=secret-in-url',
+            'https://cardano-preprod.blockfrost.io/api/v0?',
+            'https://cardano-preprod.blockfrost.io/api/v0#secret-in-url',
+            'https://cardano-preprod.blockfrost.io/api/v0#',
+        ].forEach(CHAIN_PROVIDER_URL => {
+            const message = problemsOf({ ...on, CHAIN_PROVIDER_URL });
+            expect(message).toMatch(/CHAIN_PROVIDER_URL/);
+            expect(message).not.toContain('secret-in-url');
+            expect(message).not.toContain('cardano-preprod.blockfrost.io');
+        });
+    });
+
+    test('the optional timings: whole numbers above their minimum', () => {
+        ['999', 'often', '1500.5'].forEach(CHAIN_WATCH_INTERVAL_MS => expect(problemsOf({ ...on, CHAIN_WATCH_INTERVAL_MS }))
+            .toMatch(/CHAIN_WATCH_INTERVAL_MS/));
+        ['59999', 'long'].forEach(CHAIN_INDEX_MAX_LAG_MS => expect(problemsOf({ ...on, CHAIN_INDEX_MAX_LAG_MS }))
+            .toMatch(/CHAIN_INDEX_MAX_LAG_MS/));
+    });
+
+    test('no message shows the provider key, every problem is listed at once', () => {
+        const message = problemsOf({
+            ...on, CHAIN_POLICY_ID: 'x', CHAIN_CONFIG_REF: 'y', CHAIN_PROVIDER_URL: 'z', CHAIN_K_FINAL: '0', CHAIN_WATCH_INTERVAL_MS: '1', CHAIN_INDEX_MAX_LAG_MS: '1',
+        });
+        ['CHAIN_POLICY_ID', 'CHAIN_CONFIG_REF', 'CHAIN_PROVIDER_URL', 'CHAIN_K_FINAL', 'CHAIN_WATCH_INTERVAL_MS', 'CHAIN_INDEX_MAX_LAG_MS']
+            .forEach(name => expect(message).toContain(name));
+        expect(message).not.toContain(PROVIDER_KEY);
+        // also when the key landed in the wrong variable
+        expect(problemsOf({ ...on, CHAIN_PROVIDER_URL: PROVIDER_KEY })).not.toContain(PROVIDER_KEY);
+        expect(problemsOf({ ...on, CHAIN_K_FINAL: PROVIDER_KEY })).not.toContain(PROVIDER_KEY);
     });
 });

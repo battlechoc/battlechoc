@@ -9,9 +9,26 @@ const { HttpError, ErrorCode } = require('../errors');
 
 const MAX_RECORDS = 50;
 const MAX_MERGED_RECORDS = 500;
+// notices marked seen in one request (the stats carry at most 20) and the length of a notice's id
+// (a UUID has 36 characters)
+const MAX_SEEN_NOTICES = 50;
+const MAX_NOTICE_ID_LENGTH = 64;
 
-/** `user`: the middlewares of a route for a player (access token, then the player's row in req.player). */
-const registerPlayerRoutes = (app, { pool, auth, user }) => {
+// the ids of POST /user/notices/seen: 1 to MAX_SEEN_NOTICES distinct, non-empty strings, else 400
+const noticeIdsOf = body => {
+    const ids = body && body.ids;
+    if (!Array.isArray(ids) || ids.length === 0 || ids.length > MAX_SEEN_NOTICES || new Set(ids).size !== ids.length
+        || !ids.every(id => typeof id === 'string' && id.length > 0 && id.length <= MAX_NOTICE_ID_LENGTH)) {
+        throw new HttpError(400, ErrorCode.INVALID_REQUEST_PARAMETERS);
+    }
+    return ids;
+};
+
+/**
+ * `user`: the middlewares of a route for a player (access token, then the player's row in
+ * req.player); `oneAtATime`: the per-player queue of the app; `now`: its clock (ms).
+ */
+const registerPlayerRoutes = (app, { pool, auth, user, oneAtATime, now = () => Date.now() }) => {
     // after a change: the stats from the player's row as it is now
     const sendStats = async (res, playerId) => res.json({ stats: await players.stats(pool, playerId) });
     // nothing changed: the stats from the row the middleware loaded
@@ -47,6 +64,13 @@ const registerPlayerRoutes = (app, { pool, auth, user }) => {
         }
         await players.addTrackRecords(pool, req.playerId, req.body.stats.slice(0, MAX_RECORDS));
         await sendStats(res, req.playerId);
+    });
+
+    // the notices of minted items (plan C) the game has shown; others' ids and seen ones change nothing
+    app.post('/user/notices/seen', ...user, async (req, res) => {
+        const ids = noticeIdsOf(req.body);
+        await oneAtATime(req.playerId, () => players.markNoticesSeen(pool, req.playerId, ids, now()));
+        res.status(204).end();
     });
 
     app.post('/user/tutorial/:step', ...user, async (req, res) => {

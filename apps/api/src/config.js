@@ -23,6 +23,20 @@
 //   MATCH_RETENTION_DAYS      not set (the default): matches are kept in full for ever. Set to a
 //                             number of days: the logged actions and the snapshot of a match are
 //                             deleted that long after it was over (cleanup.js)
+//
+// The chain features (items as tokens, src/chain/) are on only with CARDANO_NETWORK and all six of:
+//   CHAIN_POLICY_ID           the policy id of the items, 56 hex characters (printed by the deploy
+//                             script, like the config reference)
+//   CHAIN_CONFIG_REF          the output that holds the on-chain configuration, "<64 hex>#<index>"
+//   CHAIN_SERVER_KEY_FILE     the server's signing key; it must be readable at the start (server.js)
+//   CHAIN_PROVIDER_URL        a Blockfrost-compatible API, https (http only outside production)
+//   CHAIN_PROVIDER_KEY        its project id, a secret: never shown in a message
+//   CHAIN_K_FINAL             the depth from which a transaction counts as final, 1 to 2160
+// Some or all of them not set: the chain features are off and the start logs the missing names.
+// All six set: a wrong value stops the start (the operator meant them to be on), and these count:
+//   CHAIN_WATCH_INTERVAL_MS   how often the watcher reads the chain, default 20000, at least 1000
+//   CHAIN_INDEX_MAX_LAG_MS    how old the chain index's tip may be to be trusted, default 600000, at
+//                             least 60000
 
 const { cardano: { networkOf } } = require('@battlechoc/battlechoc-shared-functions');
 
@@ -69,12 +83,93 @@ const originOf = text => {
     return plain ? url.origin : undefined;
 };
 
+// the variables that turn the chain features on, in the order a message names them
+const CHAIN_REQUIRED = ['CHAIN_POLICY_ID', 'CHAIN_CONFIG_REF', 'CHAIN_SERVER_KEY_FILE', 'CHAIN_PROVIDER_URL', 'CHAIN_PROVIDER_KEY', 'CHAIN_K_FINAL'];
+const K_FINAL_MAX = 2160;
+const CHAIN_TIMINGS = [
+    ['watchIntervalMs', 'CHAIN_WATCH_INTERVAL_MS', 20000, 1000],
+    ['indexMaxLagMs', 'CHAIN_INDEX_MAX_LAG_MS', 600000, 60000],
+];
+
 const isPostgresUrl = text => {
     try {
         return ['postgres:', 'postgresql:'].includes(new URL(text).protocol);
     } catch {
         return false;
     }
+};
+
+// "https://host/path" without its trailing slash; undefined for anything but a plain http(s) URL:
+// no user or password (the key goes in a header, never in the URL), no query and no fragment
+// (the provider appends its paths to it), not even an empty one ("@", "?" or "#" alone)
+const providerUrlOf = (text, production) => {
+    let url;
+    try {
+        url = new URL(text);
+    } catch {
+        return undefined;
+    }
+    const allowed = production ? ['https:'] : ['https:', 'http:'];
+    const plain = !url.username && !url.password && !url.search && !url.hash && !/[@?#]/.test(text);
+    return allowed.includes(url.protocol) && url.hostname !== '' && plain ? text.replace(/\/+$/, '') : undefined;
+};
+
+/**
+ * The chain settings: `{ chain: null, missing }` while CARDANO_NETWORK or one of the six variables
+ * is not set, else the checked settings. Its problems name the variables, never a value: one of
+ * them is the provider key, and a value in the wrong variable must not show it either.
+ */
+const chainOf = (env, network, production, problems) => {
+    if (network === null) {
+        return { chain: null, missing: [] };
+    }
+    const value = Object.fromEntries(CHAIN_REQUIRED.map(name => [name, (read(env, name) || '').trim()]));
+    const missing = CHAIN_REQUIRED.filter(name => value[name] === '');
+    if (missing.length > 0) {
+        return { chain: null, missing };
+    }
+    const count = problems.length;
+    if (!/^[0-9a-f]{56}$/.test(value.CHAIN_POLICY_ID)) {
+        problems.push('CHAIN_POLICY_ID must be a policy id: 56 lower-case hex characters');
+    }
+    if (!/^[0-9a-f]{64}#\d+$/.test(value.CHAIN_CONFIG_REF)) {
+        problems.push('CHAIN_CONFIG_REF must be an output reference: 64 lower-case hex characters, "#" and the output index');
+    }
+    const providerUrl = providerUrlOf(value.CHAIN_PROVIDER_URL, production);
+    if (typeof providerUrl === 'undefined') {
+        problems.push(production
+            ? 'CHAIN_PROVIDER_URL must be an https:// URL in production, without a user, a query or a fragment'
+            : 'CHAIN_PROVIDER_URL must be an https:// (or http://) URL without a user, a query or a fragment');
+    }
+    const kFinal = Number(value.CHAIN_K_FINAL);
+    if (!(isWholeNumber(value.CHAIN_K_FINAL) && kFinal >= 1 && kFinal <= K_FINAL_MAX)) {
+        problems.push(`CHAIN_K_FINAL must be a whole number from 1 to ${K_FINAL_MAX}`);
+    }
+    const timings = {};
+    CHAIN_TIMINGS.forEach(([key, name, fallback, minimum]) => {
+        const text = (read(env, name) || '').trim();
+        timings[key] = text === '' ? fallback : Number(text);
+        if (text !== '' && !(isWholeNumber(text) && timings[key] >= minimum)) {
+            problems.push(`${name} must be a whole number of milliseconds, at least ${minimum}`);
+        }
+    });
+    if (problems.length > count) {
+        return { chain: null, missing: [] };
+    }
+    return {
+        chain: Object.freeze({
+            network,
+            policyId: value.CHAIN_POLICY_ID,
+            configRef: value.CHAIN_CONFIG_REF,
+            serverKeyFile: value.CHAIN_SERVER_KEY_FILE,
+            providerUrl,
+            providerKey: value.CHAIN_PROVIDER_KEY,
+            kFinal,
+            watchIntervalMs: timings.watchIntervalMs,
+            indexMaxLagMs: timings.indexMaxLagMs,
+        }),
+        missing: [],
+    };
 };
 
 /**
@@ -173,6 +268,8 @@ const loadConfig = (env = process.env) => {
         problems.push(`CARDANO_NETWORK must be "preprod" or "mainnet" (or not set: no Cardano sign-in), not "${cardanoNetworkText}"`);
     }
 
+    const { chain, missing: chainMissing } = chainOf(env, cardanoNetwork, production, problems);
+
     if (problems.length > 0) {
         throw new ConfigError(problems);
     }
@@ -195,6 +292,8 @@ const loadConfig = (env = process.env) => {
         cardanoNetwork,
         accountsPerMinute,
         cardanoPerMinute,
+        chain,
+        chainMissing,
     });
 };
 

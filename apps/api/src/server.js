@@ -1,6 +1,7 @@
 // Entry point of the battlechoc backend: REST API and the live match WebSocket (/live) on one
 // HTTP server (see deploy/docker-compose.yml for the environment, config.js for what is read from it).
 
+const fs = require('fs');
 const http = require('http');
 const { loadConfig, ConfigError } = require('./config');
 const { createPool, migrate } = require('./db');
@@ -10,18 +11,34 @@ const { createApp } = require('./app');
 const { createLive } = require('./live');
 const { loadRecipes } = require('./lab/recipes');
 const { scheduleCleanup } = require('./cleanup');
+const { createChain } = require('./chain');
+const { createWatcher } = require('./chain/watcher');
+const { ownershipStep } = require('./chain/ownership');
 
 // Docker waits 10 seconds after SIGTERM, then it kills the container: the process leaves on its
 // own before that, also when a part of the shutdown hangs.
 const SHUTDOWN_TIMEOUT_MS = 8000;
 
 /**
- * The handler of SIGTERM and SIGINT: saves the running matches (they resume after the restart,
- * clients reconnect), then closes the HTTP server and the pool, whatever failed before, and exits.
- * A second signal while it runs changes nothing.
+ * With the chain features on, the watcher of the chain (its steps: the ownership sync) in
+ * `runtime.watcher`, started: the function that stops it. Off, no watcher: a stop that does nothing.
+ */
+const startWatcher = ({ chain, pool, intervalMs, runtime, log = console }) => {
+    if (!chain.enabled) {
+        return () => {};
+    }
+    const watcher = createWatcher({ chain, pool, steps: [ownershipStep], intervalMs, log });
+    runtime.watcher = watcher;
+    return watcher.start();
+};
+
+/**
+ * The handler of SIGTERM and SIGINT: stops the cleanup and the chain watcher, saves the running
+ * matches (they resume after the restart, clients reconnect), then closes the HTTP server and the
+ * pool, whatever failed before, and exits. A second signal while it runs changes nothing.
  */
 const createShutdown = ({
-    stopCleanup, live, server, pool, exit = process.exit, log = console, setTimer = setTimeout, timeoutMs = SHUTDOWN_TIMEOUT_MS,
+    stopCleanup, stopWatcher = () => {}, live, server, pool, exit = process.exit, log = console, setTimer = setTimeout, timeoutMs = SHUTDOWN_TIMEOUT_MS,
 }) => {
     let stopping = null;
     const stop = async () => {
@@ -43,6 +60,12 @@ const createShutdown = ({
         };
         try {
             stopCleanup();
+            try {
+                stopWatcher();
+            } catch (error) {
+                failed = true;
+                log.error('shutdown: stopping the chain watcher failed', error);
+            }
             await step('closing the live service', () => live.close());
         } finally {
             await step('closing the HTTP server', () => new Promise((resolve, reject) => {
@@ -61,16 +84,30 @@ const createShutdown = ({
 };
 
 /**
- * Starts the backend; `wrap(app, { pool })` may put a handler around the REST app (the browser
- * tests add a route of their own, see test/e2eServer.js). `env` is the environment to configure
- * it from.
+ * Starts the backend; `wrap(app, { pool, runtime })` may put a handler around the REST app (the
+ * browser tests add routes of their own, see test/e2eServer.js); `runtime.chain` is the chain of
+ * the server, `runtime.watcher` its watcher once it runs. `env` is the environment to configure it
+ * from; `chainOverrides` (tests only) are doubles of the chain's provider and index (createChain).
  */
-const main = async ({ wrap = app => app, env = process.env } = {}) => {
+const main = async ({ wrap = app => app, env = process.env, chainOverrides } = {}) => {
     // first of all: a mistake in the environment stops the start before anything is opened
     const config = loadConfig(env);
+    if (config.chain) {
+        // only that it can be read: what is in it is for chain/keys.js, and never for a message
+        try {
+            fs.accessSync(config.chain.serverKeyFile, fs.constants.R_OK);
+        } catch {
+            throw new ConfigError(['CHAIN_SERVER_KEY_FILE cannot be read']);
+        }
+    }
     const recipes = loadRecipes(config.recipesFile, config.nodeEnv);
     const pool = createPool({ databaseUrl: config.databaseUrl, ...config.database });
     await migrate(pool);
+    if (config.chainMissing.length > 0) {
+        console.log(`chain features off: missing ${config.chainMissing.join(', ')}`);
+    }
+    const chain = createChain({ config, pool, log: console, overrides: chainOverrides });
+    const runtime = { chain, watcher: null };
     const auth = createAuth({ pool, secret: config.jwtSecret });
     const push = createPush({ pool, ...config.vapid });
     // the link preview of a challenge asks the live lobby, which starts after the HTTP server exists
@@ -84,10 +121,11 @@ const main = async ({ wrap = app => app, env = process.env } = {}) => {
         recipes,
         challengeInfo,
         cardanoNetwork: config.cardanoNetwork,
+        chain,
         ...(config.accountsPerMinute ? { accountsPerMinute: config.accountsPerMinute } : {}),
         ...(config.cardanoPerMinute ? { cardanoPerMinute: config.cardanoPerMinute } : {}),
     });
-    const server = http.createServer(wrap(app, { pool }));
+    const server = http.createServer(wrap(app, { pool, runtime }));
     live = createLive({ server, pool, auth, origins: config.corsOrigins, config: config.live });
     const recovered = await live.recover();
     if (recovered > 0) {
@@ -99,9 +137,16 @@ const main = async ({ wrap = app => app, env = process.env } = {}) => {
         console.log(`match retention: actions and snapshots are deleted ${config.matchRetentionDays} days after a match is over`);
     }
     const stopCleanup = scheduleCleanup(pool, { matchRetentionDays: config.matchRetentionDays });
-    server.listen(config.port, () => console.log(`battlechoc api listening on ${config.port}`));
+    // the chain watcher starts once the server listens (its first run reads the chain at once)
+    let stopWatcher = () => {};
+    server.listen(config.port, () => {
+        console.log(`battlechoc api listening on ${config.port}`);
+        if (chain.enabled) {
+            stopWatcher = startWatcher({ chain, pool, intervalMs: config.chain.watchIntervalMs, runtime });
+        }
+    });
 
-    const shutdown = createShutdown({ stopCleanup, live, server, pool });
+    const shutdown = createShutdown({ stopCleanup, stopWatcher: () => stopWatcher(), live, server, pool });
     process.on('SIGTERM', shutdown);
     process.on('SIGINT', shutdown);
 };
@@ -114,4 +159,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { main, createShutdown };
+module.exports = { main, createShutdown, startWatcher };

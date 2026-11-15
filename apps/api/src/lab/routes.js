@@ -151,10 +151,14 @@ const registerLabRoutes = (app, { pool, user, recipes, oneAtATime, triesPerHour 
             const player = await players.findPlayer(client, req.playerId);
             const items = await players.itemsOf(client, req.playerId);
             const equipment = JSON.parse(JSON.stringify(players.equipmentOf(player)));
-            // points of all equipped items (stored equipment may be over the budget after a balance change)
+            // points of all equipped items (stored equipment may be over the budget after a balance
+            // change); a slot may hold an item the player does not have now (a minted item whose
+            // token is in no wallet of theirs: plan C keeps its slot), which counts for nothing, as
+            // in loadoutOf
             const pointsOf = stored => Object.values(stored).flat()
-                .filter(id => id !== null)
-                .reduce((sum, id) => sum + Items[items.find(entry => entry.id === id).item].points, 0);
+                .map(id => items.find(entry => entry.id === id))
+                .filter(entry => entry !== undefined && Items[entry.item])
+                .reduce((sum, entry) => sum + Items[entry.item].points, 0);
             const pointsBefore = pointsOf(equipment);
             const slots = Array.from({ length: SLOTS_PER_BUILDING }, (_, i) => (equipment[entityType] || [])[i] || null);
             if (itemId !== null) {
