@@ -152,6 +152,10 @@ const PRECACHED_MEDIA = [
 const NOT_PRECACHED = [
   // the picture of link previews (Open Graph, index.html): chats fetch it, the game never does
   "images/challenge-preview.jpg",
+  // the pages a phone wallet opens in its own browser (vite.link.config.js builds them after
+  // the game, so they are not there yet; should an older build have left them, still not)
+  "link/**",
+  "sign/**",
 ];
 
 // Babylon ships every shader twice, GLSL for WebGL and WGSL for WebGPU, and imports the set of

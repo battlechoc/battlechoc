@@ -138,11 +138,16 @@ const SALVAGE_ERRORS = {
 
 const ingredientName = (id) => t(tr[`INGREDIENT_${id}`]);
 
+// a slot of the plan that adds minting: an element, or a function of the chosen item
+const slotFor = (slot, selected) =>
+  typeof slot === "function" ? slot(selected) : slot || null;
+
 /**
  * The card of an item type from the shelf: what it is and does, which of the player's items of
  * the type it shows (`instances`, the one with `instanceId` selected), and what can be done with
- * that one: equip or take it off, mint it (`mintAction`, from the plan that adds minting) and
- * salvage it after a confirmation.
+ * that one: equip or take it off (`onEquip(entry)` with the chosen item), mint it and salvage it
+ * after a confirmation. `mintAction` (under Equip) and `mintStatus` (the item's mark, under its
+ * effects) are minting's slots: an element, or a function of the chosen item (null for none).
  */
 const ItemCard = ({
   open,
@@ -329,7 +334,6 @@ const ItemCard = ({
                 definition.points
               )} · ${t(tr.ITEM_SERIAL, selected.serial)}`}
             </div>
-            {mintStatus}
             <div className={classes.effects}>
               {effectLines(item).map((line) => (
                 <span
@@ -341,6 +345,7 @@ const ItemCard = ({
                 </span>
               ))}
             </div>
+            {slotFor(mintStatus, selected)}
           </>
         ) : null}
         {instances.length > 1 || (!selected && instances.length > 0) ? (
@@ -393,14 +398,14 @@ const ItemCard = ({
             ) : (
               <Button
                 color="primary"
-                onClick={() => onEquip(item)}
+                onClick={() => onEquip(selected)}
                 disabled={!actions.equip || busy}
                 data-testid="item-equip"
               >
                 {t(tr.ITEM_EQUIP)}
               </Button>
             )}
-            {mintAction}
+            {slotFor(mintAction, selected)}
             {actions.salvage ? (
               <Button
                 color="accent"

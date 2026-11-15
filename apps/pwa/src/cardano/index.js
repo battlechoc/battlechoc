@@ -162,7 +162,19 @@ export {
   linkPageUrl,
   WalletCancelledError,
   WalletNetworkError,
+  WalletWithoutAddressError,
 } from "./wallet.js";
+export {
+  signPageUrl,
+  signPrepared,
+  walletAddresses,
+  OwnerNotConfirmedError,
+  UnsupportedAddressError,
+  WalletAccountChangedError,
+  WalletCannotSignError,
+  WalletOtherAccountError,
+  WalletSignError,
+} from "./signTx.js";
 export {
   createPasskeyBackup,
   passkeySupport,

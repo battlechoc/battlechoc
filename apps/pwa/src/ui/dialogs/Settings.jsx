@@ -27,6 +27,7 @@ import {
   useFullscreenAvailable,
 } from "../../helper/fullscreen";
 import { LAB_INTRO_SEEN } from "../lab/LabIntro";
+import { MINT_EXPLAINED } from "../mint/mintSettings";
 import { applyLanguage } from "../../helper/language";
 import { rememberLanguage } from "../../helper/rememberLanguage";
 
@@ -378,6 +379,10 @@ const Settings = (props) => {
                         // the Choclab explains itself again on the next visit
                         OfflineStore.settingsStore
                           .delete(LAB_INTRO_SEEN)
+                          .catch((error) => logger.info(error));
+                        // and minting explains itself again
+                        OfflineStore.settingsStore
+                          .delete(MINT_EXPLAINED)
                           .catch((error) => logger.info(error));
                         props.startTutorial();
                         props.close();

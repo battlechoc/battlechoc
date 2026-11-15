@@ -49,8 +49,9 @@ const ringReach = (size) =>
  * Every look of the stamp on minted items in one place (spec section 2, mockup variant B): the
  * gold double ring that replaces the tier ring, scaled with the icon (`ring(size)`); the serial
  * tag below it where the item shows large; the room the tag needs under the icon
- * (`tagRoom(size)`); the dot on an item card's serial chip; and an item that is gone (`away`:
- * a dark face, a light dashed rim, a grey picture, no badge).
+ * (`tagRoom(size)`); the dot on an item card's serial chip; an item being minted (`minting`: a
+ * dashed gold rim that pulses); and an item that is gone (`away`: a dark face, a light dashed
+ * rim, a grey picture, no badge).
  */
 export const STAMP = {
   ring: (size) => ({
@@ -89,10 +90,34 @@ export const STAMP = {
     background: MINT.gold,
     boxShadow: `0 0 0 1px ${MINT.dark}`,
   },
+  // an item being minted (its operation is out): a dashed gold rim over the tier ring that
+  // pulses (scale 1 → 1.12 → 1), still with its badge; no tag, it has no stamp yet
+  minting: {
+    rim: (size) => `${share(size, 0.05, "2px")} dashed ${MINT.gold}`,
+    inset: (size) => `calc(-1 * ${share(size, 0.07, "3px")})`,
+    pulse: "1.2s ease-in-out infinite",
+  },
   away: {
     face: "#5C7482",
     rim: (size) => `${share(size, 0.055, "2px")} dashed #B7C7D1`,
     picture: "grayscale(1)",
+  },
+};
+
+/**
+ * ItemIcon's style sheet (react-jss): the pulse of an item being minted, unless the player
+ * asked for less motion. Here, not in ItemIcon.jsx, so a unit test builds it with jss.
+ */
+export const ITEM_ICON_SHEET = {
+  "@keyframes itemMinting": {
+    "0%": { transform: "scale(1)" },
+    "50%": { transform: "scale(1.12)" },
+    "100%": { transform: "scale(1)" },
+  },
+  // the rim of an item being minted: it pulses, unless the player asked for less motion
+  minting: {
+    animation: `$itemMinting ${STAMP.minting.pulse}`,
+    "@media (prefers-reduced-motion: reduce)": { animation: "none" },
   },
 };
 

@@ -21,6 +21,8 @@ import {
   shelfTileWidth,
   shelfColumns,
   SHELF_GAP,
+  instanceToEquip,
+  groupMark,
 } from "../../src/ui/lab/itemActions.js";
 
 // stats.items: newest first
@@ -368,11 +370,11 @@ test("a shelf tile's label: the name with its serial or count, and 'minted' when
   const name = "Heavy rum barrel";
   assert.equal(
     tileLabel("HEAVY_BARREL", [barrel("a", 4)], false),
-    `${name} (No. 4)`
+    `${name} (No.\u00a04)`
   );
   assert.equal(
     tileLabel("HEAVY_BARREL", [barrel("a", 4, "minted")], true),
-    `${name}, minted, No. 4`
+    `${name}, minted, No.\u00a04`
   );
   assert.equal(
     tileLabel("HEAVY_BARREL", [barrel("a", 4), barrel("b", 2)], false),
@@ -397,4 +399,37 @@ test("the shelf's columns: tiles as wide as the longest word, but two columns on
     "repeat(auto-fill, minmax(min(8.8em, calc(50% - 0.3em)), 1fr))"
   );
   assert.equal(SHELF_GAP, "0.6em");
+});
+
+test("equipping from the card puts in the copy the card has chosen, not any free one", () => {
+  const plain = { id: "p1", item: "NUT_BRICKS", serial: 4, minted: null };
+  const minted = {
+    id: "m1",
+    item: "NUT_BRICKS",
+    serial: 7,
+    minted: { state: "minted", assetName: "aa" },
+  };
+  const instances = [minted, plain];
+  // the card chose the plain one: that one, though the minted one is free and newer
+  assert.equal(instanceToEquip(instances, new Set(), "p1"), plain);
+  assert.equal(instanceToEquip(instances, new Set(), "m1"), minted);
+  // the chosen one is equipped elsewhere already: it moves (the server takes it off there)
+  assert.equal(instanceToEquip(instances, new Set(["p1"]), "p1"), plain);
+  // without a choice (the picker on its own): a free one first, else the first
+  assert.equal(instanceToEquip(instances, new Set(["m1"])), plain);
+  assert.equal(instanceToEquip(instances, new Set(["m1", "p1"])), minted);
+  // a choice that is not among them (another type's) does not count
+  assert.equal(instanceToEquip(instances, new Set(["m1"]), "x9"), plain);
+});
+
+test("a shelf tile wears the stamp when every copy is minted, else the minting rim while one is minted", () => {
+  const minted = (id) => ({ id, minted: { state: "minted", assetName: id } });
+  const minting = { id: "g", minted: { state: "minting", operationId: "op" } };
+  const plain = { id: "p", minted: null };
+  assert.deepEqual(groupMark([minted("a"), minted("b")]), minted("a").minted);
+  assert.equal(groupMark([plain, minting]), minting.minted);
+  assert.equal(groupMark([minted("a"), minting]), minting.minted);
+  assert.equal(groupMark([plain, minted("a")]), null);
+  // a state this build does not know: plain
+  assert.equal(groupMark([{ id: "x", minted: { state: "burning" } }]), null);
 });

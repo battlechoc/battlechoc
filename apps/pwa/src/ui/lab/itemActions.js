@@ -61,6 +61,18 @@ export const groupMinted = (instances) =>
     : null;
 
 /**
+ * What a shelf tile's icon wears for a group (its instances): the stamp when every instance is
+ * minted (groupMinted), else the mark of an instance being minted (its pulsing rim), else null.
+ */
+export const groupMark = (instances) =>
+  groupMinted(instances) ||
+  (
+    instances.find(
+      (entry) => entry.minted && entry.minted.state === "minting"
+    ) || { minted: null }
+  ).minted;
+
+/**
  * The label of a shelf tile (its aria-label, `instances` newest first): the item's name with the
  * newest's serial, or the group's count; with "minted" when the tile wears the ring (`ringed`:
  * groupMinted, where the marks show).
@@ -130,6 +142,17 @@ export const cardActions = ({ item, online }) => ({
   equip: Boolean(online),
   salvage: Boolean(online) && !item.minted,
 });
+
+/**
+ * Which of `instances` (one item type's, newest first) the inventory picker equips: the one the
+ * item card chose (`chosenId`: minted and plain copies differ in what can be done with them),
+ * else one that is not equipped anywhere (`equippedIds`), else the first (equipping it again
+ * moves it).
+ */
+export const instanceToEquip = (instances, equippedIds, chosenId) =>
+  instances.find((entry) => entry.id === chosenId) ||
+  instances.find((entry) => !equippedIds.has(entry.id)) ||
+  instances[0];
 
 /**
  * How an item card's serial chip shows `entry`: `chosen` (the one the card shows) and `minted`
