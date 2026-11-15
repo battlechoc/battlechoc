@@ -21,8 +21,6 @@ const {
     KeyHash,
     Mint,
     PlutusV3,
-    Redeemers,
-    ScriptDataHash,
     ScriptHash,
     Time,
     Transaction,
@@ -34,10 +32,9 @@ const {
 } = require('@evolution-sdk/evolution');
 // public subpaths of the package (its `./*` export), not in the root index
 const { makeTxBuilder } = require('@evolution-sdk/evolution/sdk/builders/TransactionBuilder');
-const CostModel = require('@evolution-sdk/evolution/CostModel');
 const { createAikenEvaluator } = require('@evolution-sdk/aiken-uplc');
 const blueprint = require('../../../contracts/plutus.json');
-const { loadParams, TIP, fixtureKey, utxo, walletWitness } = require('./helpers/chain');
+const { loadParams, TIP, fixtureKey, utxo, walletWitness, scriptDataOf: scriptDataOfParams, costModelsOf } = require('./helpers/chain');
 
 const hex = bytes => Buffer.from(bytes).toString('hex');
 const text = string => Data.bytearray(Buffer.from(string, 'utf8').toString('hex'));
@@ -146,33 +143,7 @@ const buildMint = async ({ signers = [owner, server] } = {}) => {
 const bodyBytesOf = cborHex => Transaction.extractBodyBytes(Buffer.from(cborHex, 'hex'));
 const bodyHashOf = cborHex => TransactionHash.toBytes(TransactionBody.toHashFromBytes(bodyBytesOf(cborHex)));
 
-// The script data hash of a transaction, recomputed as the node does: blake2b-256 of the
-// redeemers' bytes as they stand in the witness set ‖ the language views { 2: V3 costs } (no
-// witness datums: the datum is inline; no V1 or V2 view: no such script is used). `redeemerBytes`
-// are the redeemers encoded in the form they were decoded from (map or array); `written` says
-// whether exactly these bytes are in the transaction, so a re-encoding shows.
-const scriptDataOf = cborHex => {
-    const { body, witnessSet } = Transaction.fromCBORHex(cborHex);
-    const { redeemers } = witnessSet;
-    const redeemerBytes = redeemers._tag === 'RedeemerMap' ? Redeemers.toCBORBytesMap(redeemers) : Redeemers.toCBORBytes(redeemers);
-    const v3Costs = Object.values(params.costModels.PlutusV3).map(BigInt);
-    const languageViews = CBOR.toCBORBytes(new Map([[2n, v3Costs]]), CBOR.CANONICAL_OPTIONS);
-    return {
-        declared: ScriptDataHash.toHex(body.scriptDataHash),
-        computed: hex(blake2b(Buffer.concat([redeemerBytes, languageViews]), { dkLen: 32 })),
-        redeemerBytes: hex(redeemerBytes),
-        written: cborHex.includes(hex(redeemerBytes)),
-        witnessDatums: witnessSet.plutusData ?? [],
-    };
-};
-
-// The cost models of the parameters, as the builder hands them to the evaluator
-const costModelsOf = ({ costModels }) =>
-    new CostModel.CostModels({
-        PlutusV1: new CostModel.CostModel({ costs: Object.values(costModels.PlutusV1).map(BigInt) }),
-        PlutusV2: new CostModel.CostModel({ costs: Object.values(costModels.PlutusV2).map(BigInt) }),
-        PlutusV3: new CostModel.CostModel({ costs: Object.values(costModels.PlutusV3).map(BigInt) }),
-    });
+const scriptDataOf = cborHex => scriptDataOfParams(cborHex, params);
 
 let unsigned;
 let walletSigned;

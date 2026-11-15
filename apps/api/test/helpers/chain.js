@@ -4,19 +4,25 @@
 
 const fs = require('fs');
 const path = require('path');
+const { blake2b } = require('@noble/hashes/blake2.js');
 const { sha256 } = require('@noble/hashes/sha2.js');
 const {
     Address,
     Assets,
+    CBOR,
     InlineDatum,
     KeyHash,
     PrivateKey,
+    Redeemers,
+    ScriptDataHash,
     Transaction,
     TransactionBody,
     TransactionHash,
     TransactionWitnessSet,
     UTxO,
+    VKey,
 } = require('@evolution-sdk/evolution');
+const CostModel = require('@evolution-sdk/evolution/CostModel');
 const {
     Networks: { preprod },
 } = require('@battlechoc/battlechoc-shared-functions').cardano;
@@ -68,9 +74,11 @@ const utxo = ({ address, lovelace, tokens = {}, txId, index, datum, scriptRef })
 
 /**
  * What a CIP-30 wallet answers to signTx(cborHex, true): a witness set (CBOR hex) with one vkey
- * witness per key over the body hash, nothing else.
+ * witness per key over the body hash, nothing else. Wallets write the vkey witnesses in either
+ * form of a CDDL set: by default as the SDK does, tagged (`a100d90102…`, tag 258), with
+ * `tagged: false` as a plain array (`a10081…`).
  */
-const walletWitness = (cborHex, privateKeys) => {
+const walletWitness = (cborHex, privateKeys, { tagged = true } = {}) => {
     const bodyHash = TransactionBody.toHashFromBytes(Transaction.extractBodyBytes(Buffer.from(cborHex, 'hex')));
     const witnesses = privateKeys.map(
         privateKey =>
@@ -79,8 +87,45 @@ const walletWitness = (cborHex, privateKeys) => {
                 signature: PrivateKey.sign(privateKey, TransactionHash.toBytes(bodyHash)),
             })
     );
-    return TransactionWitnessSet.toCBORHex(TransactionWitnessSet.fromVKeyWitnesses(witnesses));
+    if (tagged) {
+        return TransactionWitnessSet.toCBORHex(TransactionWitnessSet.fromVKeyWitnesses(witnesses));
+    }
+    const vkeys = witnesses.map(({ vkey, signature }) => [VKey.toBytes(vkey), signature.bytes]);
+    return CBOR.toCBORHex(new Map([[0n, vkeys]]), CBOR.CANONICAL_OPTIONS);
 };
+
+const hex = bytes => Buffer.from(bytes).toString('hex');
+
+/**
+ * The script data hash of a transaction (CBOR hex), recomputed as the node does: blake2b-256 of
+ * the redeemers' bytes as they stand in the witness set ‖ the language views { 2: V3 costs of
+ * `params` } (no witness datums: the datums are inline; no V1 or V2 view: no such script is
+ * used). `redeemerBytes` are the redeemers encoded in the form they were decoded from (map or
+ * array); `written` says whether exactly these bytes are in the transaction, so a re-encoding
+ * shows.
+ */
+const scriptDataOf = (cborHex, params) => {
+    const { body, witnessSet } = Transaction.fromCBORHex(cborHex);
+    const { redeemers } = witnessSet;
+    const redeemerBytes = redeemers._tag === 'RedeemerMap' ? Redeemers.toCBORBytesMap(redeemers) : Redeemers.toCBORBytes(redeemers);
+    const v3Costs = Object.values(params.costModels.PlutusV3).map(BigInt);
+    const languageViews = CBOR.toCBORBytes(new Map([[2n, v3Costs]]), CBOR.CANONICAL_OPTIONS);
+    return {
+        declared: ScriptDataHash.toHex(body.scriptDataHash),
+        computed: hex(blake2b(Buffer.concat([redeemerBytes, languageViews]), { dkLen: 32 })),
+        redeemerBytes: hex(redeemerBytes),
+        written: cborHex.includes(hex(redeemerBytes)),
+        witnessDatums: witnessSet.plutusData ?? [],
+    };
+};
+
+/** The cost models of `params`, as the builder hands them to the evaluator. */
+const costModelsOf = ({ costModels }) =>
+    new CostModel.CostModels({
+        PlutusV1: new CostModel.CostModel({ costs: Object.values(costModels.PlutusV1).map(BigInt) }),
+        PlutusV2: new CostModel.CostModel({ costs: Object.values(costModels.PlutusV2).map(BigInt) }),
+        PlutusV3: new CostModel.CostModel({ costs: Object.values(costModels.PlutusV3).map(BigInt) }),
+    });
 
 // The deployment of fixtureContracts: the blueprint (loaded once) with the config policy of the
 // seed CONFIG_SEED, its items policy and treasury.
@@ -125,4 +170,4 @@ const fixtureContracts = ({ paused = false, serverKeys = [fixtureKey('server').k
     return contractsFor({ blueprint, configUtxo, policyId, network: preprod });
 };
 
-module.exports = { TIP, TEAM_ADDRESS, loadParams, fixtureKey, utxo, walletWitness, fixtureContracts };
+module.exports = { TIP, TEAM_ADDRESS, loadParams, fixtureKey, utxo, walletWitness, scriptDataOf, costModelsOf, fixtureContracts };
