@@ -120,13 +120,18 @@ A crafted item can become a token on Cardano (minting). From then on the chain d
 who has it: a minted item belongs, in the game, to the player whose linked wallet holds its user
 token. The server learns that from the chain through four parts, each built on the one before.
 
-- **The provider** (`apps/api/src/chain/provider.js`) is the server's door to a
-  Blockfrost-compatible API: a wallet's unspent outputs, protocol parameters, the tip, and
-  submitting and evaluating a transaction. Minting and burning build their transactions with it.
+- **The provider** (`apps/api/src/chain/provider.js`) is the server's door to the chain's API:
+  Koios (`koiosProvider.js`, the default; with a free Koios token, see "The provider" below) or a Blockfrost-compatible
+  API, by `CHAIN_PROVIDER_KIND`. Both answer alike, as the Evolution SDK's objects
+  (`test/chainProviderContract.test.js` holds them to that): a wallet's unspent outputs, protocol
+  parameters, the tip, and submitting and evaluating a transaction. Minting and burning build their transactions with it.
   It is never asked who holds an item: the index answers that.
 - **The index** is Yaci Store, run beside the API (the compose profile `chain`). It follows the
-  Cardano network and keeps only the outputs, mints and burns of the game's policy, in schema
-  `yaci_store` of the game's own Postgres. The API never reads those tables directly: it creates
+  Cardano network from the block `deploy.js` recorded below the contracts' deployment, and keeps
+  only what holds or moves the game's user tokens (CIP-68 label `000de140` under its policy): the
+  outputs with one, their spends, and their mints and burns, in schema `yaci_store` of the game's
+  own Postgres (`deploy/README.md` lists every table). The reference tokens are not in it: a burn
+  finds the reference output through the provider. The API never reads those tables directly: it creates
   views over them in schema `chain` (`apps/api/src/chain/views.sql`, the only SQL that reads Yaci
   Store's tables; `apps/api/src/chain/chainIndex.js` applies it once Yaci Store has made them), and
   reads only the views, as the role `chain_reader`, in read-only transactions. The index sees only blocks, so a transaction still in the mempool is
@@ -136,8 +141,9 @@ token. The server learns that from the chain through four parts, each built on t
   stale or unreachable index changes nothing: no item leaves anybody because the indexer is down.
 - **The watcher** (`apps/api/src/chain/watcher.js`) is an interval job, like the cleanup: every
   `CHAIN_WATCH_INTERVAL_MS` (20 seconds by default) it reads the index's tip, decides whether the
-  index is fresh and runs its steps in order. For now it has one step, the ownership sync; the
-  steps of minting and burning will run before it. Runs never overlap, and a failing step is
+  index is fresh and runs its steps in order: the operations step of minting (see
+  [Minting](#minting)), then the ownership sync; burning's step will run before the sync too. Runs
+  never overlap, and a failing step is
   logged without stopping the others. It logs what changes and when the index stops or starts
   being fresh, never an idle run; a failure that lasts is logged when it starts, again when its
   message changes and once when it ends (`apps/api/src/chain/lastingLog.js`).
@@ -194,13 +200,256 @@ that changes the chain runs the ownership sync before it answers, so the game se
 its next request. Those routes exist only with `DATABASE_URL=memory` and never in the image.
 
 **Without the chain configuration** (`CHAIN_POLICY_ID`, `CHAIN_CONFIG_REF`,
-`CHAIN_SERVER_KEY_FILE`, `CHAIN_PROVIDER_URL`, `CHAIN_PROVIDER_KEY` and `CHAIN_K_FINAL`, besides
-`CARDANO_NETWORK`), the chain features are off. With `CARDANO_NETWORK` set, the start logs which
-of the six are missing; without it, the start says nothing about them. There is no provider, no
+`CHAIN_SERVER_KEY_FILE`, `CHAIN_PROVIDER_URL` and `CHAIN_K_FINAL`, besides `CARDANO_NETWORK`; and
+`CHAIN_PROVIDER_KEY` with `CHAIN_PROVIDER_KIND=blockfrost`: with Koios, the default kind, the key is
+an optional bearer token), the chain features are off. A `CHAIN_PROVIDER_KIND` other than `koios`
+or `blockfrost` (in any case) stops the start, and so does a URL of the other kind: a Blockfrost URL
+(`blockfrost.io`) needs `blockfrost`, so a server whose `.env` still has its Blockfrost settings and
+no kind is stopped rather than switched to Koios. The start logs the provider's kind and host. With `CARDANO_NETWORK` set, the start logs which of them are
+missing; without it, the start says nothing about them. There is no provider, no
 index and no watcher, and no item can be minted. On a server that never had them, the stats
 carry no stamps and no notices and the wallets hold no items, and the game works as before.
 Items minted before the configuration was removed keep their mark and stay with the player the
 last sync gave them to: without a watcher, nothing moves any more, whatever happens on the chain.
+
+## Minting
+
+A player turns a crafted item into a CIP-68 token pair ("Prägen" in German): the reference token
+with the item's datum goes to the items contract, the user token to the player's wallet. The
+server builds the transaction from the player's wallet, the wallet signs and pays in ADA, the
+server signs last and submits, and the watcher follows the transaction until it is final. Nothing
+in the game is spent: while a mint runs the item is only locked (no salvage, no second mint), and
+it stays usable in matches. The contracts and the transaction builder are plan B's
+([contracts/README.md](../contracts/README.md), `apps/api/src/chain/tx.js`); how the server reads
+the chain is the section above.
+
+### The operation
+
+Each mint is one row of `chain_ops` (migration `014_chain_ops.js`), moved through its states by
+`apps/api/src/chain/ops.js` only:
+
+```text
+prepared ──signature──▶ submitted ──in a block──▶ included ──K_FINAL deep──▶ final
+   │                       ▲    │                     │
+   │                       │    └─ past its ttl, not on the chain,
+   │                       │      K_FINAL blocks later ──▶ expired ('expired' or 'rejected')
+   │                       └──────── block rolled back ───┘
+   ├── cancel, or its wallet unlinked ──▶ cancelled
+   └── sign window over ──▶ expired ('not-signed')
+```
+
+| State | What it means | Who moves it there |
+| --- | --- | --- |
+| `prepared` | built, the item and the player locked, waiting for the wallet within the sign window (`SIGN_WINDOW_MS`, 10 minutes) | `POST /chain/mint`; a rebuild from the wallet's addresses keeps it prepared |
+| `submitted` | the wallet's signature checked, the server's added, sent to the network | `POST /chain/sign/:code`; the watcher, when the block it was in is rolled back |
+| `included` | in a block: the item is a minted item (its asset name, `minted_at` and holder are set) | the watcher |
+| `final` | its block is `CHAIN_K_FINAL` deep | the watcher |
+| `cancelled` | the player cancelled before signing, or the wallet was unlinked before signing | `DELETE /chain/operations/:id`; the sign routes |
+| `expired` | not signed in time (`not-signed`), or signed and provably unable to land (`expired`; `rejected` when the network refused it and took no later submit) | any read of a lapsed prepared one; the watcher for a submitted one |
+
+Every move is one compare-and-set (`UPDATE … WHERE id = $1 AND state = <from> RETURNING *`): of
+two callers that race (two tabs, the watcher, a cancel against a signature) exactly one wins, so a
+move's effects happen once. `prepared`, `submitted` and `included` are open: a player and an item
+have at most one open operation (checked before the insert, and on Postgres also by two partial
+unique indexes), so a player's next mint waits until the last one is final. A rollback makes the
+item the minter's plain item again and withdraws its unseen notices. An item whose mint ended
+without landing can be salvaged (plain salvage deletes its ended operations first); one with an
+open operation answers 409 `ITEM BUSY` (`apps/api/src/lab/salvage.js`). The stats show an
+item with an open mint as `minted: { state: 'minting', operationId, signing }`.
+
+### Three signatures, in this order
+
+1. **The wallet** signs the unsigned transaction as a partial signature (CIP-30
+   `signTx(tx, true)`). The server checks the witness set against the transaction it stored: the
+   body unchanged, every wallet key the transaction requires signed (`tx.verifyWitness`).
+2. **The server** checks that the on-chain config lists its key and adds its own witness
+   (`tx.addServerWitness`). The items contract requires that signature, so a transaction the
+   server has not signed can never land: a cancel or a lapsed sign window needs no look at the
+   chain.
+3. **The compare-and-set** from `prepared` to `submitted` (within the window, for the very
+   transaction that was signed). Only the request that wins it hands the transaction to the
+   provider. A failed submit is noted on the row and the watcher sends it again.
+
+The server key is loaded once at the start (`CHAIN_SERVER_KEY_FILE`, `apps/api/src/chain/keys.js`)
+and passed on as it is, never copied or logged. The co-signed transaction is stored for the watcher
+and is in no answer and no log line.
+
+### The routes
+
+`apps/api/src/routes/chain.js`; the error codes and their statuses are `CHAIN_STATUS` in
+`apps/api/src/errors.js`. With the chain features off, `GET /chain/readiness` answers
+`{ enabled: false }` and every other path under `/chain/` is 404 `CHAIN OFF`.
+
+- `GET /chain/status` → `{ enabled }`: no session, touches nothing; the game asks it once a session.
+- `GET /chain/readiness?itemId=…`: the checklist before any wallet opens: verified online matches
+  (10 needed), mints left today, the player's wallets with the ADA the build can spend, whether
+  each is enough, the hop wait, the fee options, the estimate, the pause and the open operation
+  (`apps/api/src/chain/readiness.js`).
+- `POST /chain/mint { itemId, subject, fee, addresses? }` → 201 `{ operation, tx, signCode, costs }`:
+  every check in a fixed order (the chain, the item, the player, the wallet, the config, the
+  funds and the build), then the prepared operation and a sign code, shown this once.
+- `GET /chain/operations/:id`: the player's operation as it stands; `DELETE` cancels a prepared one.
+- `GET /chain/sign/:code` (no session): what the wallet signs: the item, the costs, the unsigned
+  transaction, the address the token goes to, the sign window.
+- `POST /chain/sign/:code/addresses { addresses, proof? }` (no session): the address proof and the
+  rebuild (below).
+- `POST /chain/sign/:code { witness }` (no session): the signature, then the three steps above.
+
+### Whose address the token goes to
+
+A wallet is linked by its stake key (`stake:<hash>`), and the provider lists every address with
+that stake key, whatever its payment key. Anyone can build an address from their own payment key
+and a player's stake key and park ADA there; if the server chose the owner address from that list,
+it could build the player's mint for a stranger's address. So the address must be vouched for by
+the player's own wallet. `POST /chain/mint` with `addresses` (the wallet's CIP-30 addresses, at most
+100) comes with the player's session: the build uses only those of them that carry the subject's
+key, and the operation is `owner_confirmed`. Without addresses the server picks by plan B's rule
+and the operation is not confirmed; `POST /chain/sign/:code` then answers 409 `ADDRESSES NEEDED`
+and signs nothing.
+
+Two consequences of the stake-key listing stay as they are, known and accepted for now:
+- The phone path's prepare (`POST /chain/mint` without `addresses`) builds from every UTxO under
+  the stake key, an outsider's parked one included. A parked UTxO with many tokens, or one that
+  makes the build too large, can make that prepare itself fail (`WALLET TOO FULL` or the like), so
+  that a phone player never reaches the address proof. The extension path (with `addresses`) is
+  unaffected.
+- Readiness counts an outsider's ADA under the stake key as the player's: the checklist may say
+  "enough ADA" for a wallet whose own addresses hold less. The build from the wallet's own
+  addresses then answers `NOT ENOUGH ADA`, with the true figures.
+
+Without a session (the sign page) the wallet proves its list: `POST /chain/sign/:code/addresses`
+with `{ addresses }` changes nothing and answers `{ payload }`, a text the subject's key must sign
+with CIP-30 `signData`; with `{ addresses, proof }` the server checks the signature (400
+`INVALID SIGNATURE` otherwise), rebuilds the transaction from those addresses and marks it
+confirmed. The text is defined once, in `packages/shared/cardano/message.js`
+(`addressProofMessage`, parsed by `addressProofOf`): its own first line (never a sign-in's, and the
+sign-in refuses it), the domain, the network, the item and serial, the operation, the subject's
+address, the number and SHA-256 digest of exactly that list, and the window's end. The game parses
+it and refuses to ask the wallet unless it is this text for this operation and this list.
+
+### The sign page
+
+A phone wallet signs in its own browser, which shares nothing with the game. The minting dialog
+opens `/sign/?code=<sign code>` there through a CIP-158 deep link; the page (`sign/index.html`,
+`apps/pwa/src/sign/main.js`, no React) shows the item and the costs, lets the injected wallet sign
+through `signPrepared`, posts the signature, and the game polls the operation and carries on by
+itself. When the operation is not confirmed for one of the wallet's addresses, the wallet is asked
+twice: first to vouch for its addresses, then to sign the mint; the page says so first.
+
+What a sign code alone can do: read the prepared mint, ask for the proof text, and, with the
+subject key's signature over that text, rebuild the mint from the wallet's own addresses, or, with
+the wallet's signature, submit it. It cannot cancel (that needs the session), cannot choose the
+owner address without the subject's signature, and cannot sign for the player. Only its SHA-256
+is stored (`chain_ops.code_hash`); it is used up at the submit, and a code whose wallet was
+unlinked meanwhile cancels its operation.
+
+### The watcher's operations step
+
+`apps/api/src/chain/operationsStep.js` runs before the ownership sync, at most 200 open operations
+a run, oldest first:
+
+- a **prepared** one past its sign window expires (`not-signed`), also on a stale index;
+- everything else is decided only on a fresh index. A **submitted** one that the index has in a
+  block becomes `included` (and `final` at once if that block is deep enough); one that is not in
+  the index while the tip is before its ttl (exclusive, as the ledger reads it) is sent again at
+  most once a minute;
+- once the tip is at or past the ttl, the first such tip is noted (`ttl_passed_block`); `K_FINAL`
+  blocks later the operation expires, since only a rollback deeper than that could bring back a
+  block from before the ttl. A rollback that puts the tip before the ttl again clears the note.
+  The expiry frees the item (a second mint would make a second token for it), so the index alone
+  never decides it: the provider is first asked for the user token (`utxoByUnit`, once a run for
+  each operation due), and only "nobody holds it" expires the operation. A provider that cannot
+  answer leaves it for the next run. A token the provider sees and the index does not means the
+  index misses mints: the operation stays `submitted` (the item `minting`) and the watcher logs
+  once, as an error, "the index does not have a mint the provider sees: check the index's filters".
+  The operator then fixes the index, never the operation: the filters in
+  `deploy/chain/application-plugins.yml`, or a sync again from before the mint's block; once the
+  index has the transaction, the next run includes it (and makes it final when it is deep enough);
+- an **included** one whose block is `K_FINAL` deep becomes `final`; one the index no longer has in
+  that block was rolled back: it is `submitted` again (the item plain again) and judged as such, so
+  a re-inclusion in another block counts its depth from there.
+
+The provider's failures are told apart. `rejected` (it refused the transaction: a 400 on submit, a
+failing script) marks the operation, and an expiry then says `rejected`; an accepted submit later
+clears that. `busy`, `unauthorized` and `unavailable` (5xx, no answer, an unreadable answer, a 413
+for a request over the provider's size limit) say nothing about the transaction: they are noted for
+diagnosis, change nothing, and stop further resubmits in that run.
+
+### What it costs
+
+- **The network fee**, paid to the network.
+- **The battlechoc fee**, from the on-chain config (`readConfig`): its fee options, each with an
+  amount per tier (COMMON, RARE, EPIC; 1, 2 and 4 ADA on preprod) and receivers (the treasury).
+  `fee` in the mint is the option's index in the config; two payable options make the cost screen
+  offer a choice, none means no fee. A receiver's share below the minimum an output must hold is
+  raised to it, and the operation stores what the transaction pays.
+- **The deposit**: the ADA the two token outputs must hold. It stays with the item: the user
+  token's travels with the token, and the reference output's comes back when the item is burned.
+  A built operation answers it whole (`costs.deposit`) and in its two parts (`costs.deposits:
+  { reference, user }`, lovelace as Numbers like the other cost fields): the user token's ADA goes
+  to the player's own address, so a wallet, which shows the net change of its balance, counts only
+  the network fee, the battlechoc fee and `deposits.reference` as leaving it (ruling D38).
+
+Before "Mint now" the game shows plan B's measured estimates (`packages/shared/chain.js`, "about");
+after it the prepared operation's exact amounts. Readiness's `needed` is plan B's `fundsCheck`
+(fees, deposit, change, at least the collateral); a wallet that has the ADA but no output usable as
+collateral gets 400 `NO COLLATERAL`, one with too many tokens for one transaction `WALLET TOO FULL`.
+
+### Limits
+
+From `apps/api/src/app.js` (`CHAIN_LIMITS`), per minute: 120 requests per address in front of the
+routes with a session, then 30 per player for all of them together, and 5 mints per player on top;
+30 per address for the sign routes; 60 per address for `GET /chain/status`; 5 rebuilds per address
+and operation, so a stranger with the code cannot use up the player's. Per player: 3 mints per UTC
+day (`MINTS_PER_DAY`; a mint counts once submitted, unless it expired) and 10 verified online
+matches before the first. A cancel (`DELETE /chain/operations/:id`) has a bucket of its own, 10 per
+player, so polling in two tabs cannot starve it. Readiness asks the provider for at most 8 of a
+player's wallets, 3 at a time, within 8 seconds, and keeps each wallet's answer for 20 seconds
+(`readiness.js` `createUtxoCache`: by subject, which is public chain data; a failure is not kept;
+the mint and the rebuild always read afresh and drop that wallet's copy), so a player who asks
+again and again cannot spend the provider's quota, which is every player's. The per-address limits read the client's address from one
+`X-Forwarded-For` hop, so the API must sit behind exactly one reverse proxy.
+
+### The provider
+
+Koios by default, a Blockfrost-compatible API with `CHAIN_PROVIDER_KIND=blockfrost`
+(`apps/api/src/chain/providerKinds.js`). A URL on `blockfrost.io` needs the kind `blockfrost`, a
+URL on `koios.rest` the kind `koios`; another host is taken as the kind says. Both adapters answer
+the same objects and the same `ProviderError` codes (`koiosProvider.js`, `provider.js`,
+`providerCommon.js`). Koios's public tier needs no key but limits a request's body to 1 kB, and a
+mint transaction is 2 to 3 kB; whether its `/submittx` enforces that limit is untried. So a free
+Koios token in `CHAIN_PROVIDER_KEY` is the recommended setting, and the start logs one warning
+without it ("minting may be refused for size: set CHAIN_PROVIDER_KEY"). A request the provider
+refuses for its size (413) is `unavailable`, and the log names the limit (deployment:
+[deploy/README.md](../deploy/README.md)).
+
+### In the game
+
+- **The flow** is a pure reducer, `apps/pwa/src/ui/mint/mintFlow.js`: the steps explain, check,
+  costs, wallet ("your wallet opens now"), sign, minting, done, nothing happened and failed; the
+  dialog (`MintDialog.jsx`, with `MintChecklist`, `MintCosts`, `MintConnect`) sends the requests
+  the state asks for and reports each answer as an event. Every text is a translation key.
+- **Signing** (`apps/pwa/src/cardano/signTx.js`): the wallet's network and account are checked
+  before it is asked; in the extension path the game sends the wallet's addresses with "Mint
+  now" (one wallet prompt); `signPrepared` is the sign page's whole signature, the proof included.
+  The client does not inspect the transaction it hands to the wallet: the wallet's own prompt and
+  the server's `verifyWitness` (the witness over exactly the stored body) are the check.
+- **Following an operation** (`operationPoll.js`): one poller per operation, every 5 seconds at
+  most, none while the page is hidden. The dialog follows the operation it shows; otherwise
+  `MintWatch` (in the Hud) loads `MintWatcher`, which follows the stats' minting items and an
+  included one every 30 seconds until it is final, so a rollback shows.
+- **Whether minting shows** (`useChainEnabled.js`): a build with a network, not the Android app,
+  online, and `GET /chain/status` on (asked once a session, again when the device comes back
+  online). The Android app shows nothing of minting; minted items stay usable there.
+- **The sign page** is built with the link page after the game (`vite.link.config.js`), so it is
+  never in the game's precache. The minting dialog, the flow and the wallet code load when the
+  dialog opens; the first load gets only the light checks.
+
+**Browser tests.** The browser tests' API (`apps/api/test/e2eServer.js`) mints for real: plan B's
+fixture deployment sits on the chain double, a fresh server key is written for each run, and the
+fake wallet (`apps/pwa/test/helpers/wallet.js`) signs transactions and address proofs in the test
+process. Its test routes also credit verified matches (`/test/matches`), change the on-chain
+config and reset the chain between tests (`/test/chain/config`, `/test/chain/reset`).
 
 ## Releases and deployment
 

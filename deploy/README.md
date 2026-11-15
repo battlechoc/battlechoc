@@ -105,7 +105,11 @@ the certificate on its own (`systemctl list-timers | grep certbot`).
 
 The site file proxies `/live` with the WebSocket upgrade headers and long timeouts (a match
 keeps its connection open); the API trusts one proxy (`trust proxy`) and so sees the player's
-address in `X-Forwarded-For` for its per-minute account limit.
+address in `X-Forwarded-For` for its per-minute limits per address (new accounts, the Cardano
+sign-in, the chain routes). It takes exactly one hop: keep exactly one reverse proxy in front of
+it (this nginx, or Caddy). Behind a second one (a CDN, another proxy) it would see that proxy's
+address and every player would share one limit; reached without a proxy it would believe a
+client's own header (the compose file binds the API to `127.0.0.1` for that reason).
 
 ### Challenge links (play.battlechoc.com)
 
@@ -162,7 +166,11 @@ the players' games reconnect by themselves after a few seconds. A release whose 
 ## Looking after it
 
 - Logs: `docker compose logs -f api` (the API writes no access logs and stores no IP addresses,
-  see the privacy policy). Docker keeps at most five files of 10 MB per service.
+  see the privacy policy). Docker keeps at most five files of 10 MB per service. The host's
+  nginx keeps its own access log (on by default), with every request's path: with minting on,
+  that includes `/chain/sign/<code>`. A sign code is valid for at most 10 minutes, and alone it can
+  only read its mint or carry the player's own wallet signatures (`docs/architecture.md`,
+  "Minting").
 - Which version runs: `docker compose images api`, or
   `docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' "$(docker compose ps -q api)"`.
 - Backup: `docker compose exec -T postgres pg_dump -U battlechoc --exclude-schema=yaci_store --exclude-schema=chain battlechoc | gzip > backup-$(date +%F).sql.gz`,
@@ -192,34 +200,58 @@ of services that `docker compose` starts only when it is named; `COMPOSE_PROFILE
   `chain_reader` (`chain/setup.sh`, `chain/roles.sql`). `yaci-store` starts only after it
   succeeded. `docker compose ps -a` shows it as "Exited (0)": that is its normal state.
 - **`yaci-store`** ([Yaci Store](https://github.com/bloxbean/yaci-store), an indexer for Cardano)
-  connects to a public preprod relay, reads every new block and keeps only what concerns the
-  game's minting policy: the outputs that hold one of its tokens, the spends of those outputs,
-  and its mints and burns. It writes them into the schema `yaci_store` of the same Postgres
-  database. Its settings are the files in `chain/` (`application.properties`,
-  `application-plugins.yml` and `plugins/handle-commit.js`). It publishes no port.
+  connects to a public preprod relay, reads every block from the start block on (the one
+  `deploy.js` recorded, below the contracts' deployment) and keeps only what the game reads: the
+  outputs that hold one of its user tokens, the spends of those outputs, and the mints and burns
+  of user tokens. It writes them into the schema `yaci_store` of the same Postgres database. Its
+  settings are the files in `chain/` (`application.properties`, `application-plugins.yml` and
+  `plugins/handle-commit.js`). It publishes no port.
+
+What it stores, exactly (Yaci Store 2.0.7; a user token is a token of `CHAIN_POLICY_ID` whose name
+starts with the CIP-68 label `000de140`; the reference tokens, `000643b0`, at the items contract
+are not stored: the API finds them through the provider):
+
+| Table | Rows | Check on the running service (`psql -U battlechoc -d battlechoc -c '…'`) |
+| --- | --- | --- |
+| `address_utxo` | one per output that holds a user token, with all of its amounts | `select count(*) from yaci_store.address_utxo u where not exists (select 1 from jsonb_array_elements(u.amounts) a where a->>'unit' like '<policy id>000de140%')` is 0 |
+| `assets` | one per mint or burn of a user token | `select count(*) from yaci_store.assets where unit is null or unit not like '<policy id>000de140%'` is 0 |
+| `tx_input` | the spends of those outputs only (the commit handler deletes the others after each batch) | `select count(*) from yaci_store.tx_input t where not exists (select 1 from yaci_store.address_utxo u where u.tx_hash = t.tx_hash and u.output_index = t.output_index)` is 0 (a handful during a batch) |
+| `cursor_` | the sync point: the last blocks seen (Yaci Store keeps 2160) | `select min(slot), max(slot) from yaci_store.cursor_`: the minimum is at or above `YACI_SYNC_START_SLOT` while fewer than 2160 blocks are synced, and `max(slot)` grows. This proves where the sync started and that it runs, not what the other tables hold |
+
+Besides these, only Yaci Store's own bookkeeping has rows: `era` (one row per era it has seen,
+Conway), `error` (a row for a block it could not save, for example when a filter stopped the sync)
+and `flyway_schema_history` (its migrations). Every other table of the schema stays empty: only the
+stores `utxo` and `assets` run, the address table is off (`store.utxo.save-address=false`) and every
+other store is switched off in `chain/application.properties`. `select relname, n_live_tup from
+pg_stat_user_tables where schemaname = 'yaci_store' and n_live_tup > 0` lists only those tables
+(the counts are Postgres's estimate; `select count(*)` on one table is exact). Nothing before the
+start block is read: `select min(slot) from yaci_store.address_utxo` and `… from
+yaci_store.assets` are above `YACI_SYNC_START_SLOT`.
 
 The API reads the index through views of its own (the schema `chain`, which it creates once the
 index has made its tables), as the role `chain_reader`, which may read and never write. The
 role `yaci_store` can read or write nothing of the game.
 
 Resources: about 1 to 1.5 GB of RAM more (the container is limited to 1.5 GB), and little disk:
-the index holds only the policy's outputs, a few rows per mint or move. It never deletes the
+the index holds only the user tokens' outputs, a few rows per mint or move. It never deletes the
 spent ones (the version used has a flaw there, see `chain/application.properties`), so it grows
 by those few rows and needs no cleaning.
 
 ### What a player notices when the index is behind or down
 
-Nothing. The API trusts the index only while its newest block is recent: at most
+Only that minting waits. The API trusts the index only while its newest block is recent: at most
 `CHAIN_INDEX_MAX_LAG_MS` old (10 minutes by default). While the index is stopped, catching up or
 rebuilding, the API changes no ownership: no minted item leaves its player or arrives at a new
-one, and the game keeps working as before, matches included. Once the index has caught up, the
-API applies what happened on the chain in the meantime.
+one, and the game keeps working as before, matches included. A new mint cannot start meanwhile
+(the game's checklist says "battlechoc cannot read the Cardano network right now"), and a mint already signed
+stays "minting" until the index sees it. Once the index has caught up, the API applies what
+happened on the chain in the meantime.
 
 ### Turning it on
 
 The contracts must be deployed first (`apps/api/scripts/chain/deploy.js`, on the machine with
-the admin key): it prints `CHAIN_POLICY_ID` and `CHAIN_CONFIG_REF` and records the deployment
-in `contracts/deployments/preprod.json`.
+the admin key, `contracts/README.md`): it records the deployment in
+`contracts/deployments/preprod.json` and prints the chain lines for `.env`.
 
 1. The server key, next to the recipes (the API runs as the user `node`, uid 1000, in its
    container):
@@ -229,6 +261,14 @@ in `contracts/deployments/preprod.json`.
    sudo chown 1000:1000 /opt/battlechoc/private/chain-server.key
    sudo chmod 600 /opt/battlechoc/private/chain-server.key
    ```
+
+   The file is what `new-key.js --kind key` wrote: one line `ed25519_sk1…`, a regular file that
+   only its owner may read. The API loads it once at the start and refuses to start otherwise
+   (see [What the API checks at the start](#what-the-api-checks-at-the-start)). Its key hash must
+   be one of the server keys of the on-chain config (`deploy.js --server-key-hash`, later
+   `update-config.js --add-server-key`): if it is not, the API starts, but every mint answers
+   503 `CHAIN UNAVAILABLE` and the log says `chain: the server key is not in the config: minting
+   is off until an admin adds it`.
 
 2. The folder `chain/` next to `docker-compose.yml` (take both from the same release: the
    compose file mounts these files):
@@ -242,20 +282,23 @@ in `contracts/deployments/preprod.json`.
    done
    ```
 
-3. The start block. The index reads the chain from one block on, and that block must lie before
-   the first mint: take the block of the deployment or any earlier one. Its height is `block` in
-   `contracts/deployments/preprod.json`; Blockfrost gives its slot and hash (the same project id
-   as `CHAIN_PROVIDER_KEY`). `read -rs` asks for the project id without showing it, so it stays
-   out of the shell's history, and curl takes the header from its input, not from its command
-   line:
+3. The start block. The index reads the chain from one block on, not from the network's
+   genesis, and that block must lie before the first mint. `deploy.js` chooses it when it deploys
+   (20 blocks below the tip right before its submit, so a small rollback cannot remove it),
+   records it as `indexStart` (`{ block, slot, hash }`) in `contracts/deployments/preprod.json` and
+   prints it with the other lines for `.env`: `YACI_SYNC_START_SLOT` and
+   `YACI_SYNC_START_BLOCKHASH`. `deploy.js --confirm` prints them again. Nothing to look up.
 
-   ```sh
-   read -rs -p 'Blockfrost project id: ' project_id; echo
-   printf 'project_id: %s\n' "$project_id" | curl -s -H @- https://cardano-preprod.blockfrost.io/api/v0/blocks/<height> | grep -Eo '"(slot|hash)":[^,]*'
-   unset project_id
-   ```
-
-   A block explorer (preprod.cardanoscan.io, search the height) shows the same two values.
+   The value is fixed once: a retry (`--again`, `--new-seed`, `--confirm`) keeps the earliest
+   recorded start point, and `update-config.js` never touches it, so a rebuilt index still starts
+   before the first mint. A record from before start points were recorded gets the block 20 below
+   its deployment's block when `--confirm` confirms it. From `.env` the compose file passes the two
+   values to `chain-setup` (which checks them: a whole number and 64 hex characters) and to
+   `yaci-store` (`STORE_CARDANO_SYNC_START_SLOT`, `STORE_CARDANO_SYNC_START_BLOCKHASH`). If the
+   log of `yaci-store` says the intersection was not found, a rollback deeper than 20 blocks
+   orphaned the start block: take another block that lies before the deployment (a preprod
+   explorer shows its slot and hash), put it into both lines and
+   [rebuild the index](#rebuilding-the-index).
 
 4. The lines in `.env` (the commented block at the end of `.env.example` explains each one):
 
@@ -264,15 +307,56 @@ in `contracts/deployments/preprod.json`.
    | `CARDANO_NETWORK` | `preprod` |
    | `COMPOSE_PROFILES` | `chain` |
    | `YACI_STORE_DB_PASSWORD` | `openssl rand -hex 24` |
-   | `YACI_SYNC_START_SLOT`, `YACI_SYNC_START_BLOCKHASH` | the slot and the hash of step 3 |
-   | `CHAIN_POLICY_ID`, `CHAIN_CONFIG_REF` | what `deploy.js` printed |
+   | `YACI_SYNC_START_SLOT`, `YACI_SYNC_START_BLOCKHASH` | what `deploy.js` printed (step 3) |
+   | `CHAIN_POLICY_ID`, `CHAIN_CONFIG_REF`, `CHAIN_CONFIG_POLICY_ID` | what `deploy.js` printed |
    | `CHAIN_SERVER_KEY_PATH` | `/opt/battlechoc/private/chain-server.key` |
-   | `CHAIN_PROVIDER_URL` | `https://cardano-preprod.blockfrost.io/api/v0` |
-   | `CHAIN_PROVIDER_KEY` | the Blockfrost project id for preprod |
-   | `CHAIN_K_FINAL` | the depth from which a transaction counts as final (1 to 2160) |
+   | `CHAIN_PROVIDER_KIND` | not set (or `koios`) for Koios; `blockfrost` for a Blockfrost-compatible API |
+   | `CHAIN_PROVIDER_URL` | `https://preprod.koios.rest/api/v1` |
+   | `CHAIN_PROVIDER_KEY` | a free koios.rest token (recommended; without one, Koios's public tier may refuse a mint for its size, see below) |
+   | `CHAIN_K_FINAL` | the depth from which a transaction counts as final (1 to 2160; no default, yours to choose: see below). Set it last, once the index has caught up (step 6) |
 
    `YACI_CARDANO_HOST`, `YACI_CARDANO_PORT` and `YACI_PROTOCOL_MAGIC` default to preprod's public
-   relay; `CHAIN_WATCH_INTERVAL_MS` and `CHAIN_INDEX_MAX_LAG_MS` have defaults too.
+   relay; `CHAIN_WATCH_INTERVAL_MS` and `CHAIN_INDEX_MAX_LAG_MS` have defaults too. Put the
+   provider's key into `.env` with an editor, never on a command line (the shell's history keeps
+   it).
+
+   **The provider.** The API reads the chain and submits through Koios unless
+   `CHAIN_PROVIDER_KIND=blockfrost`: then `CHAIN_PROVIDER_URL` is
+   `https://cardano-preprod.blockfrost.io/api/v0` and `CHAIN_PROVIDER_KEY` the Blockfrost project
+   id for preprod (required). The kind decides how the key is sent: Koios gets it as a bearer
+   token, Blockfrost in its `project_id` header. A URL on `blockfrost.io` needs
+   `CHAIN_PROVIDER_KIND=blockfrost`, a URL on `koios.rest` the kind `koios`; the API refuses to
+   start otherwise. Any other host is taken as the kind says, so a Blockfrost-compatible service on
+   another host needs `CHAIN_PROVIDER_KIND=blockfrost` too, or the API talks Koios to it and sends
+   its key as a bearer token. At the start the log names the kind and the host:
+   `chain provider: koios at preprod.koios.rest`.
+
+   **Koios's size limit: set the free token.** Koios's public tier limits a request's body to
+   1 kB, and a mint transaction is larger (about 2 to 3 kB). Whether its submit enforces that has
+   not been tried, so the recommended setting is a free token in `CHAIN_PROVIDER_KEY`; without
+   one, the API's start logs `… minting may be refused for size: set CHAIN_PROVIDER_KEY …` once.
+   If the public tier does enforce it, the API logs `chain provider refused a request for its size (413): …` (at most once
+   an hour, naming the limit and `CHAIN_PROVIDER_KEY`), and the submit counts as "provider
+   unavailable": the transaction reached no node, so nothing is spent. The player sees the item
+   "minting"; the watcher tries again every minute, and once the transaction's validity is over it
+   ends as expired, which does not count against the day's mints. The remedy: register a free
+   token at koios.rest and put it into `CHAIN_PROVIDER_KEY` (the API sends it as a bearer token;
+   the registered tier allows 5 kB). The operator scripts hit the same limit with the deploy
+   transaction (about 2.9 kB) and `e2e.js`'s mints; if the deploy is still too large with the
+   token, run the scripts through Blockfrost (`CHAIN_PROVIDER_KIND=blockfrost`, see
+   `contracts/README.md`) or a submit endpoint of your own.
+
+   **`CHAIN_K_FINAL`** is the owner's to set; it decides three things a player notices:
+   - when a mint counts as final. A player's next mint waits until the previous one is final (an
+     included mint keeps its player's operation open), so that is the wait between two mints: K
+     blocks of about 20 seconds each (10: some 3 to 4 minutes);
+   - how long a mint that never landed stays "minting" after its validity (20 minutes) is over: K
+     blocks more before the watcher calls it expired;
+   - how deep a rollback the server survives without a wrong decision. 2160 (the network's own
+     security parameter) would mean about 12 hours for each of the above.
+
+   Recommended: 10 on preprod (the value the tests use, and the project's research proposes it),
+   20 to 30 on mainnet.
 
 5. Start and watch:
 
@@ -285,9 +369,9 @@ in `contracts/deployments/preprod.json`.
    docker compose logs -f yaci-store      # Yaci Store's log: its start, then the sync's progress
    ```
 
-   Both filters must show the policy id: `docker compose logs yaci-store | grep -A6 'Created MVEL
+   Both filters must show the policy id: `docker compose logs yaci-store | grep -A14 'Created MVEL
    filter'` prints each expression with the 56 hex characters of `CHAIN_POLICY_ID` where the file
-   has `${CHAIN_POLICY_ID}`. A wrong or empty policy id does not stop the start; it stops the sync
+   has `${CHAIN_POLICY_ID}` (followed by `000de140`, the user tokens' label). A wrong or empty policy id does not stop the start; it stops the sync
    at the first block, with `CHAIN_POLICY_ID is not 56 hex digits` and `Stopping fetcher` in the
    log (fix `.env`, then `docker compose up -d`).
 
@@ -298,6 +382,68 @@ in `contracts/deployments/preprod.json`.
    ```sh
    docker compose exec -T postgres psql -U battlechoc -d battlechoc -c 'select block_number, slot from yaci_store.cursor_ order by slot desc limit 1'
    ```
+
+   The API's own start shows in `docker compose logs api`: `chain provider: <kind> at <host>` when
+   the chain features are on, or `chain features off: missing …` with the names of the lines it
+   did not get.
+
+6. Turn the API's minting on once the index has caught up. Until then `CHAIN_K_FINAL` stays out
+   of `.env` (the index needs `CHAIN_POLICY_ID` and the `YACI_*` lines; the API turns its chain
+   features on only with all of its lines), so the API says `chain features off: missing
+   CHAIN_K_FINAL`. With every line set while the index is still syncing, `GET /chain/status`
+   would offer Mint to every web player for the hours the first sync takes, while their
+   checklist keeps saying the network cannot be read. When the newest block of the index (the
+   query above) is the chain's tip, or close to it, add `CHAIN_K_FINAL` and `docker compose up
+   -d` (Compose recreates the API with the new line). Pausing the on-chain config
+   (`update-config.js`) until then works too, but the Mint action then shows as paused.
+
+   **The first mint.** After the first mint on preprod, and before you open minting to players,
+   check that the index has it: at least one row in `yaci_store.assets` and one in
+   `yaci_store.address_utxo` for its user token. Both of these must answer 1 or more (the
+   queries in [What runs](#what-runs) count the rows that should NOT be there and say 0 either
+   way): `select count(*) from yaci_store.assets where unit like '<policy id>000de140%'` and
+   `select count(*) from yaci_store.address_utxo u where exists (select 1 from
+   jsonb_array_elements(u.amounts) a where a->>'unit' like '<policy id>000de140%')`. The game
+   shows the item as minted once the index has it. If the mint landed (a
+   preprod explorer shows it) and the index has neither row, its filters keep nothing of the
+   mints: the watcher then logs `the index does not have a mint the provider sees: check the
+   index's filters` and leaves the mint "minting", never expired. Fix the filters
+   (`chain/application-plugins.yml`, from the same release as the compose file) and [rebuild the
+   index](#rebuilding-the-index); the watcher then finishes the mint by itself. Never change
+   `chain_ops` by hand.
+
+### What the API checks at the start
+
+The API reads its chain lines once when it starts (`apps/api/src/config.js`). The chain features
+are on only with `CARDANO_NETWORK` and all of `CHAIN_POLICY_ID`, `CHAIN_CONFIG_REF`,
+`CHAIN_SERVER_KEY_FILE` (the compose file always sets it to the mounted key), `CHAIN_PROVIDER_URL`
+and `CHAIN_K_FINAL`, plus `CHAIN_PROVIDER_KEY` with `CHAIN_PROVIDER_KIND=blockfrost`. While some
+are missing the API starts with the chain features off and logs `chain features off: missing …`
+(only with `CARDANO_NETWORK` set). Once all are there, a wrong value stops the start: the API
+exits with `invalid configuration:` and one line per problem, naming the variable and never its
+value.
+
+| Variable | Default | A wrong value stops the start with |
+| --- | --- | --- |
+| `CHAIN_PROVIDER_KIND` | `koios` | `CHAIN_PROVIDER_KIND is unknown: it must be koios or blockfrost (or not set: koios)`, also while other lines are missing; `CHAIN_PROVIDER_KIND must be blockfrost for a Blockfrost URL (CHAIN_PROVIDER_URL): set CHAIN_PROVIDER_KIND=blockfrost`, or `… must be koios (or not set) for a Koios URL` |
+| `CHAIN_POLICY_ID` | none | `CHAIN_POLICY_ID must be a policy id: 56 lower-case hex characters` |
+| `CHAIN_CONFIG_REF` | none | `CHAIN_CONFIG_REF must be an output reference: 64 lower-case hex characters, "#" and the output index` |
+| `CHAIN_CONFIG_POLICY_ID` | not set: the config is found by `CHAIN_CONFIG_REF` alone | `CHAIN_CONFIG_POLICY_ID must be a policy id: 56 lower-case hex characters (or not set)` |
+| `CHAIN_PROVIDER_URL` | none | `CHAIN_PROVIDER_URL must be an https:// URL in production, without a user, a query or a fragment` |
+| `CHAIN_PROVIDER_KEY` | none (optional with Koios) | nothing at the start; a key the provider refuses shows in the log as `the provider refused the key` |
+| `CHAIN_K_FINAL` | none | `CHAIN_K_FINAL must be a whole number from 1 to 2160` |
+| `CHAIN_WATCH_INTERVAL_MS` | 20000 | `CHAIN_WATCH_INTERVAL_MS must be a whole number of milliseconds, at least 1000` |
+| `CHAIN_INDEX_MAX_LAG_MS` | 600000 (10 minutes) | `CHAIN_INDEX_MAX_LAG_MS must be a whole number of milliseconds, at least 60000` |
+| `CHAIN_SERVER_KEY_PATH` (the key file, mounted as `CHAIN_SERVER_KEY_FILE`) | `/dev/null` | `CHAIN_SERVER_KEY_FILE: /run/secrets/chain-server.key is not a file` (the line is not set, or names a path that did not exist, which Docker then creates as a directory); `… is open to others (mode 644): chmod 600 it`; `… is not a key file (one line ed25519_sk1…)`; `CHAIN_SERVER_KEY_FILE cannot be read` (the file is not owned by uid 1000) |
+
+`CHAIN_K_FINAL` decides when a mint counts as final and how long the watcher waits after a
+transaction's validity has ended before it calls a mint that never landed expired; it has no
+default, and choosing it is yours (see [step 4](#turning-it-on): 10 on preprod, 20 to 30 on
+mainnet). With `CHAIN_CONFIG_POLICY_ID` the
+API finds the config by its NFT wherever an admin update moved it; without it, after an update,
+the API reads a spent output and minting answers `CHAIN UNAVAILABLE` until `CHAIN_CONFIG_REF` is
+updated. The API keeps the config it read for a minute, so a pause or an update takes up to a
+minute to show.
 
 ### Rebuilding the index
 
@@ -316,7 +462,21 @@ docker compose restart api             # the API makes its views again (the drop
 
 ### Turning it off
 
-Comment out `COMPOSE_PROFILES=chain` in `.env`, then `docker compose --profile chain stop
+First look for mints that are still open:
+
+```sh
+docker compose exec -T postgres psql -U battlechoc -d battlechoc -c "select state, count(*) from chain_ops where state in ('prepared','submitted','included') group by state"
+```
+
+With the chain off no watcher runs, so an open mint stays open until the chain is on again: its
+item shows "minting" and cannot be salvaged (`ITEM BUSY`), and the player cannot start another
+mint (the Mint action is gone anyway). A `prepared` one (not signed) ends at the next read of it
+once its sign window is over; a `submitted` or `included` one is in the hands of the chain: it may
+land while the chain is off, and once the chain is on again the watcher finds it in the index
+(minted, then final) or, past its validity, expires it. So turn it off when that query answers no
+`submitted` and no `included` rows, or accept that those items wait.
+
+Then comment out `COMPOSE_PROFILES=chain` in `.env`, and `docker compose --profile chain stop
 yaci-store`. The API keeps the items as they were last seen; with the `CHAIN_*` lines commented
 out as well (and `docker compose up -d`), the chain features of the API are off too. The data
 stays in the schema `yaci_store` until you drop it as above.
