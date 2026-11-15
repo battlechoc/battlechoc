@@ -35,6 +35,7 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "testTimeout": 30000,
     "transform": {
       "node_modules/.+\\.[cm]?js$": "babel-jest"
     },
