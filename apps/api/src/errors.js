@@ -35,6 +35,8 @@ const ErrorCode = Object.freeze({
     OVER_BUDGET: 'OVER BUDGET',
     // salvaging an item whose recipe is no longer in the recipe table
     NO_RECIPE: 'NO RECIPE',
+    // salvaging a minted item plainly (409): its token is on the chain (plan E salvages it by burning)
+    ITEM_MINTED: 'ITEM MINTED',
     // signing in with a Cardano key (routes/cardano.js)
     CHALLENGE_EXPIRED: 'CHALLENGE EXPIRED',
     INVALID_SIGNATURE: 'INVALID SIGNATURE',

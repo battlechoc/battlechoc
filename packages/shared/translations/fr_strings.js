@@ -641,5 +641,21 @@ module.exports = {
     "SALVAGE_DONE": "Démonté ! De retour sur ton étagère, tout frais :",
     "SALVAGE_DONE_BUTTON": "Vers tes objets",
     "SALVAGE_NO_RECIPE": "Cet objet ne peut pas être démonté : sa recette n’existe plus dans le Choclab.",
-    "SALVAGE_GONE": "Cet objet ne fait plus partie de tes objets."
+    "SALVAGE_GONE": "Cet objet ne fait plus partie de tes objets.",
+    "ITEM_MINTED_LABEL": "{{name}}, frappé, N° {{serial}}",
+    "ITEM_MINTED_GROUP_LABEL": "{{name}}, tous frappés, × {{count}}",
+    "ITEM_ARRIVED_TITLE": "Nouveau dans ton portefeuille",
+    "ITEM_ARRIVED_TEXT": "L’objet est dans ton portefeuille, tu peux donc l’équiper dans le jeu.",
+    "ITEM_TO_CHOCLAB": "Vers le Choclab",
+    "ITEM_LATER": "Plus tard",
+    "ITEM_DEPARTED_TITLE": "N’est plus dans ton portefeuille",
+    "ITEM_DEPARTED_SLOT": "Il était équipé : {{building}}. Il en a été retiré.",
+    "ITEM_DEPARTED_TEXT": "Tu l’as vendu, envoyé ou mis en vente. S’il revient dans ton portefeuille, il reprend sa place.",
+    "ITEM_GOT_IT": "Compris",
+    "WALLET_ITEMS_HERE": "Tes objets frappés se trouvent ici. Avec le portefeuille, tu peux aussi revenir dans ton compte.",
+    "WALLET_ITEMS_COUNT": "{{count}} objets frappés",
+    "WALLET_ITEMS_ONE": "1 objet frappé",
+    "WALLET_ITEMS_WAIT": "Ce portefeuille appartenait avant à un autre compte. Ses objets comptent pour toi à partir du {{time}}.",
+    "WALLET_REMOVE_NOTE": "Si tu retires le portefeuille, ses objets quittent le jeu. Ils restent dans le portefeuille et reviennent dès que tu le connectes à nouveau.",
+    "WALLET_WHAT_IS": "Qu’est-ce qu’un portefeuille ?"
 }

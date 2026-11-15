@@ -6,6 +6,7 @@ const { resultOf, xpOf } = require('./xp');
 const { isValidUsername, randomName } = require('./names');
 const pantry = require('./pantry');
 const { withTransaction, count } = require('./db');
+const { MAX_SUBJECTS, linkedPlayers } = require('./chain/hopWait');
 
 const findPlayer = async (pool, playerId) => (await pool.query('SELECT * FROM players WHERE id = $1', [playerId])).rows[0];
 
@@ -94,10 +95,17 @@ const results = async (pool, playerId) => (await resultsOf(pool, [playerId])).ge
 
 const levelOf = player => ({ ...EmptyPlayerStats.level, ...(player.level || {}) });
 
+/**
+ * The mark of a minted item (plan C): { assetName, state: 'minted' } once its mint is in a block
+ * (asset name and minted_at set) and while it is not burned, else null. Plan D adds 'minting'
+ * from an open operation, plan E 'burning'.
+ */
+const mintedOf = row => (row.asset_name && row.minted_at && !row.burned_at ? { assetName: row.asset_name, state: 'minted' } : null);
+
 /** The crafted items of a player, newest first. */
 const itemsOf = async (db, playerId) => {
     const { rows } = await db.query(
-        `SELECT i.id, i.item_key, i.serial, i.crafted_by, i.created_at, p.username AS crafter
+        `SELECT i.id, i.item_key, i.serial, i.crafted_by, i.created_at, i.asset_name, i.minted_at, i.burned_at, p.username AS crafter
          FROM items i LEFT JOIN players p ON p.id = i.crafted_by WHERE i.player_id = $1`, [playerId]);
     return rows
         .map(row => ({
@@ -106,8 +114,46 @@ const itemsOf = async (db, playerId) => {
             serial: Number(row.serial),
             craftedBy: row.crafter || EmptyPlayerStats.username,
             createdAt: new Date(row.created_at).getTime(),
+            minted: mintedOf(row),
         }))
         .sort((a, b) => b.createdAt - a.createdAt || b.serial - a.serial);
+};
+
+/** The most notices the stats carry: a player works through them oldest first. */
+const MAX_NOTICES = 20;
+
+/**
+ * The unseen notices of a player (minted items that arrived in or departed from their wallets),
+ * oldest first, at most MAX_NOTICES: [{ id, kind, item: { id, item, serial }, building, at }]. The
+ * item's key and serial are read from items, whoever holds it now; a notice whose item row is
+ * gone is left out.
+ */
+const noticesOf = async (db, playerId) => {
+    const { rows } = await db.query(
+        `SELECT n.id, n.kind, n.building, n.created_at, i.id AS item_id, i.item_key, i.serial
+         FROM item_notices n JOIN items i ON i.id = n.item_id
+         WHERE n.player_id = $1 AND n.seen_at IS NULL ORDER BY n.created_at ASC, n.id ASC LIMIT ${MAX_NOTICES}`, [playerId]);
+    return rows.map(row => ({
+        id: row.id,
+        kind: row.kind,
+        item: { id: row.item_id, item: row.item_key, serial: Number(row.serial) },
+        building: row.building,
+        at: new Date(row.created_at).toISOString(),
+    }));
+};
+
+/**
+ * Marks those of `ids` that are unseen notices of the player as seen at `now` (ms); ids of other
+ * players' notices, unknown and seen ones change nothing. Resolves with the number marked.
+ */
+const markNoticesSeen = async (db, playerId, ids, now) => {
+    if (ids.length === 0) {
+        return 0;
+    }
+    const { rows } = await db.query(
+        `UPDATE item_notices SET seen_at = $1 WHERE player_id = $2 AND seen_at IS NULL AND id IN (${ids.map((id, i) => `$${i + 3}`).join(', ')})
+         RETURNING id`, [new Date(now), playerId, ...ids]);
+    return rows.length;
 };
 
 // slots of item ids per building type: { [entityType]: [itemId | null, itemId | null] }
@@ -158,10 +204,11 @@ const finishTutorial = (pool, playerId) => withTransaction(pool, async client =>
     }
 });
 
-/** The stats of a player row that is already loaded: three more queries (pantry, items, results). */
+/** The stats of a player row that is already loaded: four more queries (pantry, items, notices, results). */
 const statsOf = async (pool, player) => {
     const { totals: pantryTotals, spoiling } = await pantry.contents(pool, player.id, Date.now());
     const items = await itemsOf(pool, player.id);
+    const notices = await noticesOf(pool, player.id);
     return {
         id: player.id,
         username: player.username || EmptyPlayerStats.username,
@@ -180,6 +227,8 @@ const statsOf = async (pool, player) => {
         items,
         equipment: equipmentOf(player),
         loadout: loadoutOf(player, items),
+        // minted items that arrived in or left the player's wallets, not seen yet
+        notices,
         tutorialStarted: player.tutorial_started,
         tutorialSkipped: player.tutorial_skipped,
         tutorialFinished: player.tutorial_finished,
@@ -338,21 +387,67 @@ const addTrackRecords = async (pool, playerId, records) => {
     });
 };
 
-/** The Cardano keys linked to a player (the device identity is not listed), oldest first. */
-const identitiesOf = async (pool, playerId) => {
+/**
+ * How many of the player's minted items each of their `subjects` holds: Map subject → count. Each
+ * item counts for the key that makes the player its owner, as the ownership sync decides
+ * (chain/ownership.js decideOwner): its holder_subject (the stake key of the address that holds
+ * the token, else its payment key) when that is one of the player's, else its holder_pay (the
+ * payment key of that address: its stake key is linked to nobody) when that is one of theirs,
+ * else no key (a key removed since the last sync, or no sync yet). Minted means minted_at set (it is
+ * only set with the asset name); no `asset_name IS NOT NULL` beside the player: pg-mem, which every
+ * API and browser test runs on, then finds no rows once other players' items are minted too.
+ */
+const mintedItemsBySubject = async (db, playerId, subjects) => {
+    const counts = new Map(subjects.map(subject => [subject, 0]));
+    const { rows } = await db.query(
+        `SELECT holder_subject, holder_pay FROM items WHERE player_id = $1 AND minted_at IS NOT NULL AND burned_at IS NULL`, [playerId]);
+    rows.forEach(({ holder_subject: holder, holder_pay: holderPay }) => {
+        const key = [holder, holderPay].find(subject => subject !== null && counts.has(subject));
+        if (key) {
+            counts.set(key, counts.get(key) + 1);
+        }
+    });
+    return counts;
+};
+
+/**
+ * The Cardano keys linked to a player (the device identity is not listed), oldest first:
+ * { provider, subject, createdAt, wallet, items, waitUntil }. `wallet`: the CIP-30 name it was
+ * connected with (null: words, or a name the game did not know); `items`: the player's minted
+ * items it holds; `waitUntil` (ISO): the end of the wallet hop wait while that is ahead of `now`
+ * (ms), else null. From the game's own tables only.
+ */
+const identitiesOf = async (pool, playerId, { now = Date.now() } = {}) => {
     const { rows } = await pool.query(
-        "SELECT provider, subject, created_at FROM identities WHERE player_id = $1 AND provider = 'cardano' ORDER BY created_at ASC, subject ASC",
+        "SELECT provider, subject, created_at, wallet FROM identities WHERE player_id = $1 AND provider = 'cardano' ORDER BY created_at ASC, subject ASC",
         [playerId]);
-    return rows.map(row => ({ provider: row.provider, subject: row.subject, createdAt: new Date(row.created_at).toISOString() }));
+    const subjects = rows.map(row => row.subject);
+    const items = await mintedItemsBySubject(pool, playerId, subjects);
+    const linked = new Map();
+    for (let start = 0; start < subjects.length; start += MAX_SUBJECTS) {
+        (await linkedPlayers(pool, subjects.slice(start, start + MAX_SUBJECTS), now)).forEach((link, subject) => linked.set(subject, link));
+    }
+    return rows.map(row => {
+        const link = linked.get(row.subject);
+        return {
+            provider: row.provider,
+            subject: row.subject,
+            createdAt: new Date(row.created_at).toISOString(),
+            wallet: row.wallet,
+            items: items.get(row.subject),
+            waitUntil: link && link.waitUntil !== null ? new Date(link.waitUntil).toISOString() : null,
+        };
+    });
 };
 
 /**
  * Removes one of a player's Cardano keys: false when the player has no such key, LastIdentityError
  * when it is their last one (they could not sign in anywhere else any more). `keepSession`: the
- * session that removes it stays, also when that key signed it in.
+ * session that removes it stays, also when that key signed it in. The key's open identity_history
+ * row is closed at `now()` (the app's clock).
  */
 class LastIdentityError extends Error {}
-const removeIdentity = (pool, playerId, subject, { keepSession = null } = {}) => withTransaction(pool, async client => {
+const removeIdentity = (pool, playerId, subject, { keepSession = null, now = Date.now } = {}) => withTransaction(pool, async client => {
     // the player's row is locked: two removals at once (also from two API processes) wait for each other
     await client.query('SELECT id FROM players WHERE id = $1 FOR UPDATE', [playerId]);
     const keys = await count(client, "SELECT COUNT(*) AS n FROM identities WHERE player_id = $1 AND provider = 'cardano'", [playerId]);
@@ -365,6 +460,8 @@ const removeIdentity = (pool, playerId, subject, { keepSession = null } = {}) =>
         throw new LastIdentityError();
     }
     await client.query("DELETE FROM identities WHERE player_id = $1 AND provider = 'cardano' AND subject = $2", [playerId, subject]);
+    await client.query('UPDATE identity_history SET unlinked_at = $3 WHERE subject = $1 AND player_id = $2 AND unlinked_at IS NULL',
+        [subject, playerId, new Date(now())]);
     // the words of that key are no use any more: its passkey backups go with it, and so do the
     // sessions it signed in (words that leaked must not keep a way in)
     await client.query('DELETE FROM passkey_backups WHERE player_id = $1 AND subject = $2', [playerId, subject]);
@@ -402,5 +499,5 @@ module.exports = {
     hasProgress,
     findPlayer, findPlayerByName, setUsername, setLanguage, setTutorialStep, mergeTutorialFlags, freeRandomName, assignRandomName,
     createPlayer, stats, statsOf, results, ladderOf, advanceAiLadder, finishTutorial, rankOf, playerInfo, highscore, friendsOf, addFriend,
-    removeFriend, addTrackRecords, levelOf, itemsOf, equipmentOf, loadoutOf,
+    removeFriend, addTrackRecords, levelOf, itemsOf, noticesOf, markNoticesSeen, equipmentOf, loadoutOf,
 };

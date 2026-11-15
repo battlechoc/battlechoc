@@ -11,10 +11,34 @@ export const shortAddress = (address) =>
     ? `${address.slice(0, 14)}…${address.slice(-8)}`
     : address;
 
+// the names wallets give themselves in window.cardano (CIP-30), as players know them
+const WALLET_LABELS = {
+  eternl: "Eternl",
+  vespr: "Vespr",
+  lace: "Lace",
+  typhoncip30: "Typhon",
+  gerowallet: "Gero",
+  nufi: "NuFi",
+};
+
+/** A wallet's name from its CIP-30 key ("typhoncip30" → "Typhon"); null without one. */
+export const walletLabel = (key) => {
+  if (typeof key !== "string" || key === "") {
+    return null;
+  }
+  return WALLET_LABELS[key] || key.charAt(0).toUpperCase() + key.slice(1);
+};
+
+// the minted items a key holds that count in the game (none from an API that does not say)
+const itemsOf = (identity) =>
+  Number.isInteger(identity.items) && identity.items > 0 ? identity.items : 0;
+
 /**
  * The state of the player's account safety.
  *
- * - `identities`: the linked keys ({ subject, address }) from the server
+ * - `identities`: the linked keys from the server ({ subject, address }, and since plan C
+ *   `wallet` (the wallet's CIP-30 key or null), `items` (the minted items it holds that count)
+ *   and `waitUntil` (while a wallet's items wait after it moved from another player))
  * - `local`: the words on this device, the key they make (`subject`) and their backup marks
  *   (`methods`: "words", "file")
  * - `passkeys`: the player's passkey backups (null when they could not be read)
@@ -81,7 +105,22 @@ export const accountSafety = ({
       count: wallets.length,
       action: disconnect ? "disconnect" : "connect",
       subject: disconnect ? wallets[0].subject : null,
+      // each wallet with its name, its minted items and their wait (plan C)
+      list: wallets.map((key) => ({
+        subject: key.subject,
+        address: key.address,
+        name: walletLabel(key.wallet),
+        items: itemsOf(key),
+        waitUntil: typeof key.waitUntil === "string" ? key.waitUntil : null,
+      })),
+      // the items of every key, the words key's too: they all count in the game
+      items: identities.reduce((sum, identity) => sum + itemsOf(identity), 0),
     };
+    // the row says the minted items live in the wallets once a key holds one, or a key's items
+    // wait: before that (nothing can be minted yet) it reads as it did before minting
+    wallet.describesItems =
+      wallet.items > 0 ||
+      identities.some((identity) => typeof identity.waitUntil === "string");
   }
 
   return {

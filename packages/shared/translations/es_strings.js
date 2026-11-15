@@ -641,5 +641,21 @@ module.exports = {
     "SALVAGE_DONE": "¡Desmontado! De vuelta en tu estantería, recién hechos:",
     "SALVAGE_DONE_BUTTON": "A tus objetos",
     "SALVAGE_NO_RECIPE": "Este objeto no se puede desmontar: su receta ya no está en el Choclab.",
-    "SALVAGE_GONE": "Este objeto ya no está entre tus objetos."
+    "SALVAGE_GONE": "Este objeto ya no está entre tus objetos.",
+    "ITEM_MINTED_LABEL": "{{name}}, acuñado, N.º {{serial}}",
+    "ITEM_MINTED_GROUP_LABEL": "{{name}}, todos acuñados, × {{count}}",
+    "ITEM_ARRIVED_TITLE": "Nuevo en tu billetera",
+    "ITEM_ARRIVED_TEXT": "El objeto está en tu billetera, así que puedes equiparlo en el juego.",
+    "ITEM_TO_CHOCLAB": "Al Choclab",
+    "ITEM_LATER": "Más tarde",
+    "ITEM_DEPARTED_TITLE": "Ya no está en tu billetera",
+    "ITEM_DEPARTED_SLOT": "Estaba equipado en: {{building}}. Se ha quitado de ahí.",
+    "ITEM_DEPARTED_TEXT": "Lo vendiste, lo enviaste o lo pusiste a la venta. Si vuelve a tu billetera, ocupará otra vez su lugar.",
+    "ITEM_GOT_IT": "Entendido",
+    "WALLET_ITEMS_HERE": "Aquí están tus objetos acuñados. Con la billetera también puedes volver a tu cuenta.",
+    "WALLET_ITEMS_COUNT": "{{count}} objetos acuñados",
+    "WALLET_ITEMS_ONE": "1 objeto acuñado",
+    "WALLET_ITEMS_WAIT": "Esta billetera era antes de otra cuenta. Sus objetos cuentan para ti a partir del {{time}}.",
+    "WALLET_REMOVE_NOTE": "Si quitas la billetera, sus objetos salen del juego. Se quedan en la billetera y vuelven en cuanto la conectes de nuevo.",
+    "WALLET_WHAT_IS": "¿Qué es una billetera?"
 }

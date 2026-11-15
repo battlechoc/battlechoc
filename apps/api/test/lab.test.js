@@ -262,6 +262,38 @@ describe('salvaging (minting plan A)', () => {
         expect((await request(app).post('/lab/salvage').send({ itemId: theirs }).expect(401)).body.error).toBe('missing access token');
     });
 
+    test('an item that belongs to nobody (plan C: its token is in no linked wallet) is nobody\'s to see, salvage or equip', async () => {
+        const { app, pool } = await salvageSetup();
+        const crafter = await account(app);
+        await pool.query("INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ('away', NULL, 'LIGHT_BARREL', 1, $1)", [crafter.playerId]);
+        expect((await salvage(crafter, 'away').expect(400)).body.error).toBe('NOT YOUR ITEM');
+        expect((await crafter.post('/user/equipment', { entityType: T.RUM_TRUFFLE_CANNON, slot: 0, itemId: 'away' }).expect(400)).body.error)
+            .toBe('NOT YOUR ITEM');
+        expect(await statsOf(crafter)).toMatchObject({ items: [], equipment: {}, loadout: {} });
+        expect(await players.hasProgress(pool, crafter.playerId)).toBe(false);
+        expect((await pool.query("SELECT player_id FROM items WHERE id = 'away'")).rows).toEqual([{ player_id: null }]);
+    });
+
+    test('a minted item is not salvaged plainly: 409 ITEM MINTED, the row and the pantry stay', async () => {
+        const { app, pool } = await salvageSetup();
+        const player = await account(app);
+        const light = await giveItem(pool, player.playerId, 'LIGHT_BARREL');
+        await player.post('/user/equipment', { entityType: T.RUM_TRUFFLE_CANNON, slot: 0, itemId: light }).expect(200);
+        await pool.query('UPDATE items SET asset_name = $2, minted_at = $3 WHERE id = $1', [light, `000de140${'0'.repeat(55)}1`, new Date()]);
+        const before = await statsOf(player);
+        expect((await salvage(player, light).expect(409)).body.error).toBe('ITEM MINTED');
+        // also one whose mint is not in a block yet (plan D sets the asset name first)
+        const pending = await giveItem(pool, player.playerId, 'HEAVY_BARREL');
+        await pool.query('UPDATE items SET asset_name = $2 WHERE id = $1', [pending, `000de140${'0'.repeat(55)}2`]);
+        expect((await salvage(player, pending).expect(409)).body.error).toBe('ITEM MINTED');
+        const after = await statsOf(player);
+        expect(after.items.map(entry => entry.id).sort()).toEqual([light, pending].sort());
+        expect(after.equipment).toEqual(before.equipment);
+        expect(after.loadout).toEqual({ [T.RUM_TRUFFLE_CANNON]: ['LIGHT_BARREL'] });
+        expect(after.pantry).toEqual(before.pantry);
+        expect(after.spoiling).toEqual(before.spoiling);
+    });
+
     test('two salvages of one item at once: one works', async () => {
         const { app, pool } = await salvageSetup();
         const player = await account(app);

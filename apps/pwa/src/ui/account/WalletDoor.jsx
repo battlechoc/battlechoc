@@ -310,7 +310,11 @@ const WalletDoor = ({
       const answer =
         purpose === "confirm"
           ? { confirmToken: await confirmWithWallet(walletApi) }
-          : await connectWallet(walletApi, { purpose, confirmToken });
+          : await connectWallet(walletApi, {
+              purpose,
+              confirmToken,
+              walletName,
+            });
       if (attempts.current.isCurrent(attempt)) {
         finish(answer);
       } else if (answer.outcome === "known") {

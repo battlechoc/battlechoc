@@ -82,11 +82,13 @@ const signingAddress = async (walletApi) => {
  * Signs a `purpose` challenge ("connect", "link", "confirm") with the wallet's CIP-30 api and
  * sends it; resolves with the server's answer. `code`: the link page signs for a link code, without
  * a token (the code says what it is for; `purpose` is not used then). `confirmToken` goes with a change to a player who has keys.
+ * `walletName`: the wallet's CIP-30 key (window.cardano.<key>), sent in lower case so the wallet
+ * row can name the wallet (the API keeps only names it knows).
  */
 export const signWithWallet = async (
   walletApi,
   purpose,
-  { api, network, confirmToken, code }
+  { api, network, confirmToken, code, walletName }
 ) => {
   const walletNetwork = await walletApi.getNetworkId();
   if (walletNetwork !== network.networkId) {
@@ -129,6 +131,9 @@ export const signWithWallet = async (
     signature: signed.signature,
     key: signed.key,
   };
+  if (typeof walletName === "string" && walletName !== "") {
+    body.wallet = walletName.toLowerCase();
+  }
   return typeof code === "string"
     ? api.verifyForCode(body)
     : api.verify(body, purpose, { confirmToken });

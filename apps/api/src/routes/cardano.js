@@ -57,14 +57,14 @@ const registerCardanoRoutes = (app, { pool, auth, user, network, limit, oneAtATi
         // one signature per code: a second one at the same time finds it taken (404)
         const code = await linkCodes.claim(pool, challenge.link_code_hash, now);
         try {
-            return await settleCode(code, subject);
+            return await settleCode(code, subject, body.wallet);
         } catch (error) {
             await linkCodes.release(pool, code.code_hash);
             throw error;
         }
     };
 
-    const settleCode = async (code, subject) => {
+    const settleCode = async (code, subject, wallet) => {
         const owner = await cardano.playerOfSubject(pool, subject);
         if (typeof owner !== 'undefined' && owner !== code.player_id) {
             if (code.purpose === 'link') {
@@ -79,7 +79,9 @@ const registerCardanoRoutes = (app, { pool, auth, user, network, limit, oneAtATi
             await linkCodes.settle(pool, code.code_hash, { state: 'confirm' });
             return { outcome: 'confirm' };
         }
-        await cardano.linkIdentity(pool, { playerId: code.player_id, subject, address: cardano.addressOfSubject(subject, network) });
+        await cardano.linkIdentity(pool, {
+            playerId: code.player_id, subject, address: cardano.addressOfSubject(subject, network), linkedAt: new Date(now()), wallet,
+        });
         await linkCodes.settle(pool, code.code_hash, { state: 'linked', subject });
         return { outcome: 'linked' };
     };
@@ -149,7 +151,9 @@ const registerCardanoRoutes = (app, { pool, auth, user, network, limit, oneAtATi
                 && !auth.checkConfirmToken(req.get('x-battlechoc-confirm'), challenge.player_id)) {
                 throw new HttpError(403, ErrorCode.CONFIRMATION_REQUIRED);
             }
-            return cardano.linkIdentity(pool, { playerId: challenge.player_id, subject, address: cardano.addressOfSubject(subject, network) });
+            return cardano.linkIdentity(pool, {
+                playerId: challenge.player_id, subject, address: cardano.addressOfSubject(subject, network), linkedAt: new Date(now()), wallet: body.wallet,
+            });
         };
         if (challenge.purpose === 'link') {
             res.json({ identity: await linkToPlayer() });
@@ -175,9 +179,10 @@ const registerCardanoRoutes = (app, { pool, auth, user, network, limit, oneAtATi
     });
 
     app.get('/user/identities', ...user, async (req, res) => {
-        const identities = await players.identitiesOf(pool, req.playerId);
-        res.json(identities.map(({ provider, subject, createdAt }) => ({
-            provider, subject, address: cardano.addressOfSubject(subject, network), createdAt,
+        // what the wallet row shows (plan C) comes from the game's tables: the chain is never asked here
+        const identities = await players.identitiesOf(pool, req.playerId, { now: now() });
+        res.json(identities.map(({ provider, subject, createdAt, wallet, items, waitUntil }) => ({
+            provider, subject, address: cardano.addressOfSubject(subject, network), createdAt, wallet, items, waitUntil,
         })));
     });
 
@@ -186,7 +191,7 @@ const registerCardanoRoutes = (app, { pool, auth, user, network, limit, oneAtATi
         if (!auth.checkConfirmToken(req.get('x-battlechoc-confirm'), req.playerId)) {
             throw new HttpError(403, ErrorCode.CONFIRMATION_REQUIRED);
         }
-        const removed = await oneAtATime(req.playerId, () => players.removeIdentity(pool, req.playerId, req.params.subject, { keepSession: req.sessionId })).catch(error => {
+        const removed = await oneAtATime(req.playerId, () => players.removeIdentity(pool, req.playerId, req.params.subject, { keepSession: req.sessionId, now })).catch(error => {
             if (error instanceof players.LastIdentityError) {
                 throw new HttpError(409, ErrorCode.LAST_IDENTITY);
             }

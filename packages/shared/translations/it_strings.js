@@ -641,5 +641,21 @@ module.exports = {
     "SALVAGE_DONE": "Smontato! Di nuovo sul tuo scaffale, freschi:",
     "SALVAGE_DONE_BUTTON": "Ai tuoi oggetti",
     "SALVAGE_NO_RECIPE": "Questo oggetto non si può smontare: la sua ricetta non c’è più nel Choclab.",
-    "SALVAGE_GONE": "Questo oggetto non è più tra i tuoi oggetti."
+    "SALVAGE_GONE": "Questo oggetto non è più tra i tuoi oggetti.",
+    "ITEM_MINTED_LABEL": "{{name}}, coniato, N. {{serial}}",
+    "ITEM_MINTED_GROUP_LABEL": "{{name}}, tutti coniati, × {{count}}",
+    "ITEM_ARRIVED_TITLE": "Nuovo nel tuo wallet",
+    "ITEM_ARRIVED_TEXT": "L’oggetto è nel tuo wallet, quindi puoi equipaggiarlo nel gioco.",
+    "ITEM_TO_CHOCLAB": "Al Choclab",
+    "ITEM_LATER": "Più tardi",
+    "ITEM_DEPARTED_TITLE": "Non è più nel tuo wallet",
+    "ITEM_DEPARTED_SLOT": "Era equipaggiato: {{building}}. È stato tolto da lì.",
+    "ITEM_DEPARTED_TEXT": "L’hai venduto, inviato o messo in vendita. Se torna nel tuo wallet, riprende il suo posto.",
+    "ITEM_GOT_IT": "Capito",
+    "WALLET_ITEMS_HERE": "Qui ci sono i tuoi oggetti coniati. Con il wallet puoi anche rientrare nel tuo account.",
+    "WALLET_ITEMS_COUNT": "{{count}} oggetti coniati",
+    "WALLET_ITEMS_ONE": "1 oggetto coniato",
+    "WALLET_ITEMS_WAIT": "Questo wallet apparteneva prima a un altro account. I suoi oggetti contano per te dal {{time}}.",
+    "WALLET_REMOVE_NOTE": "Se rimuovi il wallet, i suoi oggetti escono dal gioco. Restano nel wallet e tornano appena lo colleghi di nuovo.",
+    "WALLET_WHAT_IS": "Che cos’è un wallet?"
 }

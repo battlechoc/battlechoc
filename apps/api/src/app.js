@@ -23,6 +23,10 @@ const TOKENS_PER_MINUTE = 120;
 const createApp = ({
     pool, auth, push, corsOrigins = [], accountsPerMinute = 10, tokensPerMinute = TOKENS_PER_MINUTE, recipes = loadRecipes(),
     labTriesPerHour = 30, challengeInfo = () => null, cardanoNetwork = null, cardanoPerMinute = 30, now = () => Date.now(),
+    // the chain of the server (chain/index.js), off unless configured; for the routes of the
+    // items on the chain, which come with the next tasks of the minting plans
+    // eslint-disable-next-line no-unused-vars
+    chain = { enabled: false, missing: [] },
 }) => {
     const app = express();
     // purchases and equipment changes of one player run one at a time
@@ -65,7 +69,7 @@ const createApp = ({
             pool, auth, user, network: cardanoNetwork, limit: rateLimit({ windowMs: 60000, max: cardanoPerMinute }), oneAtATime, now,
         });
     }
-    registerPlayerRoutes(app, { pool, auth, user });
+    registerPlayerRoutes(app, { pool, auth, user, oneAtATime, now });
     registerLabRoutes(app, { pool, user, recipes, oneAtATime, triesPerHour: labTriesPerHour });
     // last of the routes under /user: its GET /user/:name matches every path the others left
     registerSocialRoutes(app, { pool, auth, user });

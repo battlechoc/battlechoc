@@ -9,11 +9,13 @@ const crypto = require('crypto');
 const { KeyHash, RewardAccount, Address, COSE } = require('@evolution-sdk/evolution');
 const { cardano } = require('@battlechoc/battlechoc-shared-functions');
 const { HttpError, ErrorCode } = require('./errors');
-const { count } = require('./db');
+const { count, withTransaction } = require('./db');
 
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const IDENTITY_PROVIDER = 'cardano';
 const HEX = /^(?:[0-9a-f]{2})+$/i;
+// the CIP-30 name of a wallet (window.cardano.<name>), as the game sends it
+const WALLET_NAME = /^[a-z0-9]{1,24}$/;
 
 const invalidRequest = () => new HttpError(400, ErrorCode.INVALID_REQUEST_PARAMETERS);
 const invalidSignature = () => new HttpError(400, ErrorCode.INVALID_SIGNATURE);
@@ -136,20 +138,31 @@ const playerOfSubject = async (pool, subject) => {
     return rows.length > 0 ? rows[0].player_id : undefined;
 };
 
-/** Links a key to a player; again for the same player is fine, for another one IDENTITY TAKEN. */
-const linkIdentity = async (pool, { playerId, subject, address }) => {
+/**
+ * Links a key to a player; again for the same player is fine (and writes nothing), for another
+ * one IDENTITY TAKEN. A new link opens the key's identity_history row at `linkedAt` (the app's
+ * clock: the wallet hop wait runs from it). `wallet`: the CIP-30 name of the wallet that signed,
+ * kept only when it looks like one.
+ */
+const linkIdentity = async (pool, { playerId, subject, address, linkedAt = new Date(), wallet = null }) => {
     const owner = await playerOfSubject(pool, subject);
     if (typeof owner === 'undefined') {
         try {
-            await pool.query('INSERT INTO identities (provider, subject, player_id) VALUES ($1, $2, $3)',
-                [IDENTITY_PROVIDER, subject, playerId]);
+            await withTransaction(pool, async client => {
+                await client.query('INSERT INTO identities (provider, subject, player_id, wallet) VALUES ($1, $2, $3, $4)',
+                    [IDENTITY_PROVIDER, subject, playerId, typeof wallet === 'string' && WALLET_NAME.test(wallet) ? wallet : null]);
+                // the key was linked to nobody: a row still open is closed, a key has at most one
+                await client.query('UPDATE identity_history SET unlinked_at = $2 WHERE subject = $1 AND unlinked_at IS NULL', [subject, linkedAt]);
+                await client.query('INSERT INTO identity_history (id, subject, player_id, linked_at) VALUES ($1, $2, $3, $4)',
+                    [crypto.randomUUID(), subject, playerId, linkedAt]);
+            });
             return { provider: IDENTITY_PROVIDER, subject, address };
         } catch (error) {
             // linked at the same moment by another request: decided below by who has it now
             if (typeof (await playerOfSubject(pool, subject)) === 'undefined') {
                 throw error;
             }
-            return linkIdentity(pool, { playerId, subject, address });
+            return linkIdentity(pool, { playerId, subject, address, linkedAt, wallet });
         }
     }
     if (owner !== playerId) {

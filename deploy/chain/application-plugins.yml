@@ -1,0 +1,85 @@
+# Yaci Store's plugins (2.0.7): the filters that keep only the game's minting policy, and the
+# clean-up of the spends of everything else. Yaci Store loads this file itself (its jar includes
+# the profile `plugins`); mounted at /app/config/ next to application.properties.
+#
+# ${CHAIN_POLICY_ID} is a Spring placeholder: Spring resolves it from the container's environment
+# when it binds this file, before the expressions are compiled. Nothing stops the start when it is
+# wrong: an empty value (docker-compose.yml passes '' for an unset one) binds as '', an unresolved
+# placeholder stays the literal text, and a filter over either would silently keep nothing.
+# chain-setup's gate checks the value, but `docker compose up --no-deps` skips it. So each filter
+# checks the bound value first and throws when it is not 56 lower-case hex characters (a call that
+# fails: MVEL has no throw); with exit-on-error the first block with an output then stops the sync
+# ("Filter battlechoc: … failed: … CHAIN_POLICY_ID is not 56 hex digits", then "Stopping
+# fetcher"), and a stale index changes no ownership. Checked against MVEL 2.5.2.Final, the version
+# Yaci Store 2.0.7 uses. The log shows each filter's expression with the policy id filled in
+# ("Created MVEL filter").
+#
+# What the views of apps/api/src/chain/views.sql rely on, and what the filters make true:
+# - address_utxo holds exactly the outputs with at least one token of the policy, each with all of
+#   its amounts (ada and any other tokens too); an output without one is never written;
+# - assets holds exactly the policy's mints and burns (the assets store sees nothing else);
+# - tx_input is written for every input of every transaction, unfiltered; the views only look at
+#   the spends of outputs kept in address_utxo, and handle-commit.js deletes the rest.
+store:
+  plugins:
+    enabled: true
+    # no plugin admin endpoints (Yaci Store's HTTP port is not published anyway)
+    api-enabled: false
+    metrics:
+      enabled: false
+    # A filter that fails would otherwise let the whole unfiltered list through (PluginAspect
+    # restores the original items on a non-fatal error), and the views would then see foreign
+    # outputs. With exit-on-error the block is not saved and the sync stops instead: the index
+    # falls behind, and a stale index changes no ownership.
+    exit-on-error: true
+
+    filters:
+      # the item is AddressUtxo; amounts is a list of Amt { unit, policyId, assetName, quantity }
+      # (the Java property names; the table's JSON has snake_case keys); ada has no policy id
+      utxo.unspent.save:
+        - name: "battlechoc: outputs with a token of the policy"
+          lang: mvel
+          expression: |
+            if ('${CHAIN_POLICY_ID}'.matches('[0-9a-f]{56}') == false) {
+                Integer.parseInt('CHAIN_POLICY_ID is not 56 hex digits: the filter stops the sync');
+            }
+            if (amounts == null) return false;
+            foreach (amount : amounts) {
+                if (amount.policyId == '${CHAIN_POLICY_ID}') {
+                    return true;
+                }
+            }
+            return false;
+          exit-on-error: true
+
+      # the item is TxAsset { policy, assetName, unit, quantity, mintType }; the assets store
+      # writes only mints and burns (mintType MINT or BURN), so the policy alone decides
+      asset.save:
+        - name: "battlechoc: mints and burns of the policy"
+          lang: mvel
+          expression: |
+            if ('${CHAIN_POLICY_ID}'.matches('[0-9a-f]{56}') == false) {
+                Integer.parseInt('CHAIN_POLICY_ID is not 56 hex digits: the filter stops the sync');
+            }
+            return policy == '${CHAIN_POLICY_ID}';
+          exit-on-error: true
+
+    event-handlers:
+      # after each batch of blocks (one block at the tip): delete the spends of outputs that were
+      # never kept. Leftovers would cost only space, so a failure here does not stop the sync.
+      CommitEvent:
+        - name: "battlechoc: delete the spends of outputs not kept"
+          lang: js
+          script:
+            file: /app/plugins/scripts/handle-commit.js
+            function: handleCommitEvent
+          exit-on-error: false
+      # Yaci Store deletes the tx_input rows above the rollback point itself; the handler only
+      # moves its own mark back, so the next clean-up also covers the blocks that are replayed.
+      RollbackEvent:
+        - name: "battlechoc: move the clean-up mark back"
+          lang: js
+          script:
+            file: /app/plugins/scripts/handle-commit.js
+            function: handleRollbackEvent
+          exit-on-error: false

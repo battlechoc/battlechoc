@@ -65,8 +65,17 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-// One of the two equipment slots of a building: "+" when empty, the item when filled.
-const EquipmentSlot = ({ index, item, inactive, onClick, disabled }) => {
+// One of the two equipment slots of a building: "+" when empty, the item when filled (`minted`
+// and `serial`: the item's stamp, the ring alone at this size).
+const EquipmentSlot = ({
+  index,
+  item,
+  minted = null,
+  serial,
+  inactive,
+  onClick,
+  disabled,
+}) => {
   const classes = useStyles();
   const name = item ? itemName(item) : t(tr.LAB_SLOT_EMPTY);
   const label = inactive ? `${name} (${t(tr.LAB_OVER_BUDGET)})` : name;
@@ -87,7 +96,7 @@ const EquipmentSlot = ({ index, item, inactive, onClick, disabled }) => {
         }`}
       >
         {item ? (
-          <ItemIcon item={item} size="4.6em" />
+          <ItemIcon item={item} size="4.6em" minted={minted} serial={serial} />
         ) : (
           <svg className={classes.plus} viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3v18M3 12h18" />

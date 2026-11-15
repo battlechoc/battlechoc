@@ -129,4 +129,24 @@ module.exports = [
     files: ["apps/api/test/**/*.js", "packages/shared/tests/**/*.js"],
     languageOptions: { globals: globals.jest },
   },
+
+  // Yaci Store's JavaScript plugins (deploy/chain/plugins): plain scripts that its GraalJS runtime
+  // loads and whose top-level functions it calls by name (application-plugins.yml), with the
+  // variables it provides. In a script those functions are globals, which no-unused-vars leaves
+  // alone with vars: "local".
+  {
+    name: "battlechoc/yaci-store-plugins",
+    files: ["deploy/chain/plugins/**/*.js"],
+    languageOptions: {
+      sourceType: "script",
+      globals: {
+        console: "readonly",
+        global_state: "readonly",
+        named_jdbc: "readonly",
+      },
+    },
+    rules: {
+      "no-unused-vars": ["error", { vars: "local", args: "after-used" }],
+    },
+  },
 ];

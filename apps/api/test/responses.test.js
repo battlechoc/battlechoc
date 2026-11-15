@@ -140,7 +140,7 @@ describe('player infos', () => {
 describe('stats', () => {
     const KEYS = [
         'id', 'username', 'coins', 'score', 'xp', 'challengeXp', 'aiLadder', 'rating', 'ratedMatches', 'pantry', 'spoiling', 'items',
-        'equipment', 'loadout', 'tutorialStarted', 'tutorialSkipped', 'tutorialFinished', 'awards', 'trackRecord', 'winnings', 'drawn', 'losses',
+        'equipment', 'loadout', 'notices', 'tutorialStarted', 'tutorialSkipped', 'tutorialFinished', 'awards', 'trackRecord', 'winnings', 'drawn', 'losses',
     ];
 
     const seeded = async () => {
@@ -166,6 +166,17 @@ describe('stats', () => {
         await item('item-old', 'LIGHT_BARREL', 7, crafter.playerId, Date.UTC(2026, 9, 20));
         await item('item-new', 'DARK_WALLS', 2, player.playerId, Date.UTC(2026, 9, 25));
         await item('item-orphan', 'HEAVY_BARREL', 1, 'gone', Date.UTC(2026, 9, 22));
+        // minted (plan C): one at home, one that left (nobody's now) with a departure notice, an arrival
+        const assetName = `000de140${'0'.repeat(55)}7`;
+        await pool.query('UPDATE items SET asset_name = $2, minted_at = $3 WHERE id = $1', ['item-new', assetName, new Date(Date.UTC(2026, 9, 26))]);
+        await pool.query('INSERT INTO items (id, player_id, item_key, serial, crafted_by, created_at) VALUES ($1, NULL, $2, $3, $4, $5)',
+            ['item-away', 'HEAVY_BARREL', 4, player.playerId, new Date(Date.UTC(2026, 9, 21))]);
+        const notice = (id, itemId, kind, building, createdAt, seenAt = null) => pool.query(
+            'INSERT INTO item_notices (id, player_id, item_id, kind, building, created_at, seen_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            [id, player.playerId, itemId, kind, building, new Date(createdAt), seenAt]);
+        await notice('notice-departed', 'item-away', 'departed', EntityType.RUM_TRUFFLE_CANNON, Date.UTC(2026, 10, 2, 8));
+        await notice('notice-arrived', 'item-new', 'arrived', null, Date.UTC(2026, 10, 1, 8));
+        await notice('notice-seen', 'item-new', 'arrived', null, Date.UTC(2026, 9, 30), new Date(Date.UTC(2026, 9, 31)));
         const equipment = { [EntityType.RUM_TRUFFLE_CANNON]: ['item-old', null] };
         await pool.query('UPDATE players SET equipment = $1 WHERE id = $2', [JSON.stringify(equipment), player.playerId]);
         await env.records(player.playerId, ['won', 'won', 'draw', 'lost', 'open']);
@@ -185,12 +196,19 @@ describe('stats', () => {
                 { ingredient: 'VANILLA', amount: 2, expiresAt: now - DAY + Ingredients.VANILLA.shelfLifeMs },
             ],
             items: [
-                { id: 'item-new', item: 'DARK_WALLS', serial: 2, craftedBy: 'Carolin', createdAt: Date.UTC(2026, 9, 25) },
-                { id: 'item-orphan', item: 'HEAVY_BARREL', serial: 1, craftedBy: 'Chocnonymous', createdAt: Date.UTC(2026, 9, 22) },
-                { id: 'item-old', item: 'LIGHT_BARREL', serial: 7, craftedBy: 'Gustav', createdAt: Date.UTC(2026, 9, 20) },
+                { id: 'item-new', item: 'DARK_WALLS', serial: 2, craftedBy: 'Carolin', createdAt: Date.UTC(2026, 9, 25), minted: { assetName, state: 'minted' } },
+                { id: 'item-orphan', item: 'HEAVY_BARREL', serial: 1, craftedBy: 'Chocnonymous', createdAt: Date.UTC(2026, 9, 22), minted: null },
+                { id: 'item-old', item: 'LIGHT_BARREL', serial: 7, craftedBy: 'Gustav', createdAt: Date.UTC(2026, 9, 20), minted: null },
             ],
             equipment,
             loadout: { [EntityType.RUM_TRUFFLE_CANNON]: ['LIGHT_BARREL'] },
+            notices: [
+                { id: 'notice-arrived', kind: 'arrived', item: { id: 'item-new', item: 'DARK_WALLS', serial: 2 }, building: null, at: '2026-11-01T08:00:00.000Z' },
+                {
+                    id: 'notice-departed', kind: 'departed', item: { id: 'item-away', item: 'HEAVY_BARREL', serial: 4 }, building: EntityType.RUM_TRUFFLE_CANNON,
+                    at: '2026-11-02T08:00:00.000Z',
+                },
+            ],
             tutorialStarted: true,
             tutorialSkipped: false,
             tutorialFinished: true,
@@ -226,14 +244,22 @@ describe('stats', () => {
         expect(stats).toEqual({
             id: player.playerId, username: 'Chocnonymous', coins: 0, score: 0, xp: 0, challengeXp: 0,
             aiLadder: { step: 1, wins: 0, floor: 1, games: 0 }, rating: 1500, ratedMatches: 0, pantry: {}, spoiling: [], items: [],
-            equipment: {}, loadout: {}, tutorialStarted: false, tutorialSkipped: false, tutorialFinished: false, awards: [], trackRecord: [],
+            equipment: {}, loadout: {}, notices: [], tutorialStarted: false, tutorialSkipped: false, tutorialFinished: false, awards: [], trackRecord: [],
             winnings: 0, drawn: 0, losses: 0,
         });
     });
 
-    test('reading the stats takes four statements', async () => {
+    test('reading the stats takes five statements', async () => {
         const { player, statementsOf } = await seeded();
-        // the player, the pantry, the items, the results
-        expect((await statementsOf(() => player.get('/user').expect(200))).statements).toBeLessThanOrEqual(4);
+        // the player, the pantry, the items, the notices, the results
+        expect((await statementsOf(() => player.get('/user').expect(200))).statements).toBeLessThanOrEqual(5);
+    });
+
+    test('marking notices seen answers 204 without a body; the stats then leave them out', async () => {
+        const { player, expected } = await seeded();
+        const seen = await player.post('/user/notices/seen', { ids: ['notice-arrived'] });
+        expect({ status: seen.status, text: seen.text }).toEqual({ status: 204, text: '' });
+        const { stats } = (await player.get('/user').expect(200)).body;
+        expect(textOf(stats.notices)).toBe(textOf(expected.notices.slice(1)));
     });
 });

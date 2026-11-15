@@ -126,6 +126,17 @@ describe('errors', () => {
         await pool.query("INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ('orphan', $1, 'LIGHT_BARREL', 1, $1)",
             [player.playerId]);
         await answers(player.post('/lab/salvage', { itemId: 'orphan' }), 400, 'NO RECIPE');
+        await pool.query("UPDATE items SET asset_name = '000de140aa', minted_at = NOW() WHERE id = 'orphan'");
+        await answers(player.post('/lab/salvage', { itemId: 'orphan' }), 409, 'ITEM MINTED');
+    });
+
+    test('marking notices seen: a list of 1 to 50 distinct ids', async () => {
+        const { account } = await setup();
+        const player = await account();
+        await answers(player.post('/user/notices/seen', { ids: [] }), 400, 'INVALID REQUEST PARAMETERS');
+        await answers(player.post('/user/notices/seen', { ids: ['a', 'a'] }), 400, 'INVALID REQUEST PARAMETERS');
+        const seen = await player.post('/user/notices/seen', { ids: ['unknown'] });
+        expect({ status: seen.status, text: seen.text }).toEqual({ status: 204, text: '' });
     });
 
     test('signing in with a Cardano key: never a 401 but for a missing token', async () => {

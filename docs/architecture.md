@@ -114,6 +114,94 @@ the balance it started with.
   offline gives private experience only, which decides nothing but the player's own board size
   and AI opponent, so a faked result gains nothing.
 
+## Reading the chain
+
+A crafted item can become a token on Cardano (minting). From then on the chain decides
+who has it: a minted item belongs, in the game, to the player whose linked wallet holds its user
+token. The server learns that from the chain through four parts, each built on the one before.
+
+- **The provider** (`apps/api/src/chain/provider.js`) is the server's door to a
+  Blockfrost-compatible API: a wallet's unspent outputs, protocol parameters, the tip, and
+  submitting and evaluating a transaction. Minting and burning build their transactions with it.
+  It is never asked who holds an item: the index answers that.
+- **The index** is Yaci Store, run beside the API (the compose profile `chain`). It follows the
+  Cardano network and keeps only the outputs, mints and burns of the game's policy, in schema
+  `yaci_store` of the game's own Postgres. The API never reads those tables directly: it creates
+  views over them in schema `chain` (`apps/api/src/chain/views.sql`, the only SQL that reads Yaci
+  Store's tables; `apps/api/src/chain/chainIndex.js` applies it once Yaci Store has made them), and
+  reads only the views, as the role `chain_reader`, in read-only transactions. The index sees only blocks, so a transaction still in the mempool is
+  invisible to it. It is trusted only when it is **fresh**: its tip block's time, computed from
+  the block's slot, is at most `CHAIN_INDEX_MAX_LAG_MS` (10 minutes by default) old. The time Yaci
+  Store saved its cursor does not count, since a resyncing index saves old blocks just now. A
+  stale or unreachable index changes nothing: no item leaves anybody because the indexer is down.
+- **The watcher** (`apps/api/src/chain/watcher.js`) is an interval job, like the cleanup: every
+  `CHAIN_WATCH_INTERVAL_MS` (20 seconds by default) it reads the index's tip, decides whether the
+  index is fresh and runs its steps in order. For now it has one step, the ownership sync; the
+  steps of minting and burning will run before it. Runs never overlap, and a failing step is
+  logged without stopping the others. It logs what changes and when the index stops or starts
+  being fresh, never an idle run; a failure that lasts is logged when it starts, again when its
+  message changes and once when it ends (`apps/api/src/chain/lastingLog.js`).
+- **The ownership sync** (`apps/api/src/chain/ownership.js`) looks at every minted, unburned item at each
+  run and derives who holds it now. It writes the item's owner and holder columns where they
+  differ, and a notice for a player whose wallet the item left or entered (`item_notices`). It
+  never touches the equipment: the slot of an item that left keeps its id (a match's loadout skips
+  items the player does not have), so the item is back in its slot when it returns. Since
+  everything is derived again on each run, a rollback of the chain corrects itself on the next
+  one. The sync judges only items the index accounts for: it knows the token's mint, and exactly
+  one unspent output holds the token, or none does and the index knows a burn of it (then nobody
+  has the item). An index started with another policy, or from a slot after an item's mint, holds
+  no output of that token; one that lacks an output (a filter that kept none, a half-written
+  block) or a spend (two outputs of one token) would otherwise take the item from its player or
+  give it to the wrong one. Such items are left as they are, with a warning.
+
+**Who holds a token.** The holder is the address of the unspent output with the token. A payment
+part that is a script (a marketplace listing, the reference-token store) means nobody holds it,
+whatever its stake part. Otherwise the address has a payment key and, for a base address with a
+stake key, that stake key. The owner is the player linked to the stake key; when nobody has that
+key, the player linked to the payment key: a wallet without a stake key, or a base address whose
+stake key is linked to nobody. So a token that moves to another payment key under the same stake
+key has moved too: it leaves a player who owns it only through the old payment key.
+
+**Depth.** The depth of a block is the tip's block number minus its own; the tip itself has depth
+0. A departure counts at once: as soon as the index has the transaction in any block, the item
+leaves the player. An arrival counts at depth 1 or more, with one block on top. A move between
+two keys of the same player never leaves them. "Final" is depth `CHAIN_K_FINAL` or more, the
+measure that minting and burning use.
+
+**The hop wait.** A wallet that was linked to another player before counts for the player who has
+it now only `WALLET_HOP_WAIT_MS` (24 hours, `packages/shared/chain.js`) after their first link
+since the other player's. Until then the wallet's items belong to nobody, so a wallet passed on
+carries no items into a match at once. Unlinking and linking again neither restarts nor ends the
+wait. The history is `identity_history`, written whenever a key is linked or removed. Account
+safety shows when the wait ends.
+
+**What the game sees.** The stats (`GET /user`) mark minted items and carry the unread notices;
+`GET /user/identities` names each wallet and counts the minted items that count through it, with
+the end of a hop wait. Both come from the game's own tables, which the sync keeps current: a
+player's request never waits for the chain. The game shows a gold stamp on minted items, the
+notices on the title screen (`POST /user/notices/seen` marks them read) and the wallets' items in
+Account safety. In the Android app none of this shows, but minted items stay usable, since the
+loadout is the server's.
+
+**The chain double.** The tests use an in-memory chain (`apps/api/test/chainDouble.js`) with
+blocks, a mempool, rollbacks and faults. It answers the real provider in Blockfrost's JSON, so
+the provider's own code runs in every test, and it stands in for the index with the same
+functions and answers; the index's SQL is tested against real views on Postgres. The browser
+tests' API (`apps/api/test/e2eServer.js`) runs the real server over it and adds routes under
+`/test/chain/` to add blocks, roll back, mint an item to an address, move or burn a token, fund
+an address, hold the mempool and simulate a provider or index fault. Each route
+that changes the chain runs the ownership sync before it answers, so the game sees the change on
+its next request. Those routes exist only with `DATABASE_URL=memory` and never in the image.
+
+**Without the chain configuration** (`CHAIN_POLICY_ID`, `CHAIN_CONFIG_REF`,
+`CHAIN_SERVER_KEY_FILE`, `CHAIN_PROVIDER_URL`, `CHAIN_PROVIDER_KEY` and `CHAIN_K_FINAL`, besides
+`CARDANO_NETWORK`), the chain features are off. With `CARDANO_NETWORK` set, the start logs which
+of the six are missing; without it, the start says nothing about them. There is no provider, no
+index and no watcher, and no item can be minted. On a server that never had them, the stats
+carry no stamps and no notices and the wallets hold no items, and the game works as before.
+Items minted before the configuration was removed keep their mark and stay with the player the
+last sync gave them to: without a watcher, nothing moves any more, whatever happens on the chain.
+
 ## Releases and deployment
 
 - Commits follow Conventional Commits; release-please turns them into a version and

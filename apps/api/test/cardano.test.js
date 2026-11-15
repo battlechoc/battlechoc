@@ -3,11 +3,12 @@
 // that player in on another device.
 
 const request = require('supertest');
-const { cardano } = require('@battlechoc/battlechoc-shared-functions');
+const { cardano, chain: rules } = require('@battlechoc/battlechoc-shared-functions');
 const { createTestApp, createAccount, withToken } = require('./helpers/api');
 const { closeTestPools } = require('./helpers/db');
 const { testKeys, signMessage, signedChallenge, confirmWith, linkConfirmed, removeKey } = require('./helpers/cardano');
 const { cleanupChallenges } = require('../src/cardano');
+const { chainApp, link: linkKey, linkedPlayer, giveItem, markMinted, userName, stake, pay, HOUR } = require('./helpers/minting');
 
 afterAll(closeTestPools);
 
@@ -16,7 +17,7 @@ const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const setup = async (options = {}) => {
     let clock = Date.now();
     const env = await createTestApp({ cardanoNetwork: cardano.Networks.preprod, now: () => clock, ...options });
-    return { ...env, advance: ms => { clock += ms; } };
+    return { ...env, advance: ms => { clock += ms; }, time: () => clock };
 };
 
 const link = async (app, account, keys) => {
@@ -161,7 +162,10 @@ describe('the linked keys of a player and whether an account has progress', () =
         const keys = testKeys();
         await link(app, account, keys);
         expect((await account.get('/user/identities').expect(200)).body).toEqual([
-            { provider: 'cardano', subject: `stake:${keys.stakeKeyHashHex}`, address: keys.rewardAddress, createdAt: expect.any(String) },
+            {
+                provider: 'cardano', subject: `stake:${keys.stakeKeyHashHex}`, address: keys.rewardAddress, createdAt: expect.any(String),
+                wallet: null, items: 0, waitUntil: null,
+            },
         ]);
     });
 
@@ -559,5 +563,232 @@ describe('the wallet door (plan 3)', () => {
         await request(app).post('/accounts/logout').send({ refreshToken: other.refreshToken }).expect(204);
         await request(app).post('/accounts/logout').send({ refreshToken: 'x'.repeat(40) }).expect(204);
         await request(app).post('/accounts/logout').send({}).expect(204);
+    });
+});
+
+describe('identity history (plan C)', () => {
+    const historyOf = async (pool, subject) => (await pool.query(
+        'SELECT player_id, linked_at, unlinked_at FROM identity_history WHERE subject = $1 ORDER BY linked_at', [subject])).rows
+        .map(row => ({ playerId: row.player_id, linkedAt: new Date(row.linked_at).getTime(), unlinkedAt: row.unlinked_at === null ? null : new Date(row.unlinked_at).getTime() }));
+    const walletOf = async (pool, subject) => (await pool.query("SELECT wallet FROM identities WHERE provider = 'cardano' AND subject = $1", [subject])).rows[0].wallet;
+    const connect = async (app, account, keys, wallet) => {
+        const { verify } = await signedChallenge(app, { keys, purpose: 'connect', account });
+        return account.post('/auth/cardano/verify', { ...verify, wallet }).expect(200);
+    };
+
+    test('linking words writes one open row at the app\'s clock; linking them again writes none', async () => {
+        const { app, pool, advance, time } = await setup();
+        const account = await createAccount(app);
+        const keys = testKeys();
+        const subject = `stake:${keys.stakeKeyHashHex}`;
+        advance(1234);
+        const linkedAt = time();
+        expect((await link(app, account, keys)).status).toBe(200);
+        expect(await historyOf(pool, subject)).toEqual([{ playerId: account.playerId, linkedAt, unlinkedAt: null }]);
+        advance(60000);
+        expect((await link(app, account, keys)).status).toBe(200);
+        expect(await historyOf(pool, subject)).toEqual([{ playerId: account.playerId, linkedAt, unlinkedAt: null }]);
+    });
+
+    test('connecting a wallet stores its CIP-30 name, if it is one; connecting it again changes nothing', async () => {
+        const { app, pool, advance, time } = await setup();
+        const account = await createAccount(app);
+        const eternl = testKeys();
+        const subject = `stake:${eternl.stakeKeyHashHex}`;
+        const linkedAt = time();
+        await connect(app, account, eternl, 'eternl');
+        expect(await walletOf(pool, subject)).toBe('eternl');
+        advance(60000);
+        await connect(app, account, eternl, 'nami');
+        expect(await walletOf(pool, subject)).toBe('eternl');
+        expect(await historyOf(pool, subject)).toEqual([{ playerId: account.playerId, linkedAt, unlinkedAt: null }]);
+
+        const other = await createAccount(app);
+        for (const [name, keys] of [['Eternl!', testKeys()], ['x'.repeat(25), testKeys()], [42, testKeys()]]) {
+            const fresh = await createAccount(app);
+            await connect(app, fresh, keys, name);
+            expect(await walletOf(pool, `stake:${keys.stakeKeyHashHex}`)).toBeNull();
+        }
+        // a link with words names no wallet unless the game sends one
+        const words = testKeys();
+        await link(app, other, words);
+        expect(await walletOf(pool, `stake:${words.stakeKeyHashHex}`)).toBeNull();
+    });
+
+    test('removing a key closes its row at the removal; the other key\'s row stays open', async () => {
+        const { app, pool, advance, time } = await setup();
+        const account = await createAccount(app);
+        const [first, second] = [testKeys(), testKeys()];
+        const firstAt = time();
+        await link(app, account, first);
+        const { confirmToken } = (await confirmWith(app, account, first)).body;
+        advance(1000);
+        const secondAt = time();
+        await linkConfirmed(app, account, second, confirmToken).then(response => expect(response.status).toBe(200));
+        advance(1000);
+        const removedAt = time();
+        await removeKey(app, account, `stake:${first.stakeKeyHashHex}`, confirmToken).expect(204);
+        expect(await historyOf(pool, `stake:${first.stakeKeyHashHex}`)).toEqual([{ playerId: account.playerId, linkedAt: firstAt, unlinkedAt: removedAt }]);
+        expect(await historyOf(pool, `stake:${second.stakeKeyHashHex}`)).toEqual([{ playerId: account.playerId, linkedAt: secondAt, unlinkedAt: null }]);
+        // a removal that is refused (the last key) closes nothing
+        const again = (await confirmWith(app, account, second)).body.confirmToken;
+        await removeKey(app, account, `stake:${second.stakeKeyHashHex}`, again).expect(409);
+        expect((await historyOf(pool, `stake:${second.stakeKeyHashHex}`))[0].unlinkedAt).toBeNull();
+    });
+
+    test('a key that moves to another player: the first player\'s row closes at the removal, the second one\'s opens at the link', async () => {
+        const { app, pool, advance, time } = await setup();
+        const [q, p] = [await createAccount(app), await createAccount(app)];
+        const [moving, kept] = [testKeys(), testKeys()];
+        const subject = `stake:${moving.stakeKeyHashHex}`;
+        const qAt = time();
+        await link(app, q, moving);
+        const { confirmToken } = (await confirmWith(app, q, moving)).body;
+        await linkConfirmed(app, q, kept, confirmToken);
+        // while Q has it, P cannot take it (and no row is written for P)
+        expect((await link(app, p, moving)).status).toBe(409);
+        advance(1000);
+        const removedAt = time();
+        await removeKey(app, q, subject, confirmToken).expect(204);
+        advance(1000);
+        const pAt = time();
+        expect((await link(app, p, moving)).status).toBe(200);
+        expect(await historyOf(pool, subject)).toEqual([
+            { playerId: q.playerId, linkedAt: qAt, unlinkedAt: removedAt },
+            { playerId: p.playerId, linkedAt: pAt, unlinkedAt: null },
+        ]);
+    });
+
+    test('a link closes a row a key linked to nobody was left open with, so a key never has two', async () => {
+        const { app, pool, advance, time } = await setup();
+        const [gone, p] = [await createAccount(app), await createAccount(app)];
+        const keys = testKeys();
+        const subject = `stake:${keys.stakeKeyHashHex}`;
+        await pool.query('INSERT INTO identity_history (id, subject, player_id, linked_at) VALUES ($1, $2, $3, $4)',
+            ['left-open', subject, gone.playerId, new Date(time() - 1000)]);
+        advance(1000);
+        const linkedAt = time();
+        await link(app, p, keys);
+        expect(await historyOf(pool, subject)).toEqual([
+            { playerId: gone.playerId, linkedAt: linkedAt - 2000, unlinkedAt: linkedAt },
+            { playerId: p.playerId, linkedAt, unlinkedAt: null },
+        ]);
+    });
+
+    test('a new device account writes no history row', async () => {
+        const { app, pool } = await setup();
+        await createAccount(app);
+        expect(Number((await pool.query('SELECT COUNT(*) AS n FROM identity_history')).rows[0].n)).toBe(0);
+    });
+});
+
+describe('what the wallet row shows (plan C)', () => {
+    const identitiesOf = async account => (await account.get('/user/identities').expect(200)).body;
+    // a minted item of `account`'s with its token at `address`, synced
+    const mintedAt = async (env, account, address, n) => {
+        const itemId = await giveItem(env.pool, account.playerId, 'LIGHT_BARREL');
+        await markMinted(env.pool, itemId, userName(n));
+        env.double.mintToken({ assetName: userName(n), to: address });
+        env.block();
+        await env.sync();
+        return itemId;
+    };
+
+    test('a connected wallet with a minted item: its name, one item, no wait; a server without chain features says the same', async () => {
+        const env = await chainApp();
+        const account = await createAccount(env.app, { username: 'Ann' });
+        const eternl = testKeys();
+        const { verify } = await signedChallenge(env.app, { keys: eternl, purpose: 'connect', account });
+        await account.post('/auth/cardano/verify', { ...verify, wallet: 'eternl' }).expect(200);
+        const createdAt = expect.any(String);
+        await mintedAt(env, account, env.double.addressOf(eternl), 1);
+        const expected = [{ provider: 'cardano', subject: stake(eternl), address: eternl.rewardAddress, createdAt, wallet: 'eternl', items: 1, waitUntil: null }];
+        expect(await identitiesOf(account)).toEqual(expected);
+        const offChain = await createTestApp({ pool: env.pool, cardanoNetwork: cardano.Networks.preprod, now: env.now });
+        expect(await identitiesOf(withToken(offChain.app, account.accessToken))).toEqual(expected);
+    });
+
+    test('the count does not depend on other players\' items (pg-mem: asset_name IS NOT NULL beside the player index found nothing)', async () => {
+        const env = await chainApp();
+        const [annKeys, benKeys] = [testKeys(), testKeys()];
+        const ann = await linkedPlayer(env, 'Ann', annKeys);
+        const ben = await linkedPlayer(env, 'Ben', benKeys);
+        // Ann's item, then two of Ben's; Ann's and Ben's second one minted, Ben's first one plain
+        const annItem = await giveItem(env.pool, ann.playerId, 'LIGHT_BARREL');
+        await giveItem(env.pool, ben.playerId, 'LIGHT_BARREL');
+        const benItem = await giveItem(env.pool, ben.playerId, 'HEAVY_BARREL');
+        await markMinted(env.pool, annItem, userName(1));
+        await markMinted(env.pool, benItem, userName(2));
+        env.double.mintToken({ assetName: userName(1), to: env.double.addressOf(annKeys) });
+        env.double.mintToken({ assetName: userName(2), to: env.double.addressOf(benKeys) });
+        env.block();
+        expect(await env.sync()).toMatchObject({ checked: 2, changed: 2 });
+        expect((await identitiesOf(ann)).map(entry => [entry.subject, entry.items])).toEqual([[stake(annKeys), 1]]);
+        expect((await identitiesOf(ben)).map(entry => [entry.subject, entry.items])).toEqual([[stake(benKeys), 1]]);
+    });
+
+    test('a wallet that was another player\'s: waitUntil is the link plus 24 hours, then null and the item counts', async () => {
+        const env = await chainApp();
+        const [wallet, other] = [testKeys(), testKeys()];
+        const ben = await linkedPlayer(env, 'Ben', wallet, other);
+        await mintedAt(env, ben, env.double.addressOf(wallet), 1);
+        expect(Object.fromEntries((await identitiesOf(ben)).map(entry => [entry.subject, entry.items]))).toEqual({ [stake(wallet)]: 1, [stake(other)]: 0 });
+        const { confirmToken } = (await confirmWith(env.app, ben, other)).body;
+        await removeKey(env.app, ben, stake(wallet), confirmToken).expect(204);
+        env.advance(HOUR);
+        const cara = await createAccount(env.app, { username: 'Cara' });
+        await linkKey(env, cara, wallet);
+        const linkedAt = env.now();
+        env.block();
+        await env.sync();
+        expect(await identitiesOf(cara)).toEqual([expect.objectContaining({
+            subject: stake(wallet), items: 0, waitUntil: new Date(linkedAt + rules.WALLET_HOP_WAIT_MS).toISOString(),
+        })]);
+        env.advance(rules.WALLET_HOP_WAIT_MS);
+        env.block();
+        await env.sync();
+        // a day later: new access tokens
+        const again = async account => withToken(env.app, (await request(env.app).post('/accounts/token').send({ refreshToken: account.refreshToken }).expect(200)).body.accessToken);
+        expect(await identitiesOf(await again(cara))).toEqual([expect.objectContaining({ subject: stake(wallet), items: 1, waitUntil: null })]);
+        expect(await identitiesOf(await again(ben))).toEqual([expect.objectContaining({ subject: stake(other), items: 0, waitUntil: null })]);
+    });
+
+    test('an item held through the payment key (its address\'s stake key is nobody\'s) counts for that key', async () => {
+        const env = await chainApp();
+        const [keys, second] = [testKeys(), testKeys()];
+        const account = await createAccount(env.app, { username: 'Ann' });
+        await linkKey(env, account, second);
+        await linkKey(env, account, keys, { kind: 'pay', confirmBy: second });
+        // her base address: the stake key is linked to nobody, the payment key to Ann
+        await mintedAt(env, account, env.double.addressOf(keys), 1);
+        await mintedAt(env, account, env.double.addressOf(keys, 'enterprise'), 2);
+        // an item at the address of her stake key counts there
+        await mintedAt(env, account, env.double.addressOf(second), 3);
+        expect(Object.fromEntries((await identitiesOf(account)).map(entry => [entry.subject, entry.items]))).toEqual({ [stake(second)]: 1, [pay(keys)]: 2 });
+    });
+
+    test('with two payment keys, an item at a base address of a stake key nobody has counts for the payment key that holds it, on no other row', async () => {
+        const env = await chainApp();
+        const [words, first, other] = [testKeys(), testKeys(), testKeys()];
+        const account = await createAccount(env.app, { username: 'Ann' });
+        await linkKey(env, account, words);
+        await linkKey(env, account, first, { kind: 'pay', confirmBy: words });
+        await linkKey(env, account, other, { kind: 'pay', confirmBy: words });
+        await mintedAt(env, account, env.double.addressOf(first), 1);
+        expect(Object.fromEntries((await identitiesOf(account)).map(entry => [entry.subject, entry.items])))
+            .toEqual({ [stake(words)]: 0, [pay(first)]: 1, [pay(other)]: 0 });
+        await mintedAt(env, account, env.double.addressOf(other), 2);
+        expect(Object.fromEntries((await identitiesOf(account)).map(entry => [entry.subject, entry.items])))
+            .toEqual({ [stake(words)]: 0, [pay(first)]: 1, [pay(other)]: 1 });
+    });
+
+    test('an item under a stake key of the player counts on that key\'s row only, also when the address\'s payment key is linked too', async () => {
+        const env = await chainApp();
+        const keys = testKeys();
+        const account = await createAccount(env.app, { username: 'Ann' });
+        await linkKey(env, account, keys);
+        await linkKey(env, account, keys, { kind: 'pay', confirmBy: keys });
+        await mintedAt(env, account, env.double.addressOf(keys), 1);
+        expect(Object.fromEntries((await identitiesOf(account)).map(entry => [entry.subject, entry.items]))).toEqual({ [stake(keys)]: 1, [pay(keys)]: 0 });
     });
 });

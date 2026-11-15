@@ -28,6 +28,7 @@ export const Matchmaking = dialog("Matchmaking");
 export const Unlocked = dialog("Unlocked");
 export const NameConflict = dialog("NameConflict");
 export const UpdateAvailable = dialog("UpdateAvailable");
+export const ItemNotice = dialog("ItemNotice");
 export const Choclab = lazy(lab);
 export const Tutorial = lazy(tutorial);
 export const GameEndOverview = lazy(gameEnd);

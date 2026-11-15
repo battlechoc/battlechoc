@@ -1,6 +1,7 @@
 // Signing from the test itself (Node, the Evolution SDK), as the game does: for keys the test
 // links through the API, e.g. a second key of a player.
 import {
+  Address,
   PrivateKey,
   KeyHash,
   RewardAccount,
@@ -10,7 +11,11 @@ import { api } from "./players.js";
 
 const hex = (bytes) => Buffer.from(bytes).toString("hex");
 
-/** The stake key and reward address (preprod unless `networkId` 1) of 24 words (new ones unless given). */
+/**
+ * The stake key and reward address (preprod unless `networkId` 1) of 24 words (new ones unless
+ * given), and the base address of the words' first payment key with that stake key: where the
+ * wallet receives tokens (the chain double's /test/chain routes send them there).
+ */
 export const nodeKeys = (
   words = PrivateKey.generateMnemonic(256).split(" "),
   { networkId = 0 } = {}
@@ -21,12 +26,21 @@ export const nodeKeys = (
     networkId,
     stakeCredential: hash,
   });
+  const paymentKey = PrivateKey.fromMnemonicCardano(words.join(" "), {
+    role: 0,
+  });
+  const base = new Address.Address({
+    networkId,
+    paymentCredential: KeyHash.fromVKey(PrivateKey.toPublicKey(paymentKey)),
+    stakingCredential: hash,
+  });
   return {
     words,
     stakeKey,
     subject: `stake:${KeyHash.toHex(hash)}`,
     rewardAddress: RewardAccount.toBech32(account),
     rewardAddressHex: RewardAccount.toHex(account),
+    baseAddress: Address.toBech32(base),
   };
 };
 

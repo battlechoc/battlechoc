@@ -42,7 +42,7 @@ import LabIntro, {
   Spotlight,
 } from "./LabIntro";
 import { effectLines, labColors } from "./itemText";
-import { shelfGroups } from "./itemActions";
+import { shelfGroups, withoutAwayItems } from "./itemActions";
 import { bangers, outlined, rise } from "../styles";
 
 // loaded with the lab, like the game's scene: Babylon stays out of the first bundle
@@ -52,6 +52,18 @@ const MeshPreview = React.lazy(() => import("../../3d/MeshPreview"));
 const BUILDINGS = Object.keys(SpecialIngredient).filter((type) =>
   Object.values(Items).some((item) => item.entityType === type)
 );
+
+// the least height of the building's preview on a portrait phone, about what a 360 × 640 phone
+// gives it beside the lab table (landscape: the building's own minimum, 6em, holds it)
+const PREVIEW_LEAST = "4em";
+
+const portrait = () => {
+  try {
+    return window.matchMedia("(orientation: portrait)").matches;
+  } catch {
+    return true;
+  }
+};
 
 const useStyles = createUseStyles((theme) => ({
   page: {
@@ -66,8 +78,10 @@ const useStyles = createUseStyles((theme) => ({
     background: rise(theme.color.sky, "80%"),
     // the lab's parts size themselves in em of this
     fontSize: theme.font.size.md,
-    // phones held sideways: too little height for everything, the page scrolls
+    // phones held sideways: too little height for everything, the page scrolls; so does a short
+    // portrait phone where even one row of the item shelf leaves the building too little room
     [theme.breakpoints.shortLandscape]: { overflowY: "auto" },
+    [theme.breakpoints.orientation.portrait]: { overflowY: "auto" },
   },
   decorationLeft: {
     position: "absolute",
@@ -125,6 +139,10 @@ const useStyles = createUseStyles((theme) => ({
     gap: "0.35em",
     padding: "0 1em 0.6em",
     [theme.breakpoints.shortLandscape]: { flex: "0 0 auto" },
+    // portrait: never smaller than its parts with the preview at its least (PREVIEW_LEAST): the
+    // lab table or the item shelf below gives way instead (ItemShelf's `room`), else the page
+    // scrolls; the building is never covered
+    [theme.breakpoints.orientation.portrait]: { minHeight: "auto" },
   },
   building: {
     flex: "1 1 0",
@@ -139,11 +157,13 @@ const useStyles = createUseStyles((theme) => ({
       width: "auto",
       padding: "0 0.5em",
     },
-    // portrait: the building across the full width, the two slots side by side below it
+    // portrait: the building across the full width, the two slots side by side below it; never
+    // lower than the preview's least height and the slots (they would cover the palette)
     [theme.breakpoints.orientation.portrait]: {
+      minHeight: "auto",
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
-      gridTemplateRows: "minmax(0, 1fr) auto",
+      gridTemplateRows: `minmax(${PREVIEW_LEAST}, 1fr) auto`,
       justifyItems: "center",
       gap: "0.3em 1em",
     },
@@ -165,6 +185,7 @@ const useStyles = createUseStyles((theme) => ({
       gridColumn: "1 / -1",
       gridRow: 1,
       width: "100%",
+      minHeight: PREVIEW_LEAST,
     },
   },
   palette: {
@@ -266,7 +287,9 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       : false;
   const pantry = stats.pantry || {};
   const items = stats.items || [];
-  const equipment = stats.equipment || {};
+  // a slot that points to an item the player does not have (a minted item away from the wallet)
+  // is free here, as it is in matches
+  const equipment = withoutAwayItems(stats.equipment || {}, items);
   const loadout = stats.loadout || {};
   const special = SpecialIngredient[entityType];
   const bowls = [special, ...picked];
@@ -317,6 +340,18 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const part = (name) => (element) => {
     parts.current[name] = element;
   };
+  // how much higher (or, when negative, lower) the item shelf may be: on a portrait phone, what
+  // the preview has above its least height, less what the page lacks (it scrolls then)
+  const preview = useRef();
+  const shelfRoom = useCallback(() => {
+    const view = page.current;
+    const box = preview.current;
+    if (!view || !box || !portrait()) {
+      return Infinity;
+    }
+    const least = parseFloat(getComputedStyle(box).minHeight) || 0;
+    return box.offsetHeight - least - (view.scrollHeight - view.clientHeight);
+  }, []);
 
   // the recipe the bowls hold, once it is known (discovered by anyone)
   const recipe = useMemo(() => {
@@ -520,11 +555,13 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
     setPantryOpen(true);
   };
 
-  const slotItem = (index) => {
+  // the player's item in a slot of the building on show
+  const slotEntry = (index) => {
     const id = (equipment[entityType] || [])[index];
-    const entry = id
-      ? items.find((candidate) => candidate.id === id)
-      : undefined;
+    return id ? items.find((candidate) => candidate.id === id) : undefined;
+  };
+  const slotItem = (index) => {
+    const entry = slotEntry(index);
     return entry ? entry.item : undefined;
   };
   const equippedKeys = loadout[entityType] || [];
@@ -585,11 +622,13 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
           <EquipmentSlot
             index={0}
             item={slotItem(0)}
+            minted={(slotEntry(0) || {}).minted}
+            serial={(slotEntry(0) || {}).serial}
             inactive={inactive(0)}
             onClick={() => setPickerSlot(0)}
             disabled={!online}
           />
-          <div className={classes.preview}>
+          <div className={classes.preview} ref={preview}>
             <Suspense fallback={null}>
               <MeshPreview selectedEntity={selected} />
             </Suspense>
@@ -597,6 +636,8 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
           <EquipmentSlot
             index={1}
             item={slotItem(1)}
+            minted={(slotEntry(1) || {}).minted}
+            serial={(slotEntry(1) || {}).serial}
             inactive={inactive(1)}
             onClick={() => setPickerSlot(1)}
             disabled={!online}
@@ -650,6 +691,8 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
         {tab === "items" ? (
           <ItemShelf
             items={items}
+            room={shelfRoom}
+            layout={`${entityType} ${equippedKeys.join(" ")}`}
             onOpen={(item, instanceId) => setCard({ item, instanceId })}
           />
         ) : (

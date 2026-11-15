@@ -641,5 +641,21 @@ module.exports = {
     "SALVAGE_DONE": "Đã tháo rời! Đã trở lại kệ của bạn, còn tươi nguyên:",
     "SALVAGE_DONE_BUTTON": "Về vật phẩm của bạn",
     "SALVAGE_NO_RECIPE": "Không thể tháo rời vật phẩm này: công thức của nó không còn trong Choclab.",
-    "SALVAGE_GONE": "Vật phẩm này không còn trong danh sách của bạn."
+    "SALVAGE_GONE": "Vật phẩm này không còn trong danh sách của bạn.",
+    "ITEM_MINTED_LABEL": "{{name}}, đã đúc, Số {{serial}}",
+    "ITEM_MINTED_GROUP_LABEL": "{{name}}, tất cả đã đúc, × {{count}}",
+    "ITEM_ARRIVED_TITLE": "Mới trong ví của bạn",
+    "ITEM_ARRIVED_TEXT": "Vật phẩm đang ở trong ví của bạn, nên bạn có thể trang bị nó trong trò chơi.",
+    "ITEM_TO_CHOCLAB": "Đến Choclab",
+    "ITEM_LATER": "Để sau",
+    "ITEM_DEPARTED_TITLE": "Không còn trong ví của bạn",
+    "ITEM_DEPARTED_SLOT": "Nó đã được trang bị: {{building}}. Nó đã được gỡ ra khỏi đó.",
+    "ITEM_DEPARTED_TEXT": "Bạn đã bán, gửi đi hoặc rao bán nó. Nếu nó trở lại ví của bạn, nó sẽ lại về đúng chỗ cũ.",
+    "ITEM_GOT_IT": "Đã hiểu",
+    "WALLET_ITEMS_HERE": "Vật phẩm đã đúc của bạn nằm ở đây. Với ví, bạn cũng có thể vào lại tài khoản.",
+    "WALLET_ITEMS_COUNT": "{{count}} vật phẩm đã đúc",
+    "WALLET_ITEMS_ONE": "1 vật phẩm đã đúc",
+    "WALLET_ITEMS_WAIT": "Ví này trước đây thuộc về một tài khoản khác. Vật phẩm của nó được tính cho bạn từ {{time}}.",
+    "WALLET_REMOVE_NOTE": "Nếu bạn gỡ ví, vật phẩm của nó sẽ rời khỏi trò chơi. Chúng vẫn ở trong ví và trở lại ngay khi bạn kết nối lại ví.",
+    "WALLET_WHAT_IS": "Ví là gì?"
 }

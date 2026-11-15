@@ -129,7 +129,12 @@ const connect = async (code, wallet, wallets) => {
     const answer = await signWithWallet(
       traced(walletApi, WALLET_METHODS, onStep),
       "connect",
-      { api: traced(api, Object.keys(api), onStep), network, code }
+      {
+        api: traced(api, Object.keys(api), onStep),
+        network,
+        code,
+        walletName: wallet.key,
+      }
     );
     show(
       element("h1", t(tr.LINK_TITLE)),

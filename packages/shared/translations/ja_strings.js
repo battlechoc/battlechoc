@@ -641,5 +641,21 @@ module.exports = {
     "SALVAGE_DONE": "分解完了！新鮮なまま棚に戻りました：",
     "SALVAGE_DONE_BUTTON": "アイテムへ",
     "SALVAGE_NO_RECIPE": "このアイテムは分解できません：そのレシピはもうChoclabにありません。",
-    "SALVAGE_GONE": "このアイテムはもう手元にありません。"
+    "SALVAGE_GONE": "このアイテムはもう手元にありません。",
+    "ITEM_MINTED_LABEL": "{{name}}、ミント済み、No.{{serial}}",
+    "ITEM_MINTED_GROUP_LABEL": "{{name}}、すべてミント済み、×{{count}}",
+    "ITEM_ARRIVED_TITLE": "ウォレットに新しいアイテム",
+    "ITEM_ARRIVED_TEXT": "アイテムはあなたのウォレットにあるので、ゲームで装備できます。",
+    "ITEM_TO_CHOCLAB": "チョクラブへ",
+    "ITEM_LATER": "あとで",
+    "ITEM_DEPARTED_TITLE": "ウォレットからなくなりました",
+    "ITEM_DEPARTED_SLOT": "装備先：{{building}}。そこから外されました。",
+    "ITEM_DEPARTED_TEXT": "売った、送った、または出品したためです。ウォレットに戻ってくれば、また元の場所に装備されます。",
+    "ITEM_GOT_IT": "わかりました",
+    "WALLET_ITEMS_HERE": "ミントしたアイテムはここにあります。ウォレットでアカウントに戻ることもできます。",
+    "WALLET_ITEMS_COUNT": "ミント済みアイテム{{count}}個",
+    "WALLET_ITEMS_ONE": "ミント済みアイテム1個",
+    "WALLET_ITEMS_WAIT": "このウォレットは以前、別のアカウントのものでした。そのアイテムは{{time}}からあなたの分として数えられます。",
+    "WALLET_REMOVE_NOTE": "ウォレットを外すと、そのアイテムはゲームから消えます。アイテムはウォレットに残り、もう一度接続すればすぐに戻ってきます。",
+    "WALLET_WHAT_IS": "ウォレットとは？"
 }

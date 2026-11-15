@@ -60,12 +60,12 @@ const closeTestPools = async () => {
 // query on its own, so a ROLLBACK undoes nothing there
 const postgresOnly = process.env.TEST_DATABASE_URL ? test : test.skip;
 
-// a pool whose statements (also those inside transactions) pass through `intercept(sql, run)`
+// a pool whose statements (also those inside transactions) pass through `intercept(sql, run, params)`
 const intercepted = (pool, intercept) => {
     const wrap = db => new Proxy(db, {
         get: (target, key) => {
             if (key === 'query') {
-                return (sql, ...rest) => intercept(sql, () => target.query(sql, ...rest));
+                return (sql, ...rest) => intercept(sql, () => target.query(sql, ...rest), rest[0]);
             }
             if (key === 'connect') {
                 return async () => wrap(await target.connect());
@@ -94,5 +94,5 @@ const counting = pool => {
 };
 
 module.exports = {
-    createTestPool, siblingPool, closeTestPools, postgresOnly, failingOn, counting, JWT_SECRET: 'test-secret-test-secret-test-secret-42',
+    createTestPool, siblingPool, closeTestPools, postgresOnly, intercepted, failingOn, counting, JWT_SECRET: 'test-secret-test-secret-test-secret-42',
 };

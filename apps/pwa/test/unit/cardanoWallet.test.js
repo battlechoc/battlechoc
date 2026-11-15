@@ -313,6 +313,41 @@ test("the link page signs a code's challenge for its purpose, with the warning f
   );
 });
 
+test("the wallet's name goes with the signature (plan C), in lower case, only when there is one", async () => {
+  const keys = walletKeys();
+  const api = fakeApi();
+  await signWithWallet(fakeWallet(keys), "link", {
+    api,
+    network: preprod,
+    walletName: "eternl",
+  });
+  const [, body] = api.calls.find((call) => call[0] === "verify");
+  assert.equal(body.wallet, "eternl");
+  // the link page sends the CIP-30 key as the wallet's browser reports it
+  const linkPage = fakeApi();
+  await signWithWallet(fakeWallet(keys), "connect", {
+    api: linkPage,
+    network: preprod,
+    code: "c0de",
+    walletName: "Vespr",
+  });
+  const [, codeBody] = linkPage.calls.find(
+    (call) => call[0] === "verifyForCode"
+  );
+  assert.equal(codeBody.wallet, "vespr");
+  // no name: the body has no wallet at all (the API keeps what it had)
+  for (const walletName of [undefined, null, ""]) {
+    const without = fakeApi();
+    await signWithWallet(fakeWallet(keys), "connect", {
+      api: without,
+      network: preprod,
+      walletName,
+    });
+    const [, plain] = without.calls.find((call) => call[0] === "verify");
+    assert.equal("wallet" in plain, false);
+  }
+});
+
 test("waitForLinkCode polls until the code has an outcome", async () => {
   const answers = [{ state: "open" }, { state: "open" }, { state: "linked" }];
   let polls = 0;
@@ -420,6 +455,25 @@ test("the wallet door: hidden in the Android app; which ways in a device offers"
   );
   assert.equal(createFeatures({ network: "preprod" }).showWalletDoor(), true);
   assert.equal(createFeatures({ network: undefined }).showWalletDoor(), false);
+});
+
+test("the marks of minted items (stamp, notices, the wallet row's items): with a network, not in the Android app", () => {
+  assert.equal(createFeatures({ network: "preprod" }).showMintMarks(), true);
+  assert.equal(createFeatures({ network: "mainnet" }).showMintMarks(), true);
+  assert.equal(createFeatures({ network: undefined }).showMintMarks(), false);
+  assert.equal(
+    createFeatures({ network: "preprod", androidApp: true }).showMintMarks(),
+    false
+  );
+  // asked each time: the Android app is known once boot.js remembered it
+  let app = false;
+  const features = createFeatures({
+    network: "preprod",
+    androidApp: () => app,
+  });
+  assert.equal(features.showMintMarks(), true);
+  app = true;
+  assert.equal(features.showMintMarks(), false);
 });
 
 test("after review: a door's attempts: a closed door or a newer attempt makes a late answer stale", () => {

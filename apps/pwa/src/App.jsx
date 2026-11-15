@@ -216,6 +216,9 @@ class App extends Component {
             className={this.props.tutorial ? "tutorial hud" : "hud"}
             endGame={match.endGame}
             challengedPlayer={this.state.player}
+            appDialogOpen={
+              Boolean(this.state.unlocked) || this.state.matchmaking
+            }
           />
           <Suspense fallback={null}>
             <IncomingInvite />

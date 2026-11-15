@@ -5,7 +5,10 @@ import Dialog from "../dialogs/Dialog";
 import SafetyRow, { Pill } from "./SafetyRow";
 import TechnicalDetails from "./TechnicalDetails";
 import LineIcon from "./LineIcon";
+import { shortAddress } from "./safetyState";
+import { MINT } from "../lab/itemText";
 import {
+  getCurrentLanguage,
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
@@ -58,6 +61,83 @@ const useStyles = createUseStyles((theme) => ({
   disclosure: {
     marginTop: "0.6em",
   },
+  // a wallet's entry under the wallet row (the owner's mockup, board 4): gold while it holds
+  // minted items
+  entry: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.55em",
+    boxSizing: "border-box",
+    width: "100%",
+    padding: "0.75em",
+    borderRadius: 14,
+    background: theme.color.secondary.dark,
+    border: `2px solid ${theme.color.secondary.light}`,
+    fontFamily: theme.font.body,
+    fontSize: theme.font.size.sm,
+    textAlign: "left",
+  },
+  holding: { borderColor: MINT.gold },
+  walletName: { fontWeight: 700, lineHeight: 1.35 },
+  walletAddress: {
+    display: "block",
+    fontWeight: 600,
+    color: "#CFE9F7",
+    overflowWrap: "anywhere",
+  },
+  items: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5em",
+    fontWeight: 700,
+  },
+  // a gold coin with the stamp's colours
+  coin: {
+    flex: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "1.75em",
+    height: "1.75em",
+    boxSizing: "border-box",
+    borderRadius: "50%",
+    background: MINT.gold,
+    border: `2px solid ${MINT.dark}`,
+    "& > svg": {
+      width: "55%",
+      height: "55%",
+      fill: "none",
+      stroke: MINT.ink,
+      strokeWidth: 3,
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+    },
+  },
+  wait: {
+    fontWeight: 600,
+    lineHeight: 1.4,
+    color: theme.color.gold.light,
+  },
+  removeNote: {
+    padding: "0.6em 0.75em",
+    borderRadius: 12,
+    background: "#0F2E3F",
+    border: `2px solid ${theme.color.secondary.light}`,
+    fontWeight: 600,
+    lineHeight: 1.45,
+  },
+  guide: {
+    alignSelf: "center",
+    display: "flex",
+    alignItems: "center",
+    minHeight: 44,
+    padding: "0 0.5em",
+    fontFamily: theme.font.body,
+    fontSize: theme.font.size.sm,
+    fontWeight: 700,
+    color: "#FFE08A",
+    "&:hover": { color: "white" },
+  },
   error: {
     margin: "0.8em 0 0",
     fontSize: theme.font.size.sm,
@@ -67,10 +147,80 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
+// the local date and time a wallet's items count from (null for no valid time)
+const localTime = (iso) => {
+  const time = new Date(iso);
+  if (Number.isNaN(time.getTime())) {
+    return null;
+  }
+  try {
+    return time.toLocaleString(getCurrentLanguage(), {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  } catch {
+    return time.toLocaleString();
+  }
+};
+
+/**
+ * One wallet under the wallet row (plan C): its name, its address and network, its minted
+ * items, their wait after a wallet moved from another account, and what removing it does.
+ */
+const WalletEntry = ({ entry, networkName, classes }) => {
+  const time = entry.waitUntil ? localTime(entry.waitUntil) : null;
+  return (
+    <div
+      className={`${classes.entry} ${entry.items > 0 ? classes.holding : ""}`}
+      data-testid="wallet-entry"
+      data-subject={entry.subject}
+    >
+      <div className={classes.walletName}>
+        {entry.name || t(tr.WALLET_NAME)}
+        <span className={classes.walletAddress}>
+          {[shortAddress(entry.address), networkName]
+            .filter(Boolean)
+            .join(" · ")}
+        </span>
+      </div>
+      {entry.items > 0 ? (
+        <div
+          className={classes.items}
+          data-testid="wallet-items"
+          data-count={entry.items}
+        >
+          <span className={classes.coin} aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M8 3h8l-1 8h4v4H5v-4h4z" />
+              <path d="M4 20h16" />
+            </svg>
+          </span>
+          {entry.items === 1
+            ? t(tr.WALLET_ITEMS_ONE)
+            : t(tr.WALLET_ITEMS_COUNT, entry.items)}
+        </div>
+      ) : null}
+      {time ? (
+        <div className={classes.wait} data-testid="wallet-wait">
+          {t(tr.WALLET_ITEMS_WAIT, time)}
+        </div>
+      ) : null}
+      {entry.items > 0 ? (
+        <div className={classes.removeNote} data-testid="wallet-remove-note">
+          {t(tr.WALLET_REMOVE_NOTE)}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
 /**
  * `open`, `onClose`; `state` from accountSafety(); `network` (the test network's name, null on
  * mainnet); `policyHref`; `passkeyBusy`; `error`; the actions `onBackUp`, `onPasskey`,
  * `onConnectWallet`, `onRemove(subject)` (Disconnect and Remove) and `onAnotherAccount`.
+ * `mintMarks` (features.showMintMarks): the wallet row also says what the wallets hold, with
+ * `networkName` (the build's network as players read it) and `guideHref` (what a wallet is; no
+ * link while it is null, cardano/guide.js).
  */
 const AccountSafety = ({
   open,
@@ -78,6 +228,9 @@ const AccountSafety = ({
   state,
   network,
   policyHref,
+  mintMarks = false,
+  networkName,
+  guideHref,
   passkeyBusy,
   error,
   onBackUp,
@@ -170,6 +323,11 @@ const AccountSafety = ({
               testId="safety-wallet"
               icon="wallet"
               title={t(tr.WALLET_NAME)}
+              text={
+                mintMarks && wallet.describesItems
+                  ? t(tr.WALLET_ITEMS_HERE)
+                  : undefined
+              }
               status={walletStatus}
               action={
                 wallet.action === "disconnect" ? (
@@ -184,6 +342,27 @@ const AccountSafety = ({
                 )
               }
             />
+          ) : null}
+          {wallet && mintMarks
+            ? wallet.list.map((entry) => (
+                <WalletEntry
+                  key={entry.subject}
+                  entry={entry}
+                  networkName={networkName}
+                  classes={classes}
+                />
+              ))
+            : null}
+          {wallet && mintMarks && guideHref ? (
+            <a
+              className={classes.guide}
+              href={guideHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="wallet-guide"
+            >
+              {t(tr.WALLET_WHAT_IS)}
+            </a>
           ) : null}
         </div>
         {error ? (

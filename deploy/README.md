@@ -6,7 +6,8 @@ proxy for TLS. Everything runs with Docker Compose on one VPS.
 
 The API comes as an image from Docker Hub, published with every release
 (`fabianbormann/battlechoc-api:<version>`, see [Publishing the image](#publishing-the-image)).
-The server needs two files, `docker-compose.yml` and `.env`, and no checkout of this repository.
+The server needs two files, `docker-compose.yml` and `.env`, and no checkout of this repository
+(the optional [chain features](#chain-features-minting-preprod) add the folder `chain/`).
 
 Two ways to terminate TLS:
 
@@ -151,7 +152,8 @@ With a version in `API_TAG`, change the line in `.env` to the new release first 
 is the same with the older version; a migration the newer version ran stays in the database.
 
 When `deploy/docker-compose.yml` changed in a release, fetch the file again as in step 3
-before the two commands. `.env` stays.
+before the two commands (with the chain features on, also the folder `chain/`, see
+[Updating with the chain features on](#updating-with-the-chain-features-on)). `.env` stays.
 
 The API saves its running live matches when it stops and resumes them when it starts again;
 the players' games reconnect by themselves after a few seconds. A release whose notes say
@@ -163,10 +165,173 @@ the players' games reconnect by themselves after a few seconds. A release whose 
   see the privacy policy). Docker keeps at most five files of 10 MB per service.
 - Which version runs: `docker compose images api`, or
   `docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' "$(docker compose ps -q api)"`.
-- Backup: `docker compose exec -T postgres pg_dump -U battlechoc battlechoc | gzip > backup-$(date +%F).sql.gz`,
-  in a cron job, copied off the VPS.
+- Backup: `docker compose exec -T postgres pg_dump -U battlechoc --exclude-schema=yaci_store --exclude-schema=chain battlechoc | gzip > backup-$(date +%F).sql.gz`,
+  in a cron job, copied off the VPS. The two excluded schemas are the chain index and the API's
+  views over it (see [Chain features](#chain-features-minting-preprod)): the index rebuilds
+  itself from the chain and the API makes the views again, so neither belongs in a backup. On a
+  server without the chain features they do not exist and the options change nothing.
 - Restore: `gunzip -c backup.sql.gz | docker compose exec -T postgres psql -U battlechoc battlechoc`.
 - Uptime: a check of `https://api.battlechoc.com/health` from outside (any free uptime service).
+
+## Chain features (minting, preprod)
+
+Players can mint some of their items as tokens on the Cardano test network preprod. The game
+still keeps every item in its own database; for a minted item, the chain decides who has it: the
+player whose linked wallet holds the token. To know who holds which token, the server runs its
+own small chain index next to the API. It is off unless `.env` turns it on.
+
+### What runs
+
+Two more services of `docker-compose.yml`, in the Compose profile `chain` (a profile is a group
+of services that `docker compose` starts only when it is named; `COMPOSE_PROFILES=chain` in
+`.env` names it for every command):
+
+- **`chain-setup`** runs once at every start and exits: it checks the chain lines of `.env` (a
+  missing or malformed one stops it with a message that names the line), then creates the
+  database role `yaci_store` with its own password and schema, and the read-only role
+  `chain_reader` (`chain/setup.sh`, `chain/roles.sql`). `yaci-store` starts only after it
+  succeeded. `docker compose ps -a` shows it as "Exited (0)": that is its normal state.
+- **`yaci-store`** ([Yaci Store](https://github.com/bloxbean/yaci-store), an indexer for Cardano)
+  connects to a public preprod relay, reads every new block and keeps only what concerns the
+  game's minting policy: the outputs that hold one of its tokens, the spends of those outputs,
+  and its mints and burns. It writes them into the schema `yaci_store` of the same Postgres
+  database. Its settings are the files in `chain/` (`application.properties`,
+  `application-plugins.yml` and `plugins/handle-commit.js`). It publishes no port.
+
+The API reads the index through views of its own (the schema `chain`, which it creates once the
+index has made its tables), as the role `chain_reader`, which may read and never write. The
+role `yaci_store` can read or write nothing of the game.
+
+Resources: about 1 to 1.5 GB of RAM more (the container is limited to 1.5 GB), and little disk:
+the index holds only the policy's outputs, a few rows per mint or move. It never deletes the
+spent ones (the version used has a flaw there, see `chain/application.properties`), so it grows
+by those few rows and needs no cleaning.
+
+### What a player notices when the index is behind or down
+
+Nothing. The API trusts the index only while its newest block is recent: at most
+`CHAIN_INDEX_MAX_LAG_MS` old (10 minutes by default). While the index is stopped, catching up or
+rebuilding, the API changes no ownership: no minted item leaves its player or arrives at a new
+one, and the game keeps working as before, matches included. Once the index has caught up, the
+API applies what happened on the chain in the meantime.
+
+### Turning it on
+
+The contracts must be deployed first (`apps/api/scripts/chain/deploy.js`, on the machine with
+the admin key): it prints `CHAIN_POLICY_ID` and `CHAIN_CONFIG_REF` and records the deployment
+in `contracts/deployments/preprod.json`.
+
+1. The server key, next to the recipes (the API runs as the user `node`, uid 1000, in its
+   container):
+
+   ```sh
+   # copy the server key file there (scp), then
+   sudo chown 1000:1000 /opt/battlechoc/private/chain-server.key
+   sudo chmod 600 /opt/battlechoc/private/chain-server.key
+   ```
+
+2. The folder `chain/` next to `docker-compose.yml` (take both from the same release: the
+   compose file mounts these files):
+
+   ```sh
+   cd /opt/battlechoc
+   files=https://raw.githubusercontent.com/battlechoc/battlechoc/main/deploy
+   mkdir -p chain/plugins
+   for f in setup.sh roles.sql application.properties application-plugins.yml plugins/handle-commit.js; do
+     curl -fsSL "$files/chain/$f" -o "chain/$f"
+   done
+   ```
+
+3. The start block. The index reads the chain from one block on, and that block must lie before
+   the first mint: take the block of the deployment or any earlier one. Its height is `block` in
+   `contracts/deployments/preprod.json`; Blockfrost gives its slot and hash (the same project id
+   as `CHAIN_PROVIDER_KEY`). `read -rs` asks for the project id without showing it, so it stays
+   out of the shell's history, and curl takes the header from its input, not from its command
+   line:
+
+   ```sh
+   read -rs -p 'Blockfrost project id: ' project_id; echo
+   printf 'project_id: %s\n' "$project_id" | curl -s -H @- https://cardano-preprod.blockfrost.io/api/v0/blocks/<height> | grep -Eo '"(slot|hash)":[^,]*'
+   unset project_id
+   ```
+
+   A block explorer (preprod.cardanoscan.io, search the height) shows the same two values.
+
+4. The lines in `.env` (the commented block at the end of `.env.example` explains each one):
+
+   | Key | Value |
+   | --- | --- |
+   | `CARDANO_NETWORK` | `preprod` |
+   | `COMPOSE_PROFILES` | `chain` |
+   | `YACI_STORE_DB_PASSWORD` | `openssl rand -hex 24` |
+   | `YACI_SYNC_START_SLOT`, `YACI_SYNC_START_BLOCKHASH` | the slot and the hash of step 3 |
+   | `CHAIN_POLICY_ID`, `CHAIN_CONFIG_REF` | what `deploy.js` printed |
+   | `CHAIN_SERVER_KEY_PATH` | `/opt/battlechoc/private/chain-server.key` |
+   | `CHAIN_PROVIDER_URL` | `https://cardano-preprod.blockfrost.io/api/v0` |
+   | `CHAIN_PROVIDER_KEY` | the Blockfrost project id for preprod |
+   | `CHAIN_K_FINAL` | the depth from which a transaction counts as final (1 to 2160) |
+
+   `YACI_CARDANO_HOST`, `YACI_CARDANO_PORT` and `YACI_PROTOCOL_MAGIC` default to preprod's public
+   relay; `CHAIN_WATCH_INTERVAL_MS` and `CHAIN_INDEX_MAX_LAG_MS` have defaults too.
+
+5. Start and watch:
+
+   ```sh
+   cd /opt/battlechoc
+   docker compose pull
+   docker compose up -d
+   docker compose ps -a                   # chain-setup "Exited (0)", yaci-store "Up"
+   docker compose logs chain-setup        # a problem with a .env line shows here
+   docker compose logs -f yaci-store      # Yaci Store's log: its start, then the sync's progress
+   ```
+
+   Both filters must show the policy id: `docker compose logs yaci-store | grep -A6 'Created MVEL
+   filter'` prints each expression with the 56 hex characters of `CHAIN_POLICY_ID` where the file
+   has `${CHAIN_POLICY_ID}`. A wrong or empty policy id does not stop the start; it stops the sync
+   at the first block, with `CHAIN_POLICY_ID is not 56 hex digits` and `Stopping fetcher` in the
+   log (fix `.env`, then `docker compose up -d`).
+
+   The index starts at the start block and catches up with the chain; on preprod that takes
+   minutes to hours, depending on how far back the start block is. Until then the API waits (see
+   above). How far it is, in blocks (the newest one it has):
+
+   ```sh
+   docker compose exec -T postgres psql -U battlechoc -d battlechoc -c 'select block_number, slot from yaci_store.cursor_ order by slot desc limit 1'
+   ```
+
+### Rebuilding the index
+
+The index holds nothing that is not on the chain, so it can always be thrown away and read
+again, for example after a change of the start block or when Yaci Store reports a broken
+database. The API changes no ownership while it rebuilds: after the rebuild it waits until the
+index's newest block is recent again (`CHAIN_INDEX_MAX_LAG_MS`) and only then reads it.
+
+```sh
+cd /opt/battlechoc
+docker compose stop yaci-store
+docker compose exec -T postgres psql -U battlechoc -d battlechoc -c 'drop schema yaci_store cascade'
+docker compose up -d                   # chain-setup makes the schema again, yaci-store reads from the start block
+docker compose restart api             # the API makes its views again (the drop removed them)
+```
+
+### Turning it off
+
+Comment out `COMPOSE_PROFILES=chain` in `.env`, then `docker compose --profile chain stop
+yaci-store`. The API keeps the items as they were last seen; with the `CHAIN_*` lines commented
+out as well (and `docker compose up -d`), the chain features of the API are off too. The data
+stays in the schema `yaci_store` until you drop it as above.
+
+### Updating with the chain features on
+
+When a release changes `docker-compose.yml` or anything in `deploy/chain/`, fetch both again,
+from that release, before `docker compose pull && docker compose up -d`: the compose file as in
+[step 3](#3-the-compose-file-and-env), the folder as in step 2 above. A new variable in `.env`
+reaches the API only through the compose file that names it (on 2026-11-11 the server ran 5.4.0
+with the compose file of 5.3.0, and `CARDANO_NETWORK` never arrived), and the index's settings
+are the files in `chain/`.
+
+Locally, the same works with the dev stack: the chain lines in `deploy/.env` and
+`docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml -p battlechoc-dev --profile chain up -d --build`.
 
 ## Moving from the checkout to the image
 
