@@ -5,10 +5,12 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const request = require('supertest');
-const { createShutdown, main, startWatcher } = require('../src/server');
+const { chainProviderLine, createShutdown, main, startWatcher } = require('../src/server');
 const { createChainDouble } = require('./chainDouble');
-const { fixtureContracts } = require('./helpers/chain');
+const { fixtureContracts, fixtureKey } = require('./helpers/chain');
+const { loadedFixtureKey } = require('./helpers/chainApp');
 const { createChain } = require('../src/chain');
+const { writeKeyFile } = require('../src/chain/keys');
 const { closeTestPools, counting, createTestPool, failingOn } = require('./helpers/db');
 const { createTestApp } = require('./helpers/api');
 const { ConfigError } = require('../src/config');
@@ -154,6 +156,7 @@ describe('the chain at the start', () => {
         CHAIN_POLICY_ID: 'ab'.repeat(28),
         CHAIN_CONFIG_REF: `${'cd'.repeat(32)}#0`,
         CHAIN_SERVER_KEY_FILE: keyFile,
+        CHAIN_PROVIDER_KIND: 'blockfrost',
         CHAIN_PROVIDER_URL: 'https://cardano-preprod.blockfrost.io/api/v0',
         CHAIN_PROVIDER_KEY: 'server-test-provider-key',
         CHAIN_K_FINAL: '10',
@@ -173,23 +176,45 @@ describe('the chain at the start', () => {
     });
     afterAll(() => fs.rmSync(directory, { recursive: true, force: true }));
 
-    test('a server key file that cannot be read stops the start, naming the variable only', async () => {
-        const keyFile = path.join(directory, 'missing.skey');
-        const error = await main({ env: chainEnv(keyFile) }).catch(failure => failure);
-        expect(error).toBeInstanceOf(ConfigError);
-        expect(error.message).toContain('CHAIN_SERVER_KEY_FILE cannot be read');
-        expect(error.message).not.toContain('server-test-provider-key');
+    test('a server key file that is no key file stops the start, naming the variable and never the content', async () => {
+        const write = (name, content, mode = 0o600) => {
+            const file = path.join(directory, name);
+            fs.writeFileSync(file, content, { mode });
+            fs.chmodSync(file, mode);
+            return file;
+        };
+        // a key in the wrong file: open to others, or with more than its line
+        const secret = 'ed25519_sk1' + 'q'.repeat(58);
+        const files = {
+            missing: path.join(directory, 'missing.skey'),
+            'the empty /dev/null of docker-compose without CHAIN_SERVER_KEY_PATH': '/dev/null',
+            'a directory': directory,
+            empty: write('empty.skey', ''),
+            'not a key': write('garbage.skey', `${secret} and more\n`),
+            'open to others': write('open.skey', `${secret}\n`, 0o644),
+        };
+        for (const [what, keyFile] of Object.entries(files)) {
+            const error = await main({ env: chainEnv(keyFile) }).catch(failure => failure);
+            expect([what, error]).toEqual([what, expect.any(ConfigError)]);
+            expect(error.message).toContain('CHAIN_SERVER_KEY_FILE');
+            expect(error.message).not.toContain(secret);
+            expect(error.message).not.toContain('server-test-provider-key');
+        }
     });
 
-    test('a complete configuration builds the chain from the overrides and hands it to wrap', async () => {
+    test('a complete configuration loads the server key once and builds the chain from the overrides, handing it to wrap', async () => {
         const keyFile = path.join(directory, 'server.skey');
-        fs.writeFileSync(keyFile, 'not parsed here');
+        writeKeyFile(keyFile, fixtureKey('server').privateKey);
         const provider = { name: 'provider double' };
         const index = { name: 'index double' };
         const { runtime } = await runUntilWrap({ env: chainEnv(keyFile), chainOverrides: { provider, index } });
         expect(runtime.chain).toEqual({
-            enabled: true, network: { name: 'preprod', networkId: 0 }, policyId: 'ab'.repeat(28), kFinal: 10, indexMaxLagMs: 600000, provider, index,
+            enabled: true, network: { name: 'preprod', networkId: 0 }, policyId: 'ab'.repeat(28), configRef: `${'cd'.repeat(32)}#0`, configPolicyId: null,
+            kFinal: 10, indexMaxLagMs: 600000, provider, index, serverKey: { keyHash: fixtureKey('server').keyHash },
         });
+        // the private part is on the key, not in what the chain shows of it
+        expect(runtime.chain.serverKey.privateKey).toBeDefined();
+        expect(JSON.stringify(runtime.chain)).not.toMatch(/ed25519_sk|privateKey/);
         expect(runtime.watcher).toBeNull();
     });
 
@@ -204,6 +229,45 @@ describe('the chain at the start', () => {
             expect(log.mock.calls.flat().join(' ')).not.toContain('server-test-provider-key');
         } finally {
             log.mockRestore();
+        }
+    });
+
+    test('appOptions gets the chain, and what it answers wins over the configured options of the app', async () => {
+        const keyFile = path.join(directory, 'options.skey');
+        writeKeyFile(keyFile, fixtureKey('server').privateKey);
+        const appOptions = jest.fn(() => ({ chainStatusPerMinute: 1 }));
+        let app;
+        let parts;
+        await expect(main({
+            env: chainEnv(keyFile), chainOverrides: { provider: {}, index: {} }, appOptions,
+            wrap: (given, context) => { app = given; parts = context; throw stopped; },
+        })).rejects.toBe(stopped);
+        await parts.pool.end();
+        expect(appOptions).toHaveBeenCalledTimes(1);
+        expect(appOptions.mock.calls[0][0]).toEqual({ chain: parts.runtime.chain });
+        await request(app).get('/chain/status').expect(200);
+        await request(app).get('/chain/status').expect(429);
+    });
+
+    test('Koios without a key: one line at the start that minting may be refused for size; none with a key, none for Blockfrost', async () => {
+        const keyFile = path.join(directory, 'koios.skey');
+        writeKeyFile(keyFile, fixtureKey('server').privateKey);
+        const { CHAIN_PROVIDER_KEY, ...blockfrost } = chainEnv(keyFile);
+        const koios = { ...blockfrost, CHAIN_PROVIDER_KIND: 'koios', CHAIN_PROVIDER_URL: 'https://preprod.koios.rest/api/v1' };
+        const sizeLines = warn => warn.mock.calls.filter(call => /minting may be refused for size: set CHAIN_PROVIDER_KEY/.test(call[0]));
+        const log = jest.spyOn(console, 'log').mockImplementation(() => {});
+        const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        try {
+            await runUntilWrap({ env: koios, chainOverrides: { provider: {}, index: {} } });
+            expect(sizeLines(warn)).toHaveLength(1);
+            warn.mockClear();
+            await runUntilWrap({ env: { ...koios, CHAIN_PROVIDER_KEY }, chainOverrides: { provider: {}, index: {} } });
+            await runUntilWrap({ env: { ...blockfrost, CHAIN_PROVIDER_KEY }, chainOverrides: { provider: {}, index: {} } });
+            expect(sizeLines(warn)).toHaveLength(0);
+            expect([...log.mock.calls, ...warn.mock.calls].flat().join(' ')).not.toContain(CHAIN_PROVIDER_KEY);
+        } finally {
+            log.mockRestore();
+            warn.mockRestore();
         }
     });
 
@@ -224,6 +288,7 @@ describe('createChain', () => {
         network: { name: 'preprod', networkId: 0 },
         policyId: 'ab'.repeat(28),
         configRef: `${'cd'.repeat(32)}#0`,
+        configPolicyId: 'ef'.repeat(28),
         serverKeyFile: '/run/secrets/chain-server.skey',
         providerUrl: 'https://cardano-preprod.blockfrost.io/api/v0',
         providerKey: 'create-chain-provider-key',
@@ -237,15 +302,53 @@ describe('createChain', () => {
         expect(createChain({ config: { chain: null, chainMissing: [] } })).toEqual({ enabled: false, missing: [] });
     });
 
-    test('on: the settings the routes and the watcher need, the provider and the index from the overrides', () => {
+    test('on: the settings the routes and the watcher need, the provider and the index from the overrides, the server key as it was loaded', () => {
         const provider = {};
         const index = {};
-        const chain = createChain({ config: { chain: chainConfig, chainMissing: [] }, pool: {}, log: console, overrides: { provider, index } });
-        expect(chain).toEqual({ enabled: true, network: chainConfig.network, policyId: chainConfig.policyId, kFinal: 10, indexMaxLagMs: 600000, provider, index });
+        const serverKey = loadedFixtureKey('server');
+        const chain = createChain({ config: { chain: chainConfig, chainMissing: [] }, pool: {}, log: console, overrides: { provider, index }, serverKey });
+        expect(chain).toEqual({
+            enabled: true, network: chainConfig.network, policyId: chainConfig.policyId, configRef: chainConfig.configRef, configPolicyId: 'ef'.repeat(28),
+            kFinal: 10, indexMaxLagMs: 600000, provider, index, serverKey,
+        });
+        // the very object: not spread or cloned
+        expect(chain.serverKey).toBe(serverKey);
+        // without a config policy the config is read by its reference alone
+        const { configPolicyId, ...byRef } = chainConfig;
+        expect(configPolicyId).toBeDefined();
+        expect(createChain({ config: { chain: byRef, chainMissing: [] }, pool: {}, overrides: { provider, index }, serverKey }).configPolicyId).toBeNull();
+        // the key file is read in one place (server.js, loadServerKey): without the loaded key the chain is not built
+        expect(() => createChain({ config: { chain: chainConfig, chainMissing: [] }, pool: {}, overrides: { provider, index } })).toThrow(TypeError);
+        expect(() => createChain({ config: { chain: chainConfig, chainMissing: [] }, pool: {}, overrides: { provider, index }, serverKey: { keyHash: 'ab' } })).toThrow(TypeError);
         expect(chain.provider).toBe(provider);
         expect(chain.index).toBe(index);
         // the provider key stays inside the provider
         expect(JSON.stringify(chain)).not.toContain('create-chain-provider-key');
+    });
+
+    test('the start names the provider: its kind and host, never its key', () => {
+        expect(chainProviderLine({ ...chainConfig, providerKind: 'blockfrost' })).toBe('chain provider: blockfrost at cardano-preprod.blockfrost.io');
+        const koios = chainProviderLine({ ...chainConfig, providerKind: 'koios', providerUrl: 'https://preprod.koios.rest/api/v1' });
+        expect(koios).toBe('chain provider: koios at preprod.koios.rest');
+        expect(koios).not.toContain('create-chain-provider-key');
+    });
+
+    test('without an override: the provider of the configured kind (CHAIN_PROVIDER_KIND), at the configured URL', async () => {
+        const realFetch = globalThis.fetch;
+        const asked = [];
+        globalThis.fetch = async url => {
+            asked.push(String(url));
+            return { status: 503, text: async () => '' };
+        };
+        try {
+            for (const [providerKind, path] of [['koios', '/tip'], ['blockfrost', '/blocks/latest']]) {
+                const chain = createChain({ config: { chain: { ...chainConfig, providerKind }, chainMissing: [] }, pool: {}, overrides: { index: {} }, serverKey: loadedFixtureKey('server') });
+                await expect(chain.provider.tip()).rejects.toMatchObject({ name: 'ProviderError', code: 'unavailable', status: 503 });
+                expect(asked.pop()).toBe(`${chainConfig.providerUrl}${path}`);
+            }
+        } finally {
+            globalThis.fetch = realFetch;
+        }
     });
 });
 

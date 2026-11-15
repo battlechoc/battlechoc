@@ -197,4 +197,4 @@ const fixtureContracts = ({ paused = false, serverKeys = [fixtureKey('server').k
     return contractsFor({ blueprint, configUtxo, policyId, network: preprod });
 };
 
-module.exports = { TIP, TEAM_ADDRESS, loadParams, fixtureKey, utxo, walletWitness, scriptDataOf, costModelsOf, ledgerMinimumFeeOf, fixtureContracts };
+module.exports = { TIP, TEAM_ADDRESS, preprodFees, loadParams, fixtureKey, utxo, walletWitness, scriptDataOf, costModelsOf, ledgerMinimumFeeOf, fixtureContracts };

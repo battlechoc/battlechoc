@@ -186,6 +186,18 @@ describe('blocks, the tip and the mempool', () => {
         expect(await lovelaceAt(chain, address)).toEqual([3_000_000n]);
     });
 
+    test('dropMempool: the waiting transactions are gone (their hashes), none of them lands', async () => {
+        const { chain } = doubleWith();
+        const address = chain.addressOf(testKeys());
+        const first = chain.fund(address, 3_000_000);
+        const second = chain.fund(address, 4_000_000);
+        expect(chain.dropMempool()).toEqual([first.txHash, second.txHash]);
+        expect(chain.mempool()).toEqual([]);
+        chain.produceBlocks();
+        expect(await lovelaceAt(chain, address)).toEqual([]);
+        expect(chain.dropMempool()).toEqual([]);
+    });
+
     test('a held transaction that expires meanwhile leaves the mempool', async () => {
         const { chain } = doubleWith();
         const address = chain.addressOf(testKeys());
@@ -259,7 +271,7 @@ describe('rollbacks', () => {
 });
 
 describe('the index', () => {
-    test('mintToken and a block: one holder at the base address, the reference token at the double\'s script address, held by nobody', async () => {
+    test('mintToken and a block: one holder at the base address; the reference token at the double\'s script address, found by the provider, not in the index', async () => {
         const { chain } = doubleWith();
         const ann = testKeys();
         const name = userName(1);
@@ -271,14 +283,14 @@ describe('the index', () => {
         ]);
         expect(await chain.index().tokensHeldBy([`stake:${ann.stakeKeyHashHex}`])).toEqual(rows);
         expect(await chain.index().tokensHeldBy([`pay:${ann.paymentKeyHashHex}`])).toEqual(rows);
-        expect(await chain.index().holdersOf([referenceName(1)])).toEqual([
-            { assetName: referenceName(1), address: chain.scriptAddress, stake: null, pay: null, txHash, index: 1, blockNo: tip.blockNo, slot: tip.slot },
-        ]);
+        // the index keeps user tokens only (deploy/chain/application-plugins.yml)
+        expect(await chain.index().holdersOf([referenceName(1)])).toEqual([]);
         expect(holderOf(chain.scriptAddress)).toEqual({ stake: null, pay: null });
         // the reference-token store is the items script's address
         expect(ScriptHash.toHex(Address.fromBech32(chain.scriptAddress).paymentCredential)).toBe(policyId);
         const store = await chain.provider().utxoByUnit(policyId + referenceName(1));
         expect(Address.toBech32(store.address)).toBe(chain.scriptAddress);
+        expect(`${TransactionHash.toHex(store.transactionId)}#${store.index}`).toBe(`${txHash}#1`);
         expect(await chain.index().mintOf(name)).toEqual({ txHash, blockNo: tip.blockNo, time: tip.time });
     });
 

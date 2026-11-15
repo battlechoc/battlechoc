@@ -2,7 +2,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { Pool } = require('pg');
-const { createPool, migrate } = require('../src/db');
+const { createPool, migrate, isPostgres } = require('../src/db');
 const { createPlayer } = require('../src/players');
 const { createTestPool, siblingPool, closeTestPools, postgresOnly, failingOn } = require('./helpers/db');
 const { until } = require('./helpers/wait');
@@ -218,6 +218,24 @@ describe('migrations', () => {
             [first, new Date()]);
         expect((await pool.query("SELECT kind, building, seen_at FROM item_notices WHERE player_id = $1 AND seen_at IS NULL", [first])).rows)
             .toEqual([{ kind: 'departed', building: 'FACTORY', seen_at: null }]);
+    });
+
+    test('chain operations (plan D): open operations are unique per player and per item on Postgres only, by partial indexes', async () => {
+        const pool = await createTestPool();
+        const client = await pool.connect();
+        try {
+            // a connection taken from the pool is told apart as well: a migration only gets that
+            expect(isPostgres(client)).toBe(isPostgres(pool));
+        } finally {
+            client.release();
+        }
+        expect(isPostgres(pool)).toBe(Boolean(process.env.TEST_DATABASE_URL));
+        if (isPostgres(pool)) {
+            const { rows } = await pool.query(
+                "SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = current_schema() AND tablename = 'chain_ops' AND indexname LIKE 'chain_ops_one_open_%' ORDER BY indexname");
+            expect(rows.map(row => row.indexname)).toEqual(['chain_ops_one_open_item', 'chain_ops_one_open_player']);
+            rows.forEach(row => expect(row.indexdef).toMatch(/^CREATE UNIQUE INDEX .* WHERE \(state = ANY \(ARRAY\['prepared'::text, 'submitted'::text, 'included'::text\]\)\)$/));
+        }
     });
 
     postgresOnly('two processes that start together apply each migration once', async () => {

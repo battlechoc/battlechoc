@@ -8,11 +8,15 @@
 // sits at a script address with Ann's stake key (a marketplace listing: nobody holds it); C was
 // Bob's and is burned. E was minted, burned and minted again (to Bob): its mint is the first one.
 // Around them: an output with a policy token that is no user token, a foreign
-// policy's token with a user label, and an ada-only payment that the index never sees.
+// policy's token with a user label, and an ada-only payment that the index never sees. The index
+// keeps only what holds or moves a user token of the policy (deploy/chain/application-plugins.yml):
+// the reference tokens at the items contract, and their mints and burns, are not in it; an output
+// with a user token is kept whole, the other tokens beside it too (F with 'beef').
 
 const { Address, KeyHash, ScriptHash } = require('@evolution-sdk/evolution');
 const { createChainDouble, jsonTx } = require('../chainDouble');
 const { MAX_ASSET_NAMES } = require('../../src/chain/chainIndex');
+const { holderOf } = require('../../src/chain/addresses');
 const { testKeys } = require('./cardano');
 const { fixtureContracts } = require('./chain');
 
@@ -42,7 +46,7 @@ const scenario = async () => {
     const annBase = chain.addressOf(ann);
     const annEnterprise = chain.addressOf(ann, 'enterprise');
     const listing = Address.toBech32(new Address.Address({ networkId: 0, paymentCredential: ScriptHash.fromHex('5c'.repeat(28)), stakingCredential: KeyHash.fromHex(ann.stakeKeyHashHex) }));
-    const names = { A: userName(1), B: userName(2), C: userName(3), D: userName(4), E: userName(5) };
+    const names = { A: userName(1), B: userName(2), C: userName(3), D: userName(4), E: userName(5), F: userName(6) };
 
     const mint = {
         A: chain.mintToken({ assetName: names.A, to: annBase }),
@@ -53,6 +57,8 @@ const scenario = async () => {
     };
     const ada = chain.fund(annBase, 5_000_000);
     const others = chain.fund(annBase, 2_000_000, { [policyId + 'cafe']: 1, ['ab'.repeat(28) + userName(9)]: 1 });
+    const strangerAddress = chain.newAddress();
+    const mixed = chain.fund(strangerAddress, 2_000_000, { [policyId + names.F]: 1, [policyId + 'beef']: 1 });
     const first = block();
 
     const moveB = chain.moveToken({ assetName: names.B, to: listing });
@@ -65,7 +71,7 @@ const scenario = async () => {
     const remintE = chain.mintToken({ assetName: names.E, to: chain.addressOf(bob) });
     const third = block();
     const last = block();
-    return { chain, policyId, ann, bob, annBase, annEnterprise, listing, names, mint, ada, others, moveB, burnC, burnE, remintE, payment, blocks: { first, second, third, last } };
+    return { chain, policyId, ann, bob, annBase, annEnterprise, listing, strangerAddress, names, mint, ada, others, mixed, moveB, burnC, burnE, remintE, payment, blocks: { first, second, third, last } };
 };
 
 /**
@@ -88,9 +94,9 @@ const indexContract = (name, makeIndex) => {
             expect((await index.tip()).blockNo).toBe(s.blocks.last.blockNo);
         });
 
-        test('holdersOf: one row per unspent output and asked name, every field; burned and unknown names absent', async () => {
-            const { names, mint, others, moveB, remintE, blocks, ann, bob, annBase, annEnterprise, listing, chain } = s;
-            const asked = [names.A, names.B, names.C, names.D, names.E, referenceName(1), referenceName(3), 'cafe', userName(404)];
+        test('holdersOf: one row per unspent output and asked name, every field; burned and unknown names, reference tokens and outputs without a user token absent', async () => {
+            const { names, mint, mixed, moveB, remintE, blocks, ann, bob, annBase, annEnterprise, listing, strangerAddress, chain } = s;
+            const asked = [names.A, names.B, names.C, names.D, names.E, names.F, referenceName(1), referenceName(3), 'cafe', 'beef', userName(404)];
             const annBoth = { stake: `stake:${ann.stakeKeyHashHex}`, pay: `pay:${ann.paymentKeyHashHex}` };
             const nobody = { stake: null, pay: null };
             expect(ordered(await index.holdersOf(asked))).toEqual(
@@ -99,10 +105,14 @@ const indexContract = (name, makeIndex) => {
                     row(names.B, listing, nobody, moveB, 0, blocks.second),
                     row(names.D, annEnterprise, { stake: null, pay: annBoth.pay }, mint.D, 0, blocks.first),
                     row(names.E, chain.addressOf(bob), { stake: `stake:${bob.stakeKeyHashHex}`, pay: `pay:${bob.paymentKeyHashHex}` }, remintE, 0, blocks.third),
-                    row(referenceName(1), chain.scriptAddress, nobody, mint.A, 1, blocks.first),
-                    row('cafe', annBase, annBoth, others.txHash, 0, blocks.first),
+                    // an output with a user token is kept whole: 'beef' beside F
+                    row(names.F, strangerAddress, holderOf(strangerAddress), mixed.txHash, 0, blocks.first),
+                    row('beef', strangerAddress, holderOf(strangerAddress), mixed.txHash, 0, blocks.first),
                 ])
             );
+            // the store's reference token and the lone 'cafe' are no user tokens: not in the index
+            expect(await index.holdersOf([referenceName(1), 'cafe'])).toEqual([]);
+            expect(chain.scriptAddress).toMatch(/^addr_test1w/);
             expect(await index.holdersOf([names.C, referenceName(3), userName(404)])).toEqual([]);
             expect(await index.holdersOf([])).toEqual([]);
         });
@@ -131,11 +141,13 @@ const indexContract = (name, makeIndex) => {
         });
 
         test('transaction: the block of each transaction that touches the policy; null for the rest', async () => {
-            const { mint, others, moveB, burnC, burnE, remintE, ada, payment, blocks } = s;
+            const { mint, others, mixed, moveB, burnC, burnE, remintE, ada, payment, blocks } = s;
             const at = block => ({ blockNo: block.blockNo, slot: block.slot });
-            for (const hash of [mint.A, mint.B, mint.C, mint.D, mint.E, others.txHash]) {
+            for (const hash of [mint.A, mint.B, mint.C, mint.D, mint.E, mixed.txHash]) {
                 expect(await index.transaction(hash)).toEqual(at(blocks.first));
             }
+            // tokens of the policy, but no user token: not in the index
+            expect(await index.transaction(others.txHash)).toBeNull();
             // a burn makes no output with the token, it only spends one
             expect(await index.transaction(burnC)).toEqual(at(blocks.second));
             expect(await index.transaction(moveB)).toEqual(at(blocks.second));
@@ -155,15 +167,18 @@ const indexContract = (name, makeIndex) => {
             // minted, burned and minted again: the first mint, not the later one
             expect(await index.mintOf(names.E)).toEqual(minted(mint.E));
             expect(await index.mintOf(userName(404))).toBeNull();
+            // the reference token's mint is not in the index
+            expect(await index.mintOf(referenceName(1))).toBeNull();
         });
 
         test('eventsAmong: the asked names the policy has minted and those it has burned, also once moved or minted again; held but never minted, or unknown: in neither', async () => {
             const { names } = s;
-            const asked = [names.A, names.B, names.C, names.D, names.E, referenceName(1), referenceName(3), 'cafe', userName(404), names.A];
-            // 'cafe' sits in an output, but no mint of the policy made it; C's burn burns its reference token too
+            const asked = [names.A, names.B, names.C, names.D, names.E, names.F, referenceName(1), referenceName(3), 'cafe', userName(404), names.A];
+            // 'cafe' and F sit in outputs, but no mint of the policy made them; the reference tokens'
+            // mints and burns (C's burn burns its reference token too) are not in the index
             expect(await index.eventsAmong(asked)).toEqual({
-                minted: new Set([names.A, names.B, names.C, names.D, names.E, referenceName(1), referenceName(3)]),
-                burned: new Set([names.C, names.E, referenceName(3)]),
+                minted: new Set([names.A, names.B, names.C, names.D, names.E]),
+                burned: new Set([names.C, names.E]),
             });
             expect(await index.eventsAmong([userName(404), 'cafe'])).toEqual({ minted: new Set(), burned: new Set() });
             expect(await index.eventsAmong([])).toEqual({ minted: new Set(), burned: new Set() });

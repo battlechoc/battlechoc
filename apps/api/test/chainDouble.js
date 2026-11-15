@@ -6,9 +6,11 @@
 //   pages, 404 for what the chain has never seen). Every test runs the real conversion to the
 //   Evolution SDK's objects, and the double cannot drift from the provider.
 // - index(): the functions of the chain index (Task 4's tip, holdersOf, tokensHeldBy, transaction,
-//   mintOf; eventsAmong) in the shapes of the real one. Like the real one it sees only
-//   blocks, and of their transactions only those that mint or burn the policy's tokens, create an
-//   output with one or spend one (Yaci Store keeps nothing else).
+//   mintOf; eventsAmong) in the shapes of the real one. Like the real one it sees only blocks, and
+//   of them only what Yaci Store's filters keep (deploy/chain/application-plugins.yml): the
+//   outputs that hold a user token of the policy (whole, with every other token in them), their
+//   spends, and the mints and burns of user tokens. The reference tokens' outputs, mints and burns
+//   are not in it.
 //
 // A block is { blockNo, slot, hash, time, txs: TxDescription[] }; the UTxO set is recomputed from
 // the blocks on each read. A TxDescription is { txHash, ttlSlot: number | null, inputs: [{ txHash,
@@ -235,6 +237,9 @@ const createChainDouble = ({
         throw new TypeError('policyId: 56 hex digits');
     }
     const ours = unit => unit.length >= 56 && unit.startsWith(policyId);
+    // what the index keeps: a user token of the policy, an output with one
+    const userUnit = unit => unit.startsWith(policyId + rules.USER_LABEL);
+    const kept = output => Object.keys(output.assets).some(userUnit);
     const blockOf = (blockNo, slot, txs) => ({ blockNo, slot, hash: sha256Hex(`${blockNo}:${txs.map(tx => tx.txHash).join(',')}`), time: now(), txs });
 
     const blocks = [blockOf(firstBlockNo, firstSlot, [])];
@@ -340,6 +345,27 @@ const createChainDouble = ({
     /** While `on`, blocks take no waiting transaction (one that can never land still leaves). */
     const holdMempool = on => {
         held = Boolean(on);
+    };
+
+    /**
+     * The unspent outputs in the blocks that hold `unit` ({ txHash, index, output } copies), read
+     * from the double itself: no fault of `fail` touches it (for the test routes that arrange
+     * faults). The waiting transactions do not count.
+     */
+    const unspentHolding = unit =>
+        ledger()
+            .unspent()
+            .filter(entry => entry.output.assets[unit] !== undefined && BigInt(entry.output.assets[unit]) > 0n)
+            .map(({ txHash, index, output }) => ({ txHash, index, output: JSON.parse(JSON.stringify(output)) }));
+
+    /** Copies of the waiting transactions' descriptions, in mempool order. */
+    const waitingTransactions = () => JSON.parse(JSON.stringify(mempool));
+
+    /** Drops every waiting transaction (none of them lands): their hashes. */
+    const dropMempool = () => {
+        const dropped = mempoolHashes();
+        mempool = [];
+        return dropped;
     };
 
     const enqueue = tx => {
@@ -678,7 +704,7 @@ const createChainDouble = ({
         return respond(501, { status_code: 501, error: 'Not Implemented', message: `the chain double serves no ${method} ${path}` });
     };
 
-    const provider = createProvider({ url: URL_BASE, key: 'chain-double', network, fetch, now });
+    const provider = createProvider({ kind: 'blockfrost', url: URL_BASE, key: 'chain-double', network, fetch, now });
 
     // -----------------------------------------------------------------------------------------
     // The index (Task 4's functions, over the same blocks)
@@ -692,10 +718,11 @@ const createChainDouble = ({
             return read(...args);
         };
 
-    // a row per unspent output and policy token whose asset name `accept`s
+    // a row per unspent output the index keeps and policy token whose asset name `accept`s
     const rowsOf = accept =>
         ledger()
             .unspent()
+            .filter(entry => kept(entry.output))
             .flatMap(entry =>
                 Object.keys(entry.output.assets)
                     .filter(unit => ours(unit) && accept(unit.slice(56)))
@@ -710,12 +737,12 @@ const createChainDouble = ({
                     }))
             );
 
-    // whether the real index sees `tx`: it mints or burns a policy token, makes or spends an
-    // output with one
-    const touchesPolicy = (tx, state) =>
-        Object.keys(tx.mint).some(ours) ||
-        tx.outputs.some(output => Object.keys(output.assets).some(ours)) ||
-        tx.inputs.some(input => Object.keys(state.outputs.get(refOf(input))?.output.assets ?? {}).some(ours));
+    // whether the real index sees `tx`: it mints or burns a user token, makes or spends an output
+    // with one
+    const touchesPolicy = (tx, state) => {
+        const spent = input => state.outputs.get(refOf(input))?.output;
+        return Object.keys(tx.mint).some(userUnit) || tx.outputs.some(kept) || tx.inputs.some(input => spent(input) !== undefined && kept(spent(input)));
+    };
 
     const index = {
         /** The tip; with the 'stale' fault an hour old. */
@@ -742,6 +769,9 @@ const createChainDouble = ({
         /** The mint of the user token `assetName` (the first): { txHash, blockNo, time } | null. */
         mintOf: indexed(assetName => {
             const unit = policyId + assetName;
+            if (!userUnit(unit)) {
+                return null;
+            }
             for (const block of blocks) {
                 const tx = block.txs.find(candidate => candidate.mint[unit] !== undefined && BigInt(candidate.mint[unit]) > 0n);
                 if (tx) {
@@ -758,7 +788,7 @@ const createChainDouble = ({
             if (assetNames.length > MAX_ASSET_NAMES) {
                 throw new RangeError(`eventsAmong: at most ${MAX_ASSET_NAMES} asset names per call`);
             }
-            const units = sign => new Set(blocks.flatMap(block => block.txs.flatMap(tx => Object.keys(tx.mint).filter(unit => ours(unit) && sign(BigInt(tx.mint[unit]))))));
+            const units = sign => new Set(blocks.flatMap(block => block.txs.flatMap(tx => Object.keys(tx.mint).filter(unit => userUnit(unit) && sign(BigInt(tx.mint[unit]))))));
             const [minted, burned] = [units(quantity => quantity > 0n), units(quantity => quantity < 0n)];
             return { minted: new Set(assetNames.filter(name => minted.has(policyId + name))), burned: new Set(assetNames.filter(name => burned.has(policyId + name))) };
         }),
@@ -798,6 +828,9 @@ const createChainDouble = ({
         produceBlocks,
         rollback,
         holdMempool,
+        dropMempool,
+        unspentHolding,
+        waitingTransactions,
         fund,
         mintToken,
         moveToken,

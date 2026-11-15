@@ -1,7 +1,10 @@
 -- The views the API reads the chain through (chainIndex.js), over the tables of Yaci Store 2.0.7
 -- (the utxo and assets stores and the core's cursor, checked against its Flyway migrations at tag
 -- v2.0.7). This is the only file of src/ that names Yaci Store's tables; Yaci Store keeps only
--- the outputs, mints and burns of our policy (deploy/chain/application-plugins.yml).
+-- the outputs that hold a user token of our policy (CIP-68 label 000de140; each output whole),
+-- the spends of those outputs, and the mints and burns of user tokens
+-- (deploy/chain/application-plugins.yml). Nothing here reads a reference token (000643b0): a burn
+-- finds the reference output through the provider.
 --
 -- Not a numbered migration: Yaci Store creates its tables with its own Flyway on its first start,
 -- after the API may have migrated, and a server without chain features has none. ensureViews()
@@ -43,14 +46,14 @@ CREATE OR REPLACE VIEW :views.item_outputs AS
     CROSS JOIN LATERAL jsonb_array_elements(utxo.amounts) AS amount
     WHERE amount->>'unit' <> 'lovelace';
 
--- The policy's mints and burns (kind: MINT or BURN; quantity negative for a burn; block_time in
--- seconds).
+-- The mints and burns of the policy's user tokens (kind: MINT or BURN; quantity negative for a
+-- burn; block_time in seconds).
 CREATE OR REPLACE VIEW :views.item_events AS
     SELECT tx_hash, unit, quantity, mint_type AS kind, block AS block_no, slot, block_time
     FROM :index.assets;
 
--- The block of every transaction that touches the policy: it makes an output with one of its
--- tokens, mints or burns one, or spends such an output (a burn makes no output with the token).
+-- The block of every transaction that touches the policy's user tokens: it makes an output with
+-- one, mints or burns one, or spends such an output (a burn makes no output with the token).
 -- Spends count only for an output Yaci Store kept: it writes tx_input for every input.
 CREATE OR REPLACE VIEW :views.tx_blocks AS
     SELECT tx_hash, block AS block_no, slot FROM :index.address_utxo

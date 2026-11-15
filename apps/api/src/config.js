@@ -24,21 +24,34 @@
 //                             number of days: the logged actions and the snapshot of a match are
 //                             deleted that long after it was over (cleanup.js)
 //
-// The chain features (items as tokens, src/chain/) are on only with CARDANO_NETWORK and all six of:
+// The chain features (items as tokens, src/chain/) are on only with CARDANO_NETWORK and all of:
 //   CHAIN_POLICY_ID           the policy id of the items, 56 hex characters (printed by the deploy
 //                             script, like the config reference)
 //   CHAIN_CONFIG_REF          the output that holds the on-chain configuration, "<64 hex>#<index>"
-//   CHAIN_SERVER_KEY_FILE     the server's signing key; it must be readable at the start (server.js)
-//   CHAIN_PROVIDER_URL        a Blockfrost-compatible API, https (http only outside production)
-//   CHAIN_PROVIDER_KEY        its project id, a secret: never shown in a message
+//   CHAIN_SERVER_KEY_FILE     the server's signing key file (one ed25519_sk1… line, mode 600),
+//                             loaded at the start (server.js); a file that is none stops it
+//   CHAIN_PROVIDER_URL        the provider's API, https (http only outside production): Koios's
+//                             (https://preprod.koios.rest/api/v1) or a Blockfrost-compatible one
+//   CHAIN_PROVIDER_KEY        a secret, never shown in a message: with Blockfrost its project id,
+//                             required; with Koios a bearer token of a paid tier, optional (the
+//                             public tier needs none)
 //   CHAIN_K_FINAL             the depth from which a transaction counts as final, 1 to 2160
+// and the kind of provider, which decides whether the key is required:
+//   CHAIN_PROVIDER_KIND       "koios" or "blockfrost" (any case); not set: koios. Another value
+//                             stops the start, also while other chain variables are missing; a
+//                             Blockfrost URL (blockfrost.io) needs blockfrost, a Koios URL
+//                             (koios.rest) koios (chain/providerKinds.js)
 // Some or all of them not set: the chain features are off and the start logs the missing names.
-// All six set: a wrong value stops the start (the operator meant them to be on), and these count:
+// All set: a wrong value stops the start (the operator meant them to be on), and these count:
+//   CHAIN_CONFIG_POLICY_ID    the policy id of the config NFT, 56 hex characters (printed by the
+//                             deploy script): with it the API finds the config by its NFT wherever
+//                             an admin update moved it, and CHAIN_CONFIG_REF is only the fallback
 //   CHAIN_WATCH_INTERVAL_MS   how often the watcher reads the chain, default 20000, at least 1000
 //   CHAIN_INDEX_MAX_LAG_MS    how old the chain index's tip may be to be trusted, default 600000, at
 //                             least 60000
 
 const { cardano: { networkOf } } = require('@battlechoc/battlechoc-shared-functions');
+const { providerKindOf, providerKindProblem } = require('./chain/providerKinds');
 
 class ConfigError extends Error {
     constructor(problems) {
@@ -83,7 +96,8 @@ const originOf = text => {
     return plain ? url.origin : undefined;
 };
 
-// the variables that turn the chain features on, in the order a message names them
+// the variables that turn the chain features on, in the order a message names them;
+// CHAIN_PROVIDER_KEY only for a provider that needs one (every kind but Koios)
 const CHAIN_REQUIRED = ['CHAIN_POLICY_ID', 'CHAIN_CONFIG_REF', 'CHAIN_SERVER_KEY_FILE', 'CHAIN_PROVIDER_URL', 'CHAIN_PROVIDER_KEY', 'CHAIN_K_FINAL'];
 const K_FINAL_MAX = 2160;
 const CHAIN_TIMINGS = [
@@ -115,16 +129,25 @@ const providerUrlOf = (text, production) => {
 };
 
 /**
- * The chain settings: `{ chain: null, missing }` while CARDANO_NETWORK or one of the six variables
- * is not set, else the checked settings. Its problems name the variables, never a value: one of
- * them is the provider key, and a value in the wrong variable must not show it either.
+ * The chain settings: `{ chain: null, missing }` while CARDANO_NETWORK or one of the required
+ * variables is not set (the provider key only for a kind other than koios), else the checked
+ * settings. Its problems name the variables, never a value: one of them is the provider key, and
+ * a value in the wrong variable must not show it either.
  */
 const chainOf = (env, network, production, problems) => {
     if (network === null) {
         return { chain: null, missing: [] };
     }
+    const providerKind = providerKindOf(read(env, 'CHAIN_PROVIDER_KIND'));
+    // an unknown kind is named whatever else is missing: the operator meant to choose one
+    const unknownKind = providerKindProblem(providerKind);
+    if (unknownKind) {
+        problems.push(unknownKind);
+        return { chain: null, missing: [] };
+    }
     const value = Object.fromEntries(CHAIN_REQUIRED.map(name => [name, (read(env, name) || '').trim()]));
-    const missing = CHAIN_REQUIRED.filter(name => value[name] === '');
+    const required = CHAIN_REQUIRED.filter(name => name !== 'CHAIN_PROVIDER_KEY' || providerKind !== 'koios');
+    const missing = required.filter(name => value[name] === '');
     if (missing.length > 0) {
         return { chain: null, missing };
     }
@@ -135,11 +158,21 @@ const chainOf = (env, network, production, problems) => {
     if (!/^[0-9a-f]{64}#\d+$/.test(value.CHAIN_CONFIG_REF)) {
         problems.push('CHAIN_CONFIG_REF must be an output reference: 64 lower-case hex characters, "#" and the output index');
     }
+    const configPolicyId = (read(env, 'CHAIN_CONFIG_POLICY_ID') || '').trim() || null;
+    if (configPolicyId !== null && !/^[0-9a-f]{56}$/.test(configPolicyId)) {
+        problems.push('CHAIN_CONFIG_POLICY_ID must be a policy id: 56 lower-case hex characters (or not set)');
+    }
     const providerUrl = providerUrlOf(value.CHAIN_PROVIDER_URL, production);
     if (typeof providerUrl === 'undefined') {
         problems.push(production
             ? 'CHAIN_PROVIDER_URL must be an https:// URL in production, without a user, a query or a fragment'
             : 'CHAIN_PROVIDER_URL must be an https:// (or http://) URL without a user, a query or a fragment');
+    } else {
+        // a Blockfrost URL with the kind koios (unset: a .env from before the kind) or the reverse
+        const wrongKind = providerKindProblem(providerKind, providerUrl);
+        if (wrongKind) {
+            problems.push(wrongKind);
+        }
     }
     const kFinal = Number(value.CHAIN_K_FINAL);
     if (!(isWholeNumber(value.CHAIN_K_FINAL) && kFinal >= 1 && kFinal <= K_FINAL_MAX)) {
@@ -161,9 +194,11 @@ const chainOf = (env, network, production, problems) => {
             network,
             policyId: value.CHAIN_POLICY_ID,
             configRef: value.CHAIN_CONFIG_REF,
+            configPolicyId,
             serverKeyFile: value.CHAIN_SERVER_KEY_FILE,
+            providerKind,
             providerUrl,
-            providerKey: value.CHAIN_PROVIDER_KEY,
+            providerKey: value.CHAIN_PROVIDER_KEY || null,
             kFinal,
             watchIntervalMs: timings.watchIntervalMs,
             indexMaxLagMs: timings.indexMaxLagMs,

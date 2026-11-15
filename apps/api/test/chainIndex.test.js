@@ -6,6 +6,9 @@
 // every suite.
 
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
 const { Pool } = require('pg');
 const { Address, Time } = require('@evolution-sdk/evolution');
 const { cardano } = require('@battlechoc/battlechoc-shared-functions');
@@ -233,6 +236,8 @@ const credentialsOf = bech32 => {
  * A schema `yaci_test_<random>` for Yaci Store's tables, a view schema `chain_test_<random>`, the
  * role chain_reader_test (it stays; the schemas go in drop()), and the index over them.
  */
+const COMMIT_HANDLER = path.join(__dirname, '..', '..', '..', 'deploy', 'chain', 'plugins', 'handle-commit.js');
+
 const yaciFixture = async () => {
     const admin = new Pool({ connectionString: process.env.TEST_DATABASE_URL, max: 3, idleTimeoutMillis: 200 });
     const suffix = crypto.randomBytes(6).toString('hex');
@@ -240,7 +245,8 @@ const yaciFixture = async () => {
     const viewSchema = `chain_test_${suffix}`;
     await admin.query(`CREATE SCHEMA ${indexSchema}`);
     await admin.query(`DO $$ BEGIN CREATE ROLE ${READ_ROLE} NOLOGIN; EXCEPTION WHEN duplicate_object OR unique_violation THEN NULL; END $$`);
-    const ours = unit => unit.startsWith(policyId);
+    // what the plugin filters keep (deploy/chain/application-plugins.yml): the policy's user tokens
+    const userUnit = unit => unit.startsWith(`${policyId}000de140`);
 
     const createTables = async (names = Object.keys(YACI_TABLES)) => {
         for (const name of names) {
@@ -248,10 +254,11 @@ const yaciFixture = async () => {
         }
     };
 
-    // the rows Yaci Store writes for the double's blocks, filtered to the policy as plan C's
-    // plugin filters keep them: outputs with a policy token, the policy's mints and burns, a cursor
+    // the rows Yaci Store writes for the double's blocks, filtered as the plugin filters keep them:
+    // outputs with a user token of the policy (whole), the mints and burns of user tokens, a cursor
     // row per block (saved now, as Yaci Store saves it: its time is no block's); and every input
-    // (Yaci Store writes tx_input unfiltered)
+    // (Yaci Store writes tx_input unfiltered), of which the commit handler then deletes the spends
+    // of outputs not kept
     const write = async chain => {
         let previous = null;
         for (const block of chain.blocks()) {
@@ -264,11 +271,13 @@ const yaciFixture = async () => {
             previous = block.hash;
             for (const tx of block.txs) {
                 for (const [outputIndex, output] of tx.outputs.entries()) {
-                    if (!Object.keys(output.assets).some(ours)) {
+                    if (!Object.keys(output.assets).some(userUnit)) {
                         continue;
                     }
                     const amounts = [
                         { unit: 'lovelace', policy_id: null, asset_name: 'lovelace', quantity: Number(output.lovelace) },
+                        // (real Yaci Store writes asset_name as the UTF-8 text or the fingerprint, not
+                        // hex; the views read only unit)
                         ...Object.entries(output.assets).map(([unit, quantity]) => ({ unit, policy_id: unit.slice(0, 56), asset_name: unit.slice(56), quantity: Number(quantity) })),
                     ];
                     const { payment, stake } = credentialsOf(output.address);
@@ -286,7 +295,7 @@ const yaciFixture = async () => {
                         [input.txHash, input.index, block.slot, block.blockNo, block.hash, seconds, tx.txHash]
                     );
                 }
-                for (const [unit, quantity] of Object.entries(tx.mint).filter(([unit]) => ours(unit))) {
+                for (const [unit, quantity] of Object.entries(tx.mint).filter(([unit]) => userUnit(unit))) {
                     await admin.query(
                         `INSERT INTO ${indexSchema}.assets (id, slot, tx_hash, policy, asset_name, unit, quantity, mint_type, block, block_time, update_datetime)
                          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, now())`,
@@ -294,6 +303,30 @@ const yaciFixture = async () => {
                     );
                 }
             }
+        }
+    };
+
+    // deploy/chain/plugins/handle-commit.js after the blocks: its own SQL, as Yaci Store's
+    // named_jdbc runs it on Yaci Store's schema
+    const runCommitHandler = async () => {
+        const updates = [];
+        const state = new Map();
+        const context = {
+            named_jdbc: { update: (sql, params) => updates.push({ sql, params }) && 0 },
+            global_state: { get: key => (state.has(key) ? state.get(key) : null), put: (key, value) => state.set(key, value) },
+            console: { log() {} },
+            event: { getMetadata: () => ({ getSlot: () => 0 }) },
+        };
+        vm.runInNewContext(`${fs.readFileSync(COMMIT_HANDLER, 'utf8')}\nhandleCommitEvent(event);`, context);
+        const [{ sql, params }] = updates;
+        const client = await admin.connect();
+        try {
+            await client.query(`SET search_path TO ${indexSchema}`);
+            const { rowCount } = await client.query(sql.replace(':last_slot', '$1'), [params.last_slot]);
+            await client.query('RESET search_path');
+            return rowCount;
+        } finally {
+            client.release();
         }
     };
 
@@ -306,7 +339,7 @@ const yaciFixture = async () => {
     };
 
     const index = (onNetwork = network) => createChainIndex({ pool: admin, policyId, network: onNetwork, indexSchema, viewSchema, readRole: READ_ROLE });
-    return { admin, indexSchema, viewSchema, createTables, write, schemaExists, drop, index };
+    return { admin, indexSchema, viewSchema, createTables, write, runCommitHandler, schemaExists, drop, index };
 };
 
 describePostgres('the real index on Postgres', () => {
@@ -319,6 +352,15 @@ describePostgres('the real index on Postgres', () => {
         fixture = await yaciFixture();
         await fixture.createTables();
         await fixture.write(chain);
+        // the commit handler deletes the spends of every input whose output was not kept
+        expect(await fixture.runCommitHandler()).toBeGreaterThan(0);
+        const [{ foreign }] = (
+            await fixture.admin.query(
+                `SELECT count(*)::int AS foreign FROM ${fixture.indexSchema}.tx_input t
+                 WHERE NOT EXISTS (SELECT 1 FROM ${fixture.indexSchema}.address_utxo u WHERE u.tx_hash = t.tx_hash AND u.output_index = t.output_index)`
+            )
+        ).rows;
+        expect(foreign).toBe(0);
         // the double's slot configuration: its slots and block times agree under it
         const index = fixture.index(chain.network);
         expect(await index.ensureViews()).toBe(true);

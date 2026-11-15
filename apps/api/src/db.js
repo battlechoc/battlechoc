@@ -3,7 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { Pool } = require('pg');
+const { Pool, Client } = require('pg');
 
 const MIGRATIONS = path.join(__dirname, 'migrations');
 
@@ -58,8 +58,11 @@ const withTransaction = async (pool, fn) => {
     }
 };
 
-// pg-mem knows neither advisory locks nor statement timeouts
-const isPostgres = pool => pool instanceof Pool;
+/**
+ * Whether `db` (a pool, or a connection taken from one) is a real Postgres, not pg-mem: pg-mem
+ * knows neither advisory locks nor statement timeouts, and does not hold every index Postgres does.
+ */
+const isPostgres = db => db instanceof Pool || db instanceof Client;
 
 // the first key of the advisory lock that migrate takes ("bcmg"); the second one is the schema
 const MIGRATION_LOCK = 0x62636d67;
@@ -131,4 +134,4 @@ const migrate = async (pool, { upTo, directory = MIGRATIONS } = {}) => {
     }
 };
 
-module.exports = { createPool, migrate, withTransaction, count };
+module.exports = { createPool, migrate, withTransaction, count, isPostgres };
