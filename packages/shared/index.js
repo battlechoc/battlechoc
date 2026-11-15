@@ -83,6 +83,7 @@ module.exports.getDefaultLanguage = i18n.getDefaultLanguage;
 module.exports.translate = i18n.translate;
 module.exports.translateIn = i18n.translateIn;
 module.exports.translationKeys = i18n.translationKeys;
+module.exports.placeholdersOf = i18n.placeholdersOf;
 
 // Cardano: the networks and the sign-in challenge text (cardano/)
 module.exports.cardano = {

@@ -101,6 +101,50 @@ const placeholders = Object.freeze({
     ITEM_DEPARTED_SLOT: ['building'],
     WALLET_ITEMS_COUNT: ['count'],
     WALLET_ITEMS_WAIT: ['time'],
+    MINT_MARK_MINTED_TEXT: ['wallet'],
+    MINT_MARK_WAITING: ['minutes'],
+    MINT_CHECK_MATCHES_MET: ['need'],
+    MINT_CHECK_MATCHES_HAVE: ['have'],
+    MINT_CHECK_MATCHES: ['missing'],
+    MINT_CHECK_MATCHES_TEXT: ['need', 'have'],
+    MINT_CHECK_WALLET_TEXT: ['wallet', 'address', 'network'],
+    MINT_CHECK_WALLET_TEXT_NAMELESS: ['address', 'network'],
+    MINT_CHECK_WAITING: ['wallet', 'time'],
+    MINT_CHECK_WAITING_NAMELESS: ['time'],
+    MINT_CHECK_ADA_TEXT: ['haveAda', 'needAda'],
+    MINT_CHECK_LOW_TEXT: ['haveAda', 'needAda', 'missingAda'],
+    MINT_CHECK_ADA_LATER: ['needAda'],
+    MINT_CHECK_ADA_HAVE: ['haveAda'],
+    MINT_CHECK_COLLATERAL_TEXT: ['wallet', 'amountAda'],
+    MINT_CHECK_RUNNING_TEXT: ['item', 'serial'],
+    MINT_CHECK_LEFT: ['left'],
+    MINT_CHECK_NONE_LEFT_TEXT: ['count'],
+    MINT_ABOUT: ['amount', 'unit'],
+    MINT_AMOUNT: ['amount', 'unit'],
+    MINT_GET_ITEM: ['item', 'serial'],
+    MINT_WALLET_TIME: ['minutes'],
+    MINT_DONE_TOAST: ['item', 'serial'],
+    MINT_SIGN_WITH: ['wallet'],
+    MINT_NOT_ENOUGH_ADA: ['needAda', 'missingAda'],
+    MINT_NO_COLLATERAL: ['wallet', 'amountAda'],
+    MINT_WALLET_TOO_FULL: ['wallet'],
+    MINT_OTHER_WALLET: ['wallet'],
+    MINT_BAD_SIGNATURE: ['wallet'],
+    MINT_WALLET_SAID_NO: ['wallet'],
+    MINT_WALLET_LOST: ['wallet'],
+    MINT_NO_ACCOUNT_NAMELESS: ['network'],
+    MINT_WRONG_NETWORK: ['wallet', 'network'],
+    MINT_ACCOUNT_CHANGED: ['wallet'],
+    MINT_WALLET_CANNOT_SIGN: ['wallet'],
+    MINT_NO_ADDRESS: ['wallet'],
+    MINT_ADDRESS_UNSUPPORTED: ['wallet'],
+    MINT_TIME_UP: ['minutes'],
+    MINT_NO_ACCOUNT: ['wallet', 'network'],
+    MINT_CHECK_MATCHES_NEED: ['need'],
+    MINT_CHECK_ELSEWHERE_TEXT: ['wallet'],
+    MINT_GET_DEPOSIT: ['amount'],
+    MINT_SIGN_NOT_ENOUGH_ADA: ['needAda', 'missingAda'],
+    MINT_SIGN_BAD_SIGNATURE: ['wallet'],
 });
 
 // Texts that are picked or put together by code; each gets the language's table first.
@@ -277,6 +321,9 @@ const getCurrentLanguage = () => currentLanguage;
 
 const translate = (key, ...values) => translateIn(currentLanguage, key, ...values);
 
+/** The names of the placeholders `key`'s text fills, in the order translate takes their values ([] for none). */
+const placeholdersOf = key => (Object.hasOwn(placeholders, key) ? [...placeholders[key]] : []);
+
 module.exports = {
     languages,
     normalizeLanguage,
@@ -289,4 +336,5 @@ module.exports = {
     translate,
     translateIn,
     translationKeys,
+    placeholdersOf,
 };
