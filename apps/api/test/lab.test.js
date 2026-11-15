@@ -1,4 +1,5 @@
-const { EntityType, EmptyPlayerStats, levelRefund } = require('@battlechoc/battlechoc-shared-functions');
+const request = require('supertest');
+const { EntityType, EmptyPlayerStats, Ingredients, levelRefund } = require('@battlechoc/battlechoc-shared-functions');
 const { migrate } = require('../src/db');
 const pantry = require('../src/pantry');
 const players = require('../src/players');
@@ -26,6 +27,13 @@ const stock = (pool, client, amounts) => pantry.add(pool, client.playerId,
     Object.entries(amounts).map(([ingredient, amount]) => ({ ingredient, amount })), Date.now());
 
 const tryRecipe = (client, entityType, ingredients) => client.post('/lab/try', { entityType, ingredients });
+
+// an item in a player's shelf, without crafting it; resolves with its id
+const giveItem = async (pool, playerId, item) => {
+    const id = `${item}-${Math.random()}`;
+    await pool.query('INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ($1, $2, $3, 1, $2)', [id, playerId, item]);
+    return id;
+};
 
 describe('recipe table', () => {
     test('production never falls back to the public sample', () => {
@@ -128,12 +136,6 @@ describe('crafting', () => {
 });
 
 describe('equipment', () => {
-    const giveItem = async (pool, playerId, item) => {
-        const id = `${item}-${Math.random()}`;
-        await pool.query('INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ($1, $2, $3, 1, $2)', [id, playerId, item]);
-        return id;
-    };
-
     test('equips owned items of the building, within the budget, without duplicates', async () => {
         const { app, pool } = await setup();
         const player = await account(app);
@@ -190,6 +192,123 @@ describe('equipment', () => {
         expect((await player.get('/user')).body.stats.loadout).toEqual({
             [T.FACTORY]: ['TURBO_CONVEYOR'], [T.RUM_TRUFFLE_CANNON]: ['HEAVY_BARREL'],
         });
+    });
+});
+
+describe('salvaging (minting plan A)', () => {
+    // the test table and two recipes whose amounts show the rounding
+    const salvageRecipes = [
+        ...testRecipes,
+        { item: 'MARZIPAN_CARROTS', ingredients: ['MARZIPAN', 'MARZIPAN', 'RUM'], amounts: { MARZIPAN: 4, RUM: 3 } },
+        { item: 'NUT_BRICKS', ingredients: ['HAZELNUTS', 'RUM', 'MILK'], amounts: { HAZELNUTS: 1, RUM: 1, MILK: 1 } },
+    ];
+    const salvageSetup = () => setup({ recipes: createRecipeBook(salvageRecipes) });
+    const salvage = (client, itemId) => client.post('/lab/salvage', { itemId });
+    const statsOf = async client => (await client.get('/user').expect(200)).body.stats;
+
+    test('half of each amount comes back, rounded down; the crafting fee does not', async () => {
+        const { app, pool } = await salvageSetup();
+        const anna = await account(app, { name: 'Anna' });
+        await stock(pool, anna, { RUM: 3, SUGAR: 2 });
+        await tryRecipe(anna, T.RUM_TRUFFLE_CANNON, ['SUGAR', 'MILK']).expect(200);
+        const crafted = (await anna.post('/lab/craft', { item: 'LIGHT_BARREL' }).expect(200)).body;
+        expect(crafted.pantry).toEqual({ COCOA: 50, RUM: 2, SUGAR: 2, MILK: 1 });
+        const salvaged = (await salvage(anna, crafted.item.id).expect(200)).body;
+        expect(salvaged.returned).toEqual({ RUM: 1, SUGAR: 1 });
+        expect(salvaged.pantry).toEqual({ COCOA: 50, RUM: 3, SUGAR: 3, MILK: 1 });
+        expect((await statsOf(anna)).items).toEqual([]);
+    });
+
+    test('returned ingredients are fresh', async () => {
+        const { app, pool } = await salvageSetup();
+        const player = await account(app);
+        const carrots = await giveItem(pool, player.playerId, 'MARZIPAN_CARROTS');
+        const start = Date.now();
+        const salvaged = (await salvage(player, carrots).expect(200)).body;
+        const end = Date.now();
+        expect(salvaged.returned).toEqual({ MARZIPAN: 2, RUM: 1 });
+        const marzipan = salvaged.spoiling.filter(batch => batch.ingredient === 'MARZIPAN');
+        expect(marzipan).toEqual([{ ingredient: 'MARZIPAN', amount: 2, expiresAt: expect.any(Number) }]);
+        expect(marzipan[0].expiresAt).toBeGreaterThanOrEqual(start + Ingredients.MARZIPAN.shelfLifeMs);
+        expect(marzipan[0].expiresAt).toBeLessThanOrEqual(end + Ingredients.MARZIPAN.shelfLifeMs);
+    });
+
+    test('an equipped item is taken off its slot', async () => {
+        const { app, pool } = await salvageSetup();
+        const player = await account(app);
+        const light = await giveItem(pool, player.playerId, 'LIGHT_BARREL');
+        const heavy = await giveItem(pool, player.playerId, 'HEAVY_BARREL');
+        await player.post('/user/equipment', { entityType: T.RUM_TRUFFLE_CANNON, slot: 1, itemId: heavy }).expect(200);
+        await player.post('/user/equipment', { entityType: T.RUM_TRUFFLE_CANNON, slot: 0, itemId: light }).expect(200);
+        const first = (await salvage(player, heavy).expect(200)).body;
+        expect(first.equipment).toEqual({ [T.RUM_TRUFFLE_CANNON]: [light, null] });
+        expect(first.loadout).toEqual({ [T.RUM_TRUFFLE_CANNON]: ['LIGHT_BARREL'] });
+        const second = (await salvage(player, light).expect(200)).body;
+        expect(second.equipment).toEqual({});
+        expect(second.loadout).toEqual({});
+        expect(await statsOf(player)).toMatchObject({ items: [], equipment: {}, loadout: {} });
+    });
+
+    test('only the player\'s own items', async () => {
+        const { app, pool } = await salvageSetup();
+        const player = await account(app);
+        const other = await account(app);
+        const theirs = await giveItem(pool, other.playerId, 'LIGHT_BARREL');
+        expect((await salvage(player, theirs).expect(400)).body.error).toBe('NOT YOUR ITEM');
+        expect((await statsOf(other)).items.map(entry => entry.id)).toEqual([theirs]);
+        expect((await salvage(player, 'nope').expect(400)).body.error).toBe('NOT YOUR ITEM');
+        expect((await player.post('/lab/salvage', {}).expect(400)).body.error).toBe('INVALID REQUEST PARAMETERS');
+        expect((await player.post('/lab/salvage', { itemId: 5 }).expect(400)).body.error).toBe('INVALID REQUEST PARAMETERS');
+        expect((await request(app).post('/lab/salvage').send({ itemId: theirs }).expect(401)).body.error).toBe('missing access token');
+    });
+
+    test('two salvages of one item at once: one works', async () => {
+        const { app, pool } = await salvageSetup();
+        const player = await account(app);
+        const light = await giveItem(pool, player.playerId, 'LIGHT_BARREL');
+        const before = (await statsOf(player)).pantry;
+        const responses = await Promise.all([1, 2].map(() => salvage(player, light)));
+        expect(responses.map(response => response.status).sort()).toEqual([200, 400]);
+        expect(responses.find(response => response.status === 400).body.error).toBe('NOT YOUR ITEM');
+        expect((await statsOf(player)).pantry).toEqual({ ...before, RUM: before.RUM + 1, SUGAR: before.SUGAR + 1 });
+    });
+
+    test('an item whose recipe is gone: 400 NO RECIPE, nothing changes', async () => {
+        const { app, pool } = await salvageSetup();
+        const player = await account(app);
+        const turbo = await giveItem(pool, player.playerId, 'TURBO_CONVEYOR');
+        await player.post('/user/equipment', { entityType: T.FACTORY, slot: 0, itemId: turbo }).expect(200);
+        const before = await statsOf(player);
+        expect((await salvage(player, turbo).expect(400)).body.error).toBe('NO RECIPE');
+        const after = await statsOf(player);
+        expect(after.items.map(entry => entry.id)).toEqual([turbo]);
+        expect(after.equipment).toEqual({ [T.FACTORY]: [turbo, null] });
+        expect(after.loadout).toEqual(before.loadout);
+        expect(after.pantry).toEqual(before.pantry);
+    });
+
+    test('amounts of 1 give nothing back, and the item is still salvaged', async () => {
+        const { app, pool } = await salvageSetup();
+        const player = await account(app);
+        const bricks = await giveItem(pool, player.playerId, 'NUT_BRICKS');
+        const before = (await statsOf(player)).pantry;
+        const salvaged = (await salvage(player, bricks).expect(200)).body;
+        expect(salvaged.returned).toEqual({});
+        expect(salvaged.pantry).toEqual(before);
+        const after = await statsOf(player);
+        expect(after.items).toEqual([]);
+        expect(after.pantry).toEqual(before);
+    });
+
+    test('a serial is never given again', async () => {
+        const { app, pool } = await salvageSetup();
+        const player = await account(app);
+        await stock(pool, player, { RUM: 3, SUGAR: 2 });
+        await tryRecipe(player, T.RUM_TRUFFLE_CANNON, ['SUGAR', 'MILK']).expect(200);
+        const first = (await player.post('/lab/craft', { item: 'LIGHT_BARREL' }).expect(200)).body.item;
+        expect(first.serial).toBe(1);
+        await salvage(player, first.id).expect(200);
+        expect((await player.post('/lab/craft', { item: 'LIGHT_BARREL' }).expect(200)).body.item.serial).toBe(2);
     });
 });
 

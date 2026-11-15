@@ -1,5 +1,5 @@
 // The lab: trying ingredients on the lab table, crafting items from discovered recipes, the
-// recipe book and the equipment slots (a player's items are part of their stats).
+// recipe book, salvaging items and the equipment slots (a player's items are part of their stats).
 
 const crypto = require('crypto');
 const {
@@ -8,6 +8,7 @@ const {
 const players = require('../players');
 const pantry = require('../pantry');
 const { withTransaction } = require('../db');
+const { salvagePlain } = require('./salvage');
 const { slidingWindowLimit } = require('../limits');
 const { HttpError, ErrorCode } = require('../errors');
 
@@ -119,6 +120,24 @@ const registerLabRoutes = (app, { pool, user, recipes, oneAtATime, triesPerHour 
             item: items.find(entry => entry.id === crafted),
             pantry: await pantry.totals(pool, req.playerId, now()),
             spoiling: await pantry.spoiling(pool, req.playerId, now()),
+        });
+    });
+
+    app.post('/lab/salvage', ...user, async (req, res) => {
+        const { itemId } = req.body || {};
+        if (typeof itemId !== 'string' || itemId.length === 0) {
+            throw new HttpError(400, ErrorCode.INVALID_REQUEST_PARAMETERS);
+        }
+        const { returned, equipment } = await oneAtATime(req.playerId, () => withTransaction(pool, client =>
+            salvagePlain(client, { playerId: req.playerId, itemId, recipes, now: now() })));
+        const contents = await pantry.contents(pool, req.playerId, now());
+        const items = await players.itemsOf(pool, req.playerId);
+        res.json({
+            returned,
+            pantry: contents.totals,
+            spoiling: contents.spoiling,
+            equipment,
+            loadout: players.loadoutOf({ equipment }, items),
         });
     });
 

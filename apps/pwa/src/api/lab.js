@@ -12,6 +12,10 @@ export const tryIngredients = (entityType, ingredients) =>
 /** Crafts the item of a discovered recipe ({ item, pantry, spoiling }). */
 export const craftItem = (item) => post("/lab/craft", { item });
 
+/** Salvages a plain item: half of each recipe amount comes back ({ returned, pantry, spoiling,
+ * equipment, loadout }). */
+export const salvageItem = (itemId) => post("/lab/salvage", { itemId });
+
 /** Puts an item into a building's slot (itemId null takes it out) ({ equipment, loadout }). */
 export const equipItem = (entityType, slot, itemId) =>
   post("/user/equipment", { entityType, slot, itemId });
