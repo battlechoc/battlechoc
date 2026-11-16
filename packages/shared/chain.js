@@ -34,6 +34,11 @@ const CHANGE_RESERVE_LOVELACE = 1_000_000;
 const MINT_NETWORK_FEE_ESTIMATE_LOVELACE = 490_000;
 const MINT_DEPOSIT_ESTIMATE_LOVELACE = 3_720_000;
 const BURN_NETWORK_FEE_ESTIMATE_LOVELACE = 410_000;
+// What a burn gives back to the wallet before it is built: the reference token's part of the
+// deposit (its largest measured case above, 2_448_080, rounded up to 10_000 lovelace as the
+// others). The user token's part (1_262_830) is not in it: that ADA sat with the token in the
+// wallet all along and is only free again.
+const BURN_DEPOSIT_BACK_ESTIMATE_LOVELACE = 2_450_000;
 // The mint network fee estimate covers a wallet of up to 6 inputs at 2 of its keys (the largest
 // case spent that many). For a larger wallet the funds check adds per input and per key beyond
 // those, and per byte of tokens the change (or the collateral return) must carry: the largest
@@ -77,6 +82,7 @@ module.exports = {
     MINT_NETWORK_FEE_ESTIMATE_LOVELACE,
     MINT_DEPOSIT_ESTIMATE_LOVELACE,
     BURN_NETWORK_FEE_ESTIMATE_LOVELACE,
+    BURN_DEPOSIT_BACK_ESTIMATE_LOVELACE,
     MINT_NETWORK_FEE_ESTIMATE_INPUTS,
     MINT_NETWORK_FEE_ESTIMATE_WALLET_KEYS,
     MINT_FEE_PER_INPUT_LOVELACE,

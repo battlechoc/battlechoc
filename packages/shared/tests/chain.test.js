@@ -20,7 +20,7 @@ describe('the minting constants', () => {
     });
 
     test('the measured estimates: numbers, whole multiples of 10_000 lovelace', () => {
-        for (const name of ['MINT_NETWORK_FEE_ESTIMATE_LOVELACE', 'MINT_DEPOSIT_ESTIMATE_LOVELACE', 'BURN_NETWORK_FEE_ESTIMATE_LOVELACE']) {
+        for (const name of ['MINT_NETWORK_FEE_ESTIMATE_LOVELACE', 'MINT_DEPOSIT_ESTIMATE_LOVELACE', 'BURN_NETWORK_FEE_ESTIMATE_LOVELACE', 'BURN_DEPOSIT_BACK_ESTIMATE_LOVELACE']) {
             expect(typeof chain[name]).toBe('number');
             expect(chain[name]).toBeGreaterThan(0);
             expect(chain[name] % 10_000).toBe(0);
@@ -38,6 +38,12 @@ describe('the minting constants', () => {
             expect(Number.isSafeInteger(chain[name])).toBe(true);
             expect(chain[name]).toBeGreaterThan(0);
         }
+    });
+
+    test('what a burn gives back: the reference part of the deposit (2_448_080 measured), rounded up, less than the whole deposit', () => {
+        expect(chain.BURN_DEPOSIT_BACK_ESTIMATE_LOVELACE).toBe(2_450_000);
+        expect(chain.BURN_DEPOSIT_BACK_ESTIMATE_LOVELACE).toBeGreaterThanOrEqual(2_448_080);
+        expect(chain.BURN_DEPOSIT_BACK_ESTIMATE_LOVELACE).toBeLessThan(chain.MINT_DEPOSIT_ESTIMATE_LOVELACE);
     });
 
     test('what a mint needs: the network fee, the deposits and the change, at least the collateral', () => {

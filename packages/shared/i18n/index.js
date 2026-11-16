@@ -145,6 +145,30 @@ const placeholders = Object.freeze({
     MINT_GET_DEPOSIT: ['amount'],
     MINT_SIGN_NOT_ENOUGH_ADA: ['needAda', 'missingAda'],
     MINT_SIGN_BAD_SIGNATURE: ['wallet'],
+    // the salvage of a minted item (plan E); its variants of minting's texts fill the same names
+    SALVAGE_MINTED_COMPARE: ['list'],
+    SALVAGE_MINTED_WALLET: ['fee'],
+    SALVAGE_MINTED_SIGNER: ['wallet', 'address'],
+    SALVAGE_MINTED_SIGNER_NAMELESS: ['address'],
+    SALVAGE_WRONG_WALLET: ['address'],
+    SALVAGE_GIVE_ITEM: ['item', 'serial'],
+    SALVAGE_FEE_DEDUCTED: ['amount'],
+    SALVAGE_FREE_AGAIN: ['amount'],
+    SALVAGE_MARK_WAITING: ['minutes'],
+    SALVAGE_ARRIVED_FROM: ['item', 'serial'],
+    SALVAGE_FRESH_FOR: ['time'],
+    SALVAGE_NOT_ENOUGH_ADA: ['missingAda'],
+    SALVAGE_SIGN_NOT_ENOUGH_ADA: ['missingAda'],
+    SALVAGE_ADDRESS_UNSUPPORTED: ['wallet'],
+    SALVAGE_BAD_SIGNATURE: ['wallet'],
+    SALVAGE_ELSEWHERE_TEXT: ['wallet'],
+    SALVAGE_NO_COLLATERAL: ['wallet', 'amountAda'],
+    SALVAGE_SIGN_BAD_SIGNATURE: ['wallet'],
+    SALVAGE_WALLET_TOO_FULL: ['wallet'],
+    SALVAGE_MINTED_COMPARE_MISSING: ['list'],
+    // an amount of an ingredient in a list ("1 Vanilla"; Japanese "バニラ1個")
+    SALVAGE_COUNTED: ['count', 'name'],
+    SALVAGE_OTHER_WALLET: ['wallet'],
 });
 
 // Texts that are picked or put together by code; each gets the language's table first.
