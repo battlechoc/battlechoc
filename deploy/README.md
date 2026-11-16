@@ -166,11 +166,50 @@ the players' games reconnect by themselves after a few seconds. A release whose 
 ## Looking after it
 
 - Logs: `docker compose logs -f api` (the API writes no access logs and stores no IP addresses,
-  see the privacy policy). Docker keeps at most five files of 10 MB per service. The host's
-  nginx keeps its own access log (on by default), with every request's path: with minting on,
-  that includes `/chain/sign/<code>`. A sign code is valid for at most 10 minutes, and alone it can
-  only read its mint or carry the player's own wallet signatures (`docs/architecture.md`,
-  "Minting").
+  see the privacy policy). Docker keeps at most five files of 10 MB per service.
+- **The host's nginx must not log the API's requests either**, or the privacy policy's "our server
+  writes no access logs and stores no IP addresses" is not true. nginx writes an access log by
+  default (`/var/log/nginx/access.log`), with each client's address and each request's path, and
+  the paths carry codes and names: sign codes (`/chain/sign/<code>`, valid for 10 minutes; alone a
+  code can only read its operation or carry the player's own wallet signatures, see
+  `docs/architecture.md`, "Minting"), the asset names of minted items (`/items/<asset name>`) and
+  challenge codes (`play.battlechoc.com/<code>`). The site files in `deploy/nginx/` carry the two
+  lines below in their `server` block; a server set up from an older copy needs them added. Do
+  this once, now, and at the latest before the chain features go on: in
+  `/etc/nginx/sites-available/api.battlechoc.com` and `/etc/nginx/sites-available/play.battlechoc.com`,
+  make sure these two lines are in every `server` block of the file (`certbot --nginx` keeps the
+  original block for TLS and adds one for port 80 that redirects; that one needs them too):
+
+  ```nginx
+  access_log off;
+  error_log /dev/null crit;
+  ```
+
+  then `sudo nginx -t && sudo systemctl reload nginx`. The second line discards these sites' error
+  log: at its default level nginx writes a line with the client's address and the request's path
+  whenever the API cannot be reached, and even at `crit` some lines (failed TLS handshakes) name
+  the client's address. Errors nginx cannot attribute to a site go to the main `error_log` in
+  `/etc/nginx/nginx.conf`; on a VPS that serves only battlechoc, set that one to
+  `error_log /dev/null crit;` as well. Check it:
+  `curl -s https://api.battlechoc.com/health`, then `sudo tail -n 3 /var/log/nginx/access.log`
+  shows no new line for that request. (A `log_format` without `$remote_addr` and `$request` would
+  do instead of `access_log off`, but off is simpler.)
+
+  Then empty what nginx has logged so far, once: the current files and logrotate's older copies
+  (Debian keeps about two weeks of them):
+
+  ```sh
+  sudo truncate -s 0 /var/log/nginx/access.log /var/log/nginx/error.log
+  sudo rm -f /var/log/nginx/access.log.* /var/log/nginx/error.log.*
+  ```
+
+  If other sites on the VPS log into the same files, this empties their logs too. **With Caddy**
+  instead of nginx (the `docker-compose.caddy.yml` variant) there is nothing to do: the
+  `Caddyfile` writes no logs at all. Its site has no `log` directive, so there is no access log,
+  and its global `log { output discard }` block discards Caddy's own lines, which could name a
+  client's address and a request's path (when the API cannot be reached), so they never reach
+  `docker compose logs caddy` either. An operator who needs Caddy's log to debug a certificate
+  problem removes that block knowingly and puts it back afterwards.
 - Which version runs: `docker compose images api`, or
   `docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' "$(docker compose ps -q api)"`.
 - Backup: `docker compose exec -T postgres pg_dump -U battlechoc --exclude-schema=yaci_store --exclude-schema=chain battlechoc | gzip > backup-$(date +%F).sql.gz`,
