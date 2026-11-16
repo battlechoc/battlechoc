@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { chainEnabled } from "../../api/chain.js";
 import { connectivity } from "../../api/connectivity.js";
 import { features } from "../../cardano/appFeatures.js";
@@ -48,6 +48,28 @@ export const useMintingSwitch = () => {
     chainEnabled.ask();
   }, []);
   return features.showMinting({ serverEnabled });
+};
+
+/**
+ * Whether useMintingSwitch's value is decided for now: true once the server's answer is in, or
+ * once nothing is asked (no network, the Android app, offline) or the ask failed. The guide links
+ * mark it in the page (a hidden "decided" element), so a test of "no link" waits for that instead
+ * of a fixed time.
+ */
+export const useMintingDecided = () => {
+  const [decided, setDecided] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    chainEnabled.ask().then(() => {
+      if (mounted) {
+        setDecided(true);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  return decided;
 };
 
 export default useChainEnabled;

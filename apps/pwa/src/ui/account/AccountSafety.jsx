@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { createUseStyles } from "react-jss";
 import Dialog from "../dialogs/Dialog";
@@ -7,11 +7,52 @@ import TechnicalDetails from "./TechnicalDetails";
 import LineIcon from "./LineIcon";
 import { shortAddress } from "./safetyState";
 import { MINT } from "../lab/itemText";
+import { loadChunk } from "../../helper/loadChunk";
 import {
   getCurrentLanguage,
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
+
+// "What is a wallet?": the guide's wallet section, only where the game shows minting
+// (useMintingSwitch: not in the Android app, and the server's minting on), as the Info dialog's
+// guide link. The hook brings the chain client: the link comes as a chunk of its own
+// (helper/loadChunk.js), and nothing shows until it is in. A hidden mark says when the switch is
+// decided (useMintingDecided), for the tests of "no link".
+const WalletGuide = lazy(
+  loadChunk(() =>
+    import("../mint/useChainEnabled").then(
+      ({ useMintingSwitch, useMintingDecided }) => ({
+        default: function WalletGuideLink({ href, className }) {
+          const minting = useMintingSwitch();
+          const decided = useMintingDecided();
+          return (
+            <>
+              {minting ? (
+                <a
+                  className={className}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="wallet-guide"
+                >
+                  {t(tr.WALLET_WHAT_IS)}
+                </a>
+              ) : null}
+              {decided ? (
+                <span
+                  hidden
+                  data-testid="wallet-guide-decided"
+                  data-minting={String(minting)}
+                />
+              ) : null}
+            </>
+          );
+        },
+      })
+    )
+  )
+);
 
 // "Account safety" (the owner's mockup B, screens 4, 5 and 7, 2026-11-12), opened by "Manage" in
 // the profile: how the player gets back into the account on another device. One row per way that
@@ -220,7 +261,7 @@ const WalletEntry = ({ entry, networkName, classes }) => {
  * `onConnectWallet`, `onRemove(subject)` (Disconnect and Remove) and `onAnotherAccount`.
  * `mintMarks` (features.showMintMarks): the wallet row also says what the wallets hold, with
  * `networkName` (the build's network as players read it) and `guideHref` (what a wallet is; no
- * link while it is null, cardano/guide.js).
+ * link while it is null, cardano/guide.js, nor where minting does not show: WalletGuide).
  */
 const AccountSafety = ({
   open,
@@ -354,15 +395,9 @@ const AccountSafety = ({
               ))
             : null}
           {wallet && mintMarks && guideHref ? (
-            <a
-              className={classes.guide}
-              href={guideHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              data-testid="wallet-guide"
-            >
-              {t(tr.WALLET_WHAT_IS)}
-            </a>
+            <Suspense fallback={null}>
+              <WalletGuide href={guideHref} className={classes.guide} />
+            </Suspense>
           ) : null}
         </div>
         {error ? (
