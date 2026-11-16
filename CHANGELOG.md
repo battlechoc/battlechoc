@@ -1,5 +1,53 @@
 # Changelog
 
+## [5.9.0](https://github.com/battlechoc/battlechoc/compare/v5.8.1...v5.9.0) (2026-11-16)
+
+
+### Features
+
+* **api:** build the mint transaction offline ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **api:** burn transactions and the two-party signing ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **api:** keys and the preprod deploy and config scripts ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **api:** load the contracts, asset names and the item datum ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **api:** minted items belong to whoever holds the token ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **api:** minting: chain operations, readiness, the mint and sign routes, the wallet's address proof, the watcher's operations step ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **api:** read the chain through a Blockfrost-compatible provider and an index over Yaci Store's tables ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **api:** salvage a plain item: half of each recipe amount comes back, fresh; it leaves its slots ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **api:** salvaging a minted item: the burn route and its signature, the item's burning state, the credit at CHAIN_K_FINAL for burns in and outside the game ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **api:** the chain provider speaks Koios beside Blockfrost; the operator scripts follow and record where the index starts ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **api:** the end-to-end chain script for preprod ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **api:** the end-to-end script checks on the real chain what the credit of both burns needs ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **api:** the public data of a minted item (GET /items/:assetName) without its holder; ended chain operations are deleted after 90 days ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **contracts:** Aiken project with the CIP-68 asset names ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **contracts:** burning in pairs and the reference store; the blueprint ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **contracts:** minting an item as a CIP-68 pair ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **contracts:** the config NFT and its admin-signed datum ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **contracts:** the treasury, spent by the admins only ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **deploy:** the index keeps only the game's user tokens and starts at the deployment ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **pwa:** "Check for updates" in the Info dialog ([7a79fb6](https://github.com/battlechoc/battlechoc/commit/7a79fb6c0cc81a7b348ac678c4b4f18f79ed04f2))
+* **pwa:** "Is it you?" offers a wallet only when one can prove it, the words behind a button ([419b883](https://github.com/battlechoc/battlechoc/commit/419b8831b5171bff39e7c010006130bc32de7ab3))
+* **pwa:** "Reset battlechoc" in the Settings ([7a79fb6](https://github.com/battlechoc/battlechoc/commit/7a79fb6c0cc81a7b348ac678c4b4f18f79ed04f2))
+* **pwa:** a guide to wallets, ADA and what minting and salvaging cost (/guide/, de and en), linked where minting shows ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **pwa:** minting: the flow, the dialog, the item card's marks, the watcher for running mints and the sign page ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **pwa:** one picture per item type for the tokens (public/items/), drawn as the game, the item page and the sign page draw an item ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **pwa:** salvage a minted item: the dialog, the item card's marks, the watcher and the notice, the sign page; both dialogs on one flow driver ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **pwa:** the Choclab's item shelf and item card; salvage a plain item after a confirmation ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **pwa:** the item card's logic and the salvage call ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **pwa:** the public item page (/item/?a=…): picture, serial, today's effects, no holder ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **pwa:** the stamp on minted items, arrival and departure notices, the wallet's items ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **shared:** a minted item returns its rare and legendary ingredients in full; the burn's address proof and the salvage texts in 8 languages ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **shared:** chain constants and item URLs ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **shared:** measured cost estimates of minting and burning ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **shared:** the address proof's text and the minting texts in 8 languages ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **shared:** the item page's texts and the guide link in 8 languages; item keys and their picture URLs are permanent ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+* **shared:** the salvage arithmetic (half of each recipe amount, rounded down) ([081e4c2](https://github.com/battlechoc/battlechoc/commit/081e4c225aa8e9759ee7481259d629bcc45bb9f5))
+
+
+### Bug Fixes
+
+* **pwa:** wallet errors say what to do: set up a wallet, switch to Preprod ([419b883](https://github.com/battlechoc/battlechoc/commit/419b8831b5171bff39e7c010006130bc32de7ab3))
+* **shared:** "Is it you?" asks for proof without naming a passkey the player may not have ([419b883](https://github.com/battlechoc/battlechoc/commit/419b8831b5171bff39e7c010006130bc32de7ab3))
+
 ## [5.8.1](https://github.com/battlechoc/battlechoc/compare/v5.8.0...v5.8.1) (2026-11-13)
 
 
