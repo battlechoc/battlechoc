@@ -15,7 +15,8 @@ const open = createClient({ baseURL: apiUrl, timeout: 15000 });
 export const chainApi = createChainApi({ open, request });
 
 /**
- * Whether the server has the chain features on, asked once per session (createChainEnabled):
+ * Whether the server has the chain features on (createChainEnabled): a definite answer is kept for
+ * the session, until then each ask sends one request again;
  * `ask()`, `retry()` (when the device is back online: connectivity's "online"),
  * `serverEnabled()`, `subscribe(listener)`; the game shows minting where
  * `features.showMinting({ serverEnabled })`.

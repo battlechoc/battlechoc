@@ -1,20 +1,21 @@
-// Chain operations (spec 6.2, minting plan D): the state machine of chain_ops. A mint (plan E: a
-// burn) is prepared (built, item locked, waiting for the wallet's signature), submitted (witness
-// checked, co-signed, sent), included (in a block), final (K_FINAL deep); or it ends cancelled (by
-// the player while prepared) or expired (not signed in the sign window; or submitted, past its
-// ttl and not on the chain).
+// Chain operations (spec 6.2, minting plan D): the state machine of chain_ops. A mint, or a burn
+// of a minted item (plan E), is prepared (built, item locked, waiting for the wallet's
+// signature), submitted (witness checked, co-signed, sent), included (in a block), final (K_FINAL
+// deep); or it ends cancelled (by the player while prepared) or expired (not signed in the sign
+// window; or submitted, past its ttl and not on the chain).
 //
 // Every step is one compare-and-set: `UPDATE … WHERE id = $1 AND state = <from> RETURNING *`. Of
 // two callers that race for a step (two tabs, the watcher, a cancel against a signature) exactly
 // one gets the row back; the other gets null and changes nothing, so a step's effects (the item
-// marked minted, plan E's credit) happen once. A step reads the state from the table, never from
+// marked minted) happen once. A step reads the state from the table, never from
 // the caller's copy of the row; of that copy it uses the id, and markRolledBack and markFinal also
 // its `included_block`, the inclusion the caller judged (a copy from before a rollback and a new
 // inclusion matches nothing). Every function answers
 // rows as the table holds them (snake_case), with the BIGINT columns as Numbers on both databases.
 //
-// The steps that change the item too (markIncluded, markRolledBack) and markFinal (plan E credits
-// a burn there) take a pool and run in one transaction of their own. `now` is the app's clock, a
+// The steps that change the item too (markIncluded, markRolledBack: a mint's only; a burn changes
+// no item here, its ingredients are credited by a watcher step of its own, plan E Task 3) and
+// markFinal take a pool and run in one transaction of their own. `now` is the app's clock, a
 // time in ms, never left out (a TypeError otherwise): the watcher and the tests inject theirs.
 
 const crypto = require('crypto');
@@ -95,11 +96,13 @@ const byId = (db, id) => (typeof id === 'string' ? one(db, 'SELECT * FROM chain_
 const byCode = (db, code) => (typeof code === 'string' ? one(db, 'SELECT * FROM chain_ops WHERE code_hash = $1', [hashOf(code)]) : Promise.resolve(null));
 
 /**
- * Stores a prepared operation: the row. `fields`: { playerId, itemId, kind ('mint'), subject (the
- * wallet's), ownerKeyHash, ownerAddress, requiredKeys (the key hashes the wallet signs with),
+ * Stores a prepared operation: the row. `fields`: { playerId, itemId, kind ('mint' or 'burn'),
+ * subject (the wallet's), ownerKeyHash, ownerAddress (a burn: where the store's ADA and the change
+ * go), requiredKeys (the key hashes the wallet signs with),
  * assetName (the user token's), txHash, txCbor (the unsigned transaction exactly as built),
- * ttlSlot (its ttl as built), signUntil (ms), code (the sign code; stored hashed), feeOption,
- * networkFee, gameFeeAsset ('lovelace' or policy hex + asset name hex; null without a fee),
+ * ttlSlot (its ttl as built), signUntil (ms), code (the sign code; stored hashed), feeOption (the
+ * mint's option; null for a burn, which pays no battlechoc fee), networkFee, gameFeeAsset
+ * ('lovelace' or policy hex + asset name hex; null without a fee, always for a burn),
  * gameFee, deposit (both tokens' outputs' ADA), depositUser (of that, the user token's output's;
  * amounts as strings or numbers, stored as text), ownerConfirmed (true: built from addresses a
  * wallet of the player vouched for; default false), now (ms) }. The same
@@ -108,7 +111,9 @@ const byCode = (db, code) => (typeof code === 'string' ? one(db, 'SELECT * FROM 
  * Rejects with an OpenOperationError while the item (reason 'item', asked first) or the player
  * ('player') has an open operation. One process is guarded by the check before the insert, as
  * long as the caller runs it for one player at a time (the routes' `oneAtATime(playerId)`; an
- * unminted item has one owner, so two players never race for one item); two API processes on
+ * item has one owner at a time, its crafter or, once minted, the player the ownership sync gives
+ * it to, so two players race for one item at most across the sync's change of its owner, which
+ * the item's partial index refuses on Postgres); two API processes on
  * Postgres by the partial unique indexes, whose refusal comes back as the same error. Inside a
  * caller's transaction such a refusal has aborted that transaction: roll it back.
  */
@@ -163,9 +168,16 @@ const insertPrepared = async (db, fields) => {
     }
 };
 
-/** prepared → cancelled (the player's cancel; `error` 'cancelled'): the row, or null. */
-const cancel = async (db, op, now) =>
-    one(db, "UPDATE chain_ops SET state = 'cancelled', error = 'cancelled', ended_at = $2 WHERE id = $1 AND state = 'prepared' RETURNING *", [op.id, timeOf(now)]);
+/** Why a prepared operation was cancelled (chain_ops.error), when it was not the player. */
+const CANCELLED_BECAUSE = Object.freeze({ WALLET_UNLINKED: 'wallet-unlinked', TOKEN_MOVED: 'token-moved' });
+
+/**
+ * prepared → cancelled: the row, or null. `error`: 'cancelled' (default) for the player's own
+ * cancel; the server's cancels say why (CANCELLED_BECAUSE: the wallet no longer linked to the
+ * operation's player, a burn's token no longer where the burn spends it).
+ */
+const cancel = async (db, op, now, error = 'cancelled') =>
+    one(db, "UPDATE chain_ops SET state = 'cancelled', error = $3, ended_at = $2 WHERE id = $1 AND state = 'prepared' RETURNING *", [op.id, timeOf(now), error]);
 
 /** prepared → expired (`error` 'not-signed') once the sign window is over (`sign_until ≤ now`): the row, or null. */
 const expireUnsigned = async (db, op, now) =>
@@ -304,8 +316,9 @@ const markRolledBack = (pool, op) =>
 
 /**
  * included → final (`final_at`, `ended_at`), only while it is included at the block of `op` (the
- * block whose depth the caller judged; see markRolledBack): the row, or null. Plan E credits a
- * burn here, in this transaction.
+ * block whose depth the caller judged; see markRolledBack): the row, or null. For a burn it only
+ * ends the operation: the ingredients are credited by a step of their own, keyed by the burn on
+ * the chain, so a burn made outside the game is credited too (plan E, ruling E20).
  */
 const markFinal = async (pool, op, now) => {
     const at = timeOf(now);
@@ -320,20 +333,25 @@ const markFinal = async (pool, op, now) => {
 
 /**
  * submitted → expired: `error` 'rejected' when the network refused the transaction and took no
- * submit of it since (submit_rejected, noteSubmit), else 'expired'. Only while the noted tip
- * beyond the ttl is still the one of `op` (ttl_passed_block, the one the caller decided from; for
- * a copy without one, none): a clear or a new note by another process meanwhile wins. The row, or
+ * submit of it since (submit_rejected, noteSubmit), else 'expired'; `because` instead when the
+ * caller knows more (BURNED_ELSEWHERE: a burn whose token another transaction burned, K_FINAL
+ * deep). Only while the noted tip beyond the ttl is still the one of `op` (ttl_passed_block, the
+ * one the caller decided from; for a copy without one, none): a clear or a new note by another
+ * process meanwhile wins. The row, or
  * null. Only the watcher decides that a submitted transaction can no longer land
  * (operationsStep.js).
  */
-const expireSubmitted = async (db, op, now) => {
+const expireSubmitted = async (db, op, now, { because = null } = {}) => {
     const at = timeOf(now);
-    const set = "UPDATE chain_ops SET state = 'expired', error = CASE WHEN submit_rejected THEN 'rejected' ELSE 'expired' END, ended_at = $2";
+    const set = "UPDATE chain_ops SET state = 'expired', error = COALESCE($3, CASE WHEN submit_rejected THEN 'rejected' ELSE 'expired' END), ended_at = $2";
     // pg-mem knows no IS NOT DISTINCT FROM: the NULL case on its own
     return op.ttl_passed_block === null || op.ttl_passed_block === undefined
-        ? one(db, `${set} WHERE id = $1 AND state = 'submitted' AND ttl_passed_block IS NULL RETURNING *`, [op.id, at])
-        : one(db, `${set} WHERE id = $1 AND state = 'submitted' AND ttl_passed_block = $3 RETURNING *`, [op.id, at, op.ttl_passed_block]);
+        ? one(db, `${set} WHERE id = $1 AND state = 'submitted' AND ttl_passed_block IS NULL RETURNING *`, [op.id, at, because])
+        : one(db, `${set} WHERE id = $1 AND state = 'submitted' AND ttl_passed_block = $4 RETURNING *`, [op.id, at, because, op.ttl_passed_block]);
 };
+
+/** Why a submitted burn expired although its token is gone: another transaction burned it (K_FINAL deep). */
+const BURNED_ELSEWHERE = 'burned-elsewhere';
 
 /**
  * Notes a submit of a submitted operation at `now` (`last_submit_at`; the watcher resubmits at
@@ -446,6 +464,8 @@ module.exports = {
     ENDED_IN,
     SLOW_AFTER_MS,
     OpenOperationError,
+    CANCELLED_BECAUSE,
+    BURNED_ELSEWHERE,
     insertPrepared,
     openOf,
     openForItem,

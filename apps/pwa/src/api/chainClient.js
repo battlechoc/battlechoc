@@ -217,6 +217,23 @@ export const createChainApi = ({ open, request }) => ({
       )
     ),
 
+  /**
+   * Prepares the burn of a minted item (plan E, its salvage): { operation, tx, signCode, costs,
+   * returns }. `subject`: the wallet that holds the item; `addresses`: the wallet's own
+   * (walletAddresses), sent when given. A refusal NOT YOUR WALLET names the holder (`holder`)
+   * when the item is in another of the player's wallets.
+   */
+  burn: ({ itemId, subject, addresses }) =>
+    bodyOf(() =>
+      request(
+        "post",
+        "/chain/burn",
+        typeof addresses === "undefined"
+          ? { itemId, subject }
+          : { itemId, subject, addresses }
+      )
+    ),
+
   /** The player's operation as it stands: an OperationView. */
   operation: (id, { signal } = {}) =>
     bodyOf(() =>

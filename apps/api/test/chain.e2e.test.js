@@ -141,7 +141,9 @@ const fakeChain = ({ utxos } = {}) => {
             }
             if (apply) {
                 set = [...set.filter(entry => !inputs.includes(entry)), ...outputsOf(cbor)];
-                blocks.set(txId, TIP.block + 1 + landed.length);
+                // a block of its own, which is the tip then
+                tip.block += 1;
+                blocks.set(txId, tip.block);
                 landed.push({ txId, cbor });
             }
             return txId;
@@ -150,6 +152,10 @@ const fakeChain = ({ utxos } = {}) => {
         // the tip moves on by `slots`
         advance: slots => {
             tip.slot += slots;
+        },
+        // `count` empty blocks come on top (the tip's slot stays: no validity runs out)
+        addBlocks: count => {
+            tip.block += count;
         },
         // something else spends the UTxO `ref` ('txid#index')
         spend: ref => {
@@ -204,11 +210,12 @@ describe('the end-to-end script', () => {
         runDir,
         ...extra,
     ];
-    // a run as the script runs (runMain: what reaches stdout and stderr, and the exit code)
-    const run = async ({ client, argv = argvOf(), env = ENV, deploymentFile = files.deployment } = {}) => {
+    // a run as the script runs (runMain: what reaches stdout and stderr, and the exit code); while
+    // it waits (`sleep`) a block comes, so the burns get deep enough for step 7
+    const run = async ({ client, argv = argvOf(), env = ENV, deploymentFile = files.deployment, sleep = async () => client?.addBlocks?.(1) } = {}) => {
         const out = [];
         const err = [];
-        const code = await runMain(e2e.main, { argv, env, out: line => out.push(line), err: line => err.push(line), client, deploymentFile, sleep: async () => {}, now: () => new Date('2026-11-15T12:00:00Z') });
+        const code = await runMain(e2e.main, { argv, env, out: line => out.push(line), err: line => err.push(line), client, deploymentFile, sleep, now: () => new Date('2026-11-15T12:00:00Z') });
         return { code, out, err, output: out.join('\n'), error: err.join('\n') };
     };
     const stateOf = () => JSON.parse(fs.readFileSync(path.join(files.runDir, e2e.STATE_FILE), 'utf8'));
@@ -256,6 +263,30 @@ describe('the end-to-end script', () => {
         expect(result.output).toMatch(/step 6b +ok {2}the body requires no signer and carries only player A's witness: the validator let the holder burn alone/);
         expect(result.output).toMatch(new RegExp(`step 2 +ok  the mint's body names the server key ${server.keyHash} as a required signer and carries only player A's witness`));
 
+        // step 7: what the server's credit step asks of the chain before it credits a burned item,
+        // for both burns once the later one is CHAIN_K_FINAL (10 when not set) blocks deep
+        const burnBlock = TIP.block + 3;
+        const holderBurnBlock = TIP.block + 5;
+        expect(stateOf().steps.credit).toEqual({
+            status: 'passed',
+            kFinal: 10,
+            tip: holderBurnBlock + 10,
+            burns: [
+                { step: 'burn', txId: burn.txId, block: burnBlock, depth: 12 },
+                { step: 'holderBurn', txId: holderBurn.txId, block: holderBurnBlock, depth: 10 },
+            ],
+        });
+        expect(result.output).toMatch(new RegExp(`step 7 +waiting until the tip reaches block ${holderBurnBlock + 10}, 10 blocks past the later burn \\(it is at block ${holderBurnBlock}`));
+        expect(result.output).toMatch(new RegExp(`step 7 +ok  the burn of step 5 \\(tx ${burn.txId}\\) is 12 blocks deep in block ${burnBlock} \\(the tip is at block ${holderBurnBlock + 10}\\): the server credits a burn from 10 on`));
+        expect(result.output).toMatch(new RegExp(`step 7 +ok  the burn of step 6b \\(tx ${holderBurn.txId}\\) is 10 blocks deep in block ${holderBurnBlock}`));
+        expect(result.output).toMatch(
+            new RegExp(`step 7 +ok  the provider sees the user token of step 5's item nowhere: the server's credit step gives its ingredients for player B's stake key ${B.stakeKeyHash} to the player then linked to that stake key, or to nobody when it is linked to no player`)
+        );
+        expect(result.output).toMatch(
+            new RegExp(`step 7 +ok  the provider sees the user token of step 6b's item nowhere: the server's credit step gives its ingredients for player A's stake key ${A.stakeKeyHash} to the player then linked to that stake key, or to nobody when it is linked to no player`)
+        );
+        expect(result.output).toMatch(/step 7 +the credit itself \(the ingredients in the player's pantry\) needs the server and its index: check it in the game/);
+
         // in the end no token of the policy is left, and the treasury holds the two RARE fees
         expect(itemTokensOn(ledger)).toEqual([]);
         const treasury = ledger.set().filter(entry => Address.toBech32(entry.address) === contracts.treasuryAddress);
@@ -269,13 +300,13 @@ describe('the end-to-end script', () => {
             expect(result.output).toContain(`tx ${txId}  submitted, not yet confirmed  https://preprod.cardanoscan.io/transaction/${txId}`);
         }
         expect(result.output).toMatch(/step 2 +passed: the node refused it for the missing signature of the server key/);
-        for (const step of ['3', '4', '5', '6a', '6b']) {
+        for (const step of ['3', '4', '5', '6a', '6b', '7']) {
             expect(result.output).toMatch(new RegExp(`step ${step} +passed`));
         }
 
         // the summary: every step, the fees the chain charged beside the estimates, the treasury output
         const summary = result.output.slice(result.output.indexOf('summary'));
-        for (const step of ['1', '2', '3', '4', '5', '6a', '6b']) {
+        for (const step of ['1', '2', '3', '4', '5', '6a', '6b', '7']) {
             expect(summary).toMatch(new RegExp(`step ${step} +passed`));
         }
         const feeOf = cbor => Number(decoded(cbor).body.fee);
@@ -301,6 +332,7 @@ describe('the end-to-end script', () => {
             burn: 'passed',
             mint2: 'passed',
             holderBurn: 'passed',
+            credit: 'passed',
         });
         noSecretIn(result.output + result.error + fs.readFileSync(path.join(files.runDir, e2e.STATE_FILE), 'utf8'));
     });
@@ -744,6 +776,70 @@ describe('the end-to-end script', () => {
         expect(fs.readFileSync(path.join(files.runDir, e2e.STATE_FILE), 'utf8')).toBe(state);
     });
 
+    test('step 7 waits until both burns are CHAIN_K_FINAL deep; a run that stops there resumes and builds nothing new', async () => {
+        const ledger = fakeChain();
+        const env = { ...ENV, CHAIN_K_FINAL: '3' };
+        // no block comes while it waits
+        const stopped = await run({ client: ledger, env, sleep: async () => {} });
+        expect(stopped.code).toBe(1);
+        expect(kindsOf(ledger)).toEqual(['mint', 'transfer', 'burn', 'mint', 'burn']);
+        const tip = ledger.tipNow.block;
+        expect(stopped.error).toMatch(
+            new RegExp(`step 7 stops: the tip is at block ${tip}, and both burns are 3 blocks deep at block ${tip + 3}: run the script again later \\(the same --run-dir\\); it builds nothing new`)
+        );
+        expect(stateOf().steps.credit).toEqual({ status: 'waiting', kFinal: 3, due: tip + 3 });
+        expect(stopped.output).toMatch(/step 7 +waiting, not passed/);
+        expect(stopped.output).toMatch(/result: 1 of 8 steps did not pass/);
+
+        // a dry run says what it waits for, and writes nothing
+        const written = fs.readFileSync(path.join(files.runDir, e2e.STATE_FILE), 'utf8');
+        const dry = await run({ client: ledger, env, argv: argvOf({ extra: ['--dry-run'] }), sleep: async () => {} });
+        expect(dry.code).toBe(0);
+        expect(dry.output).toMatch(new RegExp(`dry run: step 7 waits until the tip reaches block ${tip + 3} \\(it is at block ${tip}\\); a run waits for it`));
+        expect(fs.readFileSync(path.join(files.runDir, e2e.STATE_FILE), 'utf8')).toBe(written);
+
+        let submits = 0;
+        const resumed = await run({ client: { ...ledger, submit: async cbor => (submits++, ledger.take(cbor)) }, env });
+        expect(resumed.code).toBe(0);
+        expect(submits).toBe(0);
+        expect(resumed.output).toMatch(/step 7 +ok {2}the burn of step 6b \(tx [0-9a-f]{64}\) is 3 blocks deep/);
+        expect(stateOf().steps.credit).toMatchObject({ status: 'passed', kFinal: 3, tip: tip + 3 });
+        expect(resumed.out.at(-1)).toBe('result: every step passed');
+    });
+
+    test.each([
+        [
+            'the provider still sees the user token of a burned item',
+            ({ ledger, steps }) => ({
+                ...ledger,
+                utxoByUnit: async unit =>
+                    unit === policyId + steps.burn.assetName.user ? utxo({ address: B.address, lovelace: 1_300_000n, tokens: { [unit]: 1n }, txId: 'e7'.repeat(32), index: 0 }) : ledger.utxoByUnit(unit),
+            }),
+            () => `the provider still sees the user token of step 5's item in ${'e7'.repeat(32)}#0: the server credits nothing while it does`,
+        ],
+        [
+            'a burn is in no block any more (rolled back)',
+            ({ ledger, steps }) => ({ ...ledger, blockOf: async txId => (txId === steps.holderBurn.txId ? null : ledger.blockOf(txId)) }),
+            steps => `the burn of step 6b (tx ${steps.holderBurn.txId}) is in no block now: rolled back; the server credits a burn only once it is 10 blocks deep`,
+        ],
+    ])('step 7 fails when %s; the rerun judges it again and builds nothing new', async (_name, faulty, reason) => {
+        const ledger = fakeChain();
+        expect((await run({ client: ledger, sleep: async () => {} })).code).toBe(1);
+        const { steps } = stateOf();
+        const failed = await run({ client: faulty({ ledger, steps }) });
+        expect(failed.code).toBe(1);
+        const text = reason(steps).replace(/[()]/g, '\\$&');
+        expect(failed.output).toMatch(new RegExp(`step 7 +NOT  ${text}`));
+        expect(failed.error).toMatch(new RegExp(`step 7 failed: ${text}\\. A rerun judges it again \\(it builds nothing new\\)`));
+        expect(stateOf().steps.credit.status).toBe('failed');
+
+        let submits = 0;
+        const again = await run({ client: { ...ledger, submit: async cbor => (submits++, ledger.take(cbor)) } });
+        expect(again.code).toBe(0);
+        expect(submits).toBe(0);
+        expect(stateOf().steps.credit.status).toBe('passed');
+    });
+
     test('a step whose verdict fails stops the run with exit code 1; the rerun judges it again and builds nothing new', async () => {
         const ledger = fakeChain();
         // the treasury's output of the mint is not where the config says: the chain shows none
@@ -805,6 +901,13 @@ describe('the end-to-end script', () => {
             const result = await run({ client: untouched(), env: { ...ENV, CARDANO_NETWORK } });
             expect(result.code).toBe(1);
             expect(result.error).toMatch(/CARDANO_NETWORK must be preprod/);
+            expect(result.out).toEqual([]);
+        });
+
+        test.each(['0', '2161', '1.5', 'ten', '-1', ' 10'])('CHAIN_K_FINAL %p', async CHAIN_K_FINAL => {
+            const result = await run({ client: untouched(), env: { ...ENV, CHAIN_K_FINAL } });
+            expect(result.code).toBe(1);
+            expect(result.error).toMatch(/CHAIN_K_FINAL must be a whole number from 1 to 2160 \(the server's value\), or not set \(10\)/);
             expect(result.out).toEqual([]);
         });
 

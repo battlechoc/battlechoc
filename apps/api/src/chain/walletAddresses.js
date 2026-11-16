@@ -4,7 +4,8 @@
 // and a player's stake key, and every mint of that player would be built for them (and could
 // never be signed). Only the player's wallet can say which addresses are its own: CIP-30's
 // getChangeAddress, getUsedAddresses and getUnusedAddresses, hex-encoded. A mint built from them
-// spends and pays to those addresses only. Named under the player's session (POST /chain/mint) the
+// spends and pays to those addresses only (a burn of plan E the same, with a proof text of its
+// own). Named under the player's session (POST /chain/mint, POST /chain/burn) the
 // list counts as the player's; named with a sign code alone (the sign page), the subject's key must
 // sign for it: CIP-30 signData of the payload below, checked as the wallet sign-in checks it.
 
@@ -93,11 +94,17 @@ const utxosAtWallet = (utxos, wallet) => {
 /**
  * What the subject's key signs to vouch for `addresses` (the list exactly as the request sent it)
  * for the prepared operation `op` of the item `item` ({ item, serial }) on `network`: { text (shared
- * cardano.addressProofMessage's, the only way it is built), payload (its UTF-8 bytes as hex, what
- * CIP-30 signData takes) }. Its first line is no challenge's, and the sign-in's verifier refuses it.
+ * cardano.addressProofMessage's, the only way it is built, of the purpose of the operation's kind:
+ * a mint's or a burn's proof), payload (its UTF-8 bytes as hex, what CIP-30 signData takes) }. Its
+ * first line is no challenge's, and the sign-in's verifier refuses it. A TypeError for an
+ * operation of another kind.
  */
 const addressesPayloadOf = ({ op, item, addresses, network }) => {
+    if (!cardano.AddressProofPurpose.includes(op.kind)) {
+        throw new TypeError(`addressesPayloadOf: no address proof for an operation of kind ${op.kind}`);
+    }
     const text = cardano.addressProofMessage({
+        purpose: op.kind,
         domain: PROOF_DOMAIN,
         network,
         operationId: op.id,
@@ -124,7 +131,7 @@ const invalidProof = () => new HttpError(400, ErrorCode.INVALID_SIGNATURE);
  * another address, another text).
  */
 const checkAddressesProof = ({ proof, text, subject, network }) => {
-    if (cardano.addressProofOf(text) === null) {
+    if (cardano.readAddressProof(text) === null) {
         throw new TypeError('checkAddressesProof: the text is no address proof (addressesPayloadOf)');
     }
     const { signature, key } = proof !== null && typeof proof === 'object' ? proof : {};

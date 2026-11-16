@@ -4,7 +4,8 @@
 //   node apps/api/scripts/chain/e2e.js \
 //     --player-a <words file> --player-b <words file> --server-key <file> --run-dir <dir> [--dry-run]
 //   (Koios's public tier needs no key; with CHAIN_PROVIDER_KIND=blockfrost, CHAIN_PROVIDER_URL is
-//   Blockfrost's and CHAIN_PROVIDER_KEY its project id: lib.js providerFromEnv)
+//   Blockfrost's and CHAIN_PROVIDER_KEY its project id: lib.js providerFromEnv; CHAIN_K_FINAL, the
+//   server's value, is the depth step 7 waits for, 10 when it is not set)
 //
 // It proves on the real chain what the offline tests prove locally, with tx.js used as the API
 // uses it (the server builds, the player's wallet signs, verifyWitness takes its witness set, the
@@ -26,7 +27,14 @@
 //      sign it; both tokens gone, the store's ADA at B
 //   6  a second mint for A, then a burn by A alone: no other signer required, only A's witness;
 //      the validator lets the holder burn
-//   7  a summary to paste: each step, its transaction, the fees and deposits the chain charged
+//   7  what the server's credit step (apps/api/src/chain/credit.js, minting plan E) asks of the
+//      chain before it credits a burned item, for both burns (the game's and the holder's own, which
+//      the server credits the same way): once the later one is CHAIN_K_FINAL blocks deep, each burn
+//      is still in a block that deep, and the provider sees its user token nowhere (the server
+//      never credits on its index alone). The credit itself, the ingredients in the pantry of the
+//      player then linked to the holder's stake key, needs the server and its index: the owner
+//      checks it in the game
+//   8  a summary to paste: each step, its transaction, the fees and deposits the chain charged
 //      beside the estimates of packages/shared/chain.js, and the treasury's fee output
 //
 // Each step says what it is about to do, prints its transaction id once submitted ("submitted,
@@ -41,9 +49,10 @@
 // recorded attempts landed after all (it is taken as the step's transaction) or something else
 // spent it (the run stops). So it never mints a second item by accident. A refused submit (a 4xx
 // of the provider) reached nothing and is built anew. The ids of the transactions a step
-// replaced stay in its record (`replaced`). For a new run, name a new --run-dir. --dry-run reads the
-// chain and builds the next transaction, shows it, and stops before the first submit; it writes
-// nothing.
+// replaced stay in its record (`replaced`). Step 7 waits for blocks (about 20 s each) up to a
+// bound and otherwise stops; a rerun waits again. For a new run, name a new --run-dir. --dry-run
+// reads the chain and builds the next transaction, shows it, and stops before the first submit; it
+// writes nothing.
 
 const fs = require('fs');
 const path = require('path');
@@ -77,6 +86,17 @@ const ITEM = 'DARK_WALLS';
 // by then a block that held it would long be known to the provider.
 const EXPIRY_MARGIN_SLOTS = 120;
 
+// The depth from which the server credits a burn (CHAIN_K_FINAL, as the API reads it: a whole
+// number from 1 to K_FINAL_MAX), and the value deploy/README.md recommends on preprod, which step 7
+// takes when CHAIN_K_FINAL is not set
+const K_FINAL_MAX = 2160;
+const K_FINAL_PREPROD = 10;
+
+// A block every 20 s or so: step 7 looks at the tip that often, and waits at most twice the time
+// its blocks take, plus two minutes, but never more than half an hour
+const BLOCK_MS = 20_000;
+const creditWaitMs = kFinal => Math.min((2 * kFinal + 6) * BLOCK_MS, 30 * 60_000);
+
 const explorerUrl = txId => `https://preprod.cardanoscan.io/transaction/${txId}`;
 
 // The steps in order: their key in the state, their label and what they do
@@ -88,6 +108,7 @@ const STEPS = [
     ['burn', 'step 5', "the game's burn for B: the server a required signer, signed by B and the server"],
     ['mint2', 'step 6a', 'a second mint for player A'],
     ['holderBurn', 'step 6b', "a burn by player A alone: no other signer required, only A's witness"],
+    ['credit', 'step 7', "what the server's credit asks of the chain: both burns CHAIN_K_FINAL deep, no user token left"],
 ];
 const LABEL = Object.fromEntries(STEPS.map(([id, label]) => [id, label]));
 const TITLE = Object.fromEntries(STEPS.map(([id, , title]) => [id, title]));
@@ -402,6 +423,42 @@ const burnVerdict = ({ record, reads: { userHolder, store, backOutputs }, server
             : { passed: false, text: `the holder's outputs of this transaction hold ${back} lovelace, not ${record.back} (what it spent with the store's ${record.deposits.reference}, less the fee)` };
     return verdictOf([signers, gone, returned]);
 };
+
+/**
+ * Step 7's verdict, once the tip `tip` ({ block }) is `kFinal` blocks past the later burn, on the
+ * burns `burns` ([{ id (the burn's step), record (its state), player (whose stake key held the
+ * token), block (the block the provider has it in now, null in none), userHolder (the UTxO the
+ * provider names for its user token, if any) }]): what the server's credit step asks of the chain
+ * before it credits a burned item. Each burn is in a block `kFinal` or more deep (one rolled back,
+ * or moved into a later block, is not credited yet), and the provider sees its user token nowhere
+ * (the server never credits on its index alone). The credit goes to the player linked to the
+ * holder's stake key when the server makes it; that is the server's to know, so the text names the
+ * key and checks nothing of it.
+ */
+const creditVerdict = ({ burns, tip, kFinal }) =>
+    verdictOf(
+        burns.flatMap(({ id, record, player, block, userHolder }) => {
+            const burn = `the burn of ${LABEL[id]} (tx ${record.txId})`;
+            const depth = block === null || block === undefined ? null : tip.block - block;
+            let deep;
+            if (depth === null) {
+                deep = { passed: false, text: `${burn} is in no block now: rolled back; the server credits a burn only once it is ${kFinal} blocks deep` };
+            } else {
+                const where = `${depth} blocks deep in block ${block} (the tip is at block ${tip.block})`;
+                deep =
+                    depth >= kFinal
+                        ? { passed: true, text: `${burn} is ${where}: the server credits a burn from ${kFinal} on` }
+                        : { passed: false, text: `${burn} is only ${where}: the server credits it from ${kFinal} on` };
+            }
+            const gone = userHolder
+                ? { passed: false, text: `the provider still sees the user token of ${LABEL[id]}'s item in ${outRef(userHolder)}: the server credits nothing while it does` }
+                : {
+                      passed: true,
+                      text: `the provider sees the user token of ${LABEL[id]}'s item nowhere: the server's credit step gives its ingredients for player ${player.name}'s stake key ${player.stakeKeyHash} to the player then linked to that stake key, or to nobody when it is linked to no player`,
+                  };
+            return [deep, gone];
+        })
+    );
 
 /**
  * What became of a submitted transaction valid until slot `ttl`: { landed: block } in a block,
@@ -923,6 +980,80 @@ const burnStep = (ctx, id, holder, { from, serverSigns }) =>
         },
     });
 
+// The tip, asked of `client` every `interval` ms until it is at block `block` or `timeout` ms have
+// passed (then the last one)
+const waitForTip = async ({ client, block, timeout, interval = BLOCK_MS, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)) }) => {
+    for (let waited = 0; ; waited += interval) {
+        const tip = await client.tip();
+        if (tip.block >= block || waited + interval > timeout) {
+            return tip;
+        }
+        await sleep(interval);
+    }
+};
+
+// Step 7: the burns of steps 5 and 6b as the server's credit step judges them (creditVerdict),
+// once the later one is CHAIN_K_FINAL blocks deep. It submits nothing; a step that did not pass is
+// judged again by a rerun. A tip that does not get there within creditWaitMs stops the run (a
+// rerun waits again).
+const CREDITED = [
+    ['burn', 'b'],
+    ['holderBurn', 'a'],
+];
+const creditStep = async ctx => {
+    const { client, contracts, log, state, save, sleep, kFinal, players } = ctx;
+    const label = LABEL.credit;
+    if (state.steps.credit?.status === 'passed') {
+        log(line(label, 'passed already'));
+        return;
+    }
+    log(line(label, `${TITLE.credit} (CHAIN_K_FINAL ${kFinal})`));
+    const burns = CREDITED.map(([id, player]) => ({ id, record: state.steps[id], player: players[player] }));
+    const due = Math.max(...burns.map(({ record }) => record.block)) + kFinal;
+    let tip = await client.tip();
+    if (tip.block < due) {
+        if (ctx.dryRun) {
+            log(`dry run: ${label} waits until the tip reaches block ${due} (it is at block ${tip.block}); a run waits for it`);
+            throw new DryRunStop();
+        }
+        const timeout = creditWaitMs(kFinal);
+        log(line(label, `waiting until the tip reaches block ${due}, ${kFinal} blocks past the later burn (it is at block ${tip.block}; up to ${Math.ceil(timeout / 60_000)} minutes) …`));
+        tip = await waitForTip({ client, block: due, timeout, ...(sleep ? { sleep } : {}) });
+        if (tip.block < due) {
+            state.steps.credit = { status: 'waiting', kFinal, due };
+            save();
+            throw new ScriptError(
+                `${label} stops: the tip is at block ${tip.block}, and both burns are ${kFinal} blocks deep at block ${due}: run the script again later (the same --run-dir); it builds nothing new`
+            );
+        }
+    }
+    const reads = await Promise.all(
+        burns.map(async burn => ({
+            ...burn,
+            block: await client.blockOf(burn.record.txId),
+            userHolder: await client.utxoByUnit(contracts.policyId + burn.record.assetName.user),
+        }))
+    );
+    const { checks, passed } = creditVerdict({ burns: reads, tip, kFinal });
+    for (const check of checks) {
+        log(line(label, `${check.passed ? 'ok' : 'NOT'}  ${check.text}`));
+    }
+    state.steps.credit = {
+        status: passed ? 'passed' : 'failed',
+        kFinal,
+        tip: tip.block,
+        burns: reads.map(({ id, record, block }) => ({ step: id, txId: record.txId, block: block ?? null, depth: block === null || block === undefined ? null : tip.block - block })),
+    };
+    save();
+    if (!passed) {
+        const reason = checks.find(check => !check.passed).text;
+        log(line(label, `failed: ${reason}`));
+        throw new ScriptError(`${label} failed: ${reason}. A rerun judges it again (it builds nothing new)`);
+    }
+    log(line(label, "the credit itself (the ingredients in the player's pantry) needs the server and its index: check it in the game"));
+    log(line(label, 'passed'));
+};
+
 const runSteps = async ctx => {
     const { players } = ctx;
     await mintStep(ctx, 'mint', players.a, { unsigned: true });
@@ -930,6 +1061,7 @@ const runSteps = async ctx => {
     await burnStep(ctx, 'burn', players.b, { from: 'mint', serverSigns: true });
     await mintStep(ctx, 'mint2', players.a, { unsigned: false });
     await burnStep(ctx, 'holderBurn', players.a, { from: 'mint2', serverSigns: false });
+    await creditStep(ctx);
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -961,6 +1093,20 @@ const liveContracts = async ({ client, blueprint, deployment, deploymentFile, ne
     return contracts;
 };
 
+// CHAIN_K_FINAL as the API reads it (a whole number from 1 to K_FINAL_MAX), K_FINAL_PREPROD when
+// it is not set
+const kFinalOf = env => {
+    const value = env.CHAIN_K_FINAL;
+    if (value === undefined || value === '') {
+        return K_FINAL_PREPROD;
+    }
+    const kFinal = Number(value);
+    if (!/^\d+$/.test(value) || kFinal < 1 || kFinal > K_FINAL_MAX) {
+        throw new ScriptError(`CHAIN_K_FINAL must be a whole number from 1 to ${K_FINAL_MAX} (the server's value), or not set (${K_FINAL_PREPROD})`);
+    }
+    return kFinal;
+};
+
 /**
  * The script: `argv` and `env` as above; `client` (providerFromEnv's shape) and the other
  * arguments are for the tests.
@@ -972,6 +1118,7 @@ const main = async ({ argv, env, log, client, deploymentFile = DEPLOYMENT_FILE, 
         throw new ScriptError(USAGE);
     }
     const dryRun = args['dry-run'];
+    const kFinal = kFinalOf(env);
     if (!fs.existsSync(deploymentFile)) {
         throw new ScriptError(`no deployment record at ${deploymentFile}: deploy first (deploy.js), and confirm it`);
     }
@@ -1031,6 +1178,7 @@ const main = async ({ argv, env, log, client, deploymentFile = DEPLOYMENT_FILE, 
         state,
         save,
         dryRun,
+        kFinal,
         // a dry run stops before the first submit, with the transaction shown
         gate: (label, cbor) => {
             if (dryRun) {
@@ -1071,6 +1219,7 @@ module.exports = {
     mintVerdict,
     transferVerdict,
     burnVerdict,
+    creditVerdict,
     fateOf,
     summaryOf,
     main,

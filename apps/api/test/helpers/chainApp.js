@@ -67,12 +67,13 @@ const loadedFixtureKey = label => {
  *   so setConfig shows at once; production's is CONFIG_TTL_MS, a minute);
  * - `configByNft`: false finds the config by CHAIN_CONFIG_REF alone (production without
  *   CHAIN_CONFIG_POLICY_ID): the reference of the first config UTxO, which setConfig spends;
- * - `steps`: the watcher's steps before the ownership step (which runs last, as in server.js);
+ * - `steps`: the watcher's steps before the ownership step; `stepsAfter`: those after it (server.js
+ *   runs [operationsStep, ownershipStep, credit]);
  * - `describeTx`: how the double reads a submitted transaction that is not JSON (default: the
  *   real CBOR reader);
  * - `serverKey`: the server's key on the chain (default loadedFixtureKey('server'), which the
  *   config lists; loadedFixtureKey('stranger') is one it does not);
- * - anything else goes to createApp (e.g. `chainPerMinute`; `chainMintsPerMinute`, default 1000).
+ * - anything else goes to createApp (e.g. `chainPerMinute`; `chainMintsPerMinute` and `chainBurnsPerMinute`, default 1000).
  *
  * Resolves with createTestApp's { app, pool, db, auth, push, sent } and: `deployment`
  * (chainDeployment.js createDeployedChain's, whose double and config these are), `double`, `chain` (as
@@ -86,7 +87,7 @@ const loadedFixtureKey = label => {
  * `fund(keys, lovelace)`, `matches(playerId, count)`, `giveItem(playerId, itemKey)`.
  */
 const createChainApp = async ({
-    start = T0, fees, paused = false, config = true, configTtlMs = 0, configByNft = true, steps = [], describeTx = describeCborTx, serverKey = loadedFixtureKey('server'),
+    start = T0, fees, paused = false, config = true, configTtlMs = 0, configByNft = true, steps = [], stepsAfter = [], describeTx = describeCborTx, serverKey = loadedFixtureKey('server'),
     chainLog = silentLog(), ...options
 } = {}) => {
     let clock = start;
@@ -115,9 +116,9 @@ const createChainApp = async ({
         serverKey,
     });
     const configReader = createConfigReader({ chain, ttlMs: configTtlMs, now });
-    const env = await createTestApp({ cardanoNetwork: preprod, now, chain, chainConfig: configReader, chainPerMinute: 1000, chainAddressPerMinute: 1000, chainPlayerPerMinute: 1000, chainMintsPerMinute: 1000, chainRebuildsPerMinute: 1000, chainLog, ...options });
+    const env = await createTestApp({ cardanoNetwork: preprod, now, chain, chainConfig: configReader, chainPerMinute: 1000, chainAddressPerMinute: 1000, chainPlayerPerMinute: 1000, chainMintsPerMinute: 1000, chainBurnsPerMinute: 1000, chainRebuildsPerMinute: 1000, chainLog, ...options });
     const log = silentLog();
-    const watcher = createWatcher({ chain, pool: env.pool, steps: [...steps, ownershipStep], intervalMs: 20000, now, log });
+    const watcher = createWatcher({ chain, pool: env.pool, steps: [...steps, ownershipStep, ...stepsAfter], intervalMs: 20000, now, log });
 
     /**
      * Links `keys` to `account` by its stake key, as connecting the CIP-30 wallet `wallet` does

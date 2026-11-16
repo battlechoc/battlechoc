@@ -1,12 +1,4 @@
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createUseStyles } from "react-jss";
 import { dialogSheet, DONE_ICON } from "./mintSheets";
 import {
@@ -18,22 +10,18 @@ import Dialog from "../dialogs/Dialog";
 import Button from "../controls/Button";
 import ItemIcon from "../lab/ItemIcon";
 import { itemName } from "../lab/itemText";
-import { scrollCue } from "../lab/itemActions";
-import { injectedWalletKeys } from "../../cardano/walletList";
+import { injectedKey, signingHere } from "./signingHere";
+import { fadeMask, useScrollCue } from "./useScrollCue";
 import { networkLabel } from "../account/safetyState";
 import { chainApi } from "../../api/chain";
 import {
   features,
   keyStore,
-  signPageUrl,
-  signPrepared,
   subjectOfWords,
   walletAddresses,
-  walletApiOf,
 } from "../../cardano";
 import OfflineStore from "../../OfflineStore";
 import logger from "../../helper/logger";
-import { loadChunk } from "../../helper/loadChunk";
 import {
   canCancel,
   canContinue,
@@ -45,26 +33,25 @@ import {
   initialState,
   mintFlow,
   mintRequest,
-  noSigning,
+  walletStepView,
   pollTarget,
   signWindow,
   walletTextKey,
 } from "./mintFlow";
-import { formatAda } from "./ada";
-import { following, pollOperation } from "./operationPoll";
+import { adaText, MINUS } from "./ada";
+import { following } from "./operationPoll";
+import { signOperation, useOperationPoll, useSignCode } from "./operationHooks";
+import { useFlow } from "./useFlow";
+import { ProblemBox, SignDoor } from "./FlowParts";
 import { MINT_EXPLAINED } from "./mintSettings";
 import { held } from "./held";
-import { dropCode, keepCode, onCode, readCode } from "./signCodes";
+import { keepCode, readCode } from "./signCodes";
 import { MINT_LOOK } from "./mintLook";
 import { say } from "./mintText";
 import MintChecklist from "./MintChecklist";
 import MintCosts from "./MintCosts";
 import MintConnect from "./MintConnect";
 import useSignClock from "./useSignClock";
-
-// the wallet door (plan 3), for a signature with a wallet this browser did not inject: not
-// precached, so asked for again until it arrives (a lost request never throws into the Hud)
-const WalletDoor = lazy(loadChunk(() => import("../account/WalletDoor")));
 
 // The minting dialog (the owner's mockup, board 1): explain, the checklist, the costs, "your
 // wallet opens now", the signature, minting, minted, or nothing happened. The flow's state and
@@ -80,23 +67,6 @@ const RUNNING = ["prepared", "submitted"];
 
 const useStyles = createUseStyles(dialogSheet);
 
-// how far the scroll area's edge fades where more of the step is beyond it
-const FADE = "2em";
-
-// the mask that fades the scroll area's edges with more beyond them (none when all is in view)
-const fadeMask = ({ above, below }) => {
-  if (above && below) {
-    return `linear-gradient(to bottom, transparent, #000 ${FADE}, #000 calc(100% - ${FADE}), transparent)`;
-  }
-  if (below) {
-    return `linear-gradient(to bottom, #000 calc(100% - ${FADE}), transparent)`;
-  }
-  if (above) {
-    return `linear-gradient(to top, #000 calc(100% - ${FADE}), transparent)`;
-  }
-  return undefined;
-};
-
 // the readiness entry of the wallet the flow mints to (its CIP-30 `name`), or null
 const pickedEntry = (state) => {
   const request = mintRequest(state);
@@ -111,35 +81,7 @@ const pickedEntry = (state) => {
 };
 
 // the CIP-30 name of `entry` when this browser injected that wallet, else null
-const injectedName = (entry) => {
-  try {
-    const wallet =
-      entry && typeof entry.name === "string" && window.cardano
-        ? window.cardano[entry.name]
-        : null;
-    return wallet && typeof wallet.enable === "function" ? entry.name : null;
-  } catch {
-    return null;
-  }
-};
-
-// what this device can sign with (the flow's `here`): the wallets this browser injected, and
-// whether it opens a phone's wallet app (the wallet door's paths, which never sign through the QR
-// code)
-const signingHere = () => {
-  let wallets;
-  try {
-    wallets = injectedWalletKeys(window.cardano);
-  } catch {
-    wallets = [];
-  }
-  return {
-    wallets,
-    deeplink: features
-      .walletPaths({ injected: wallets.length > 0 })
-      .has("deeplink"),
-  };
-};
+const injectedName = (entry) => injectedKey(entry ? entry.name : null);
 
 // the costs of the state, nothing for amounts an older API sent in another form
 const safeCosts = (state) => {
@@ -150,16 +92,11 @@ const safeCosts = (state) => {
   }
 };
 
-const amount = (lovelace, exact) => {
+// an amount as the wallet box shows it (adaText; `options`: round, given); nothing for one an
+// older API sent in another form
+const amount = (lovelace, exact, options = {}) => {
   try {
-    const shown = formatAda(
-      lovelace,
-      getCurrentLanguage(),
-      exact ? { exact } : {}
-    );
-    return exact
-      ? t(tr.MINT_AMOUNT, shown, "ADA")
-      : t(tr.MINT_ABOUT, shown, "ADA");
+    return adaText(lovelace, getCurrentLanguage(), { ...options, exact });
   } catch {
     return "";
   }
@@ -199,26 +136,10 @@ const MintFlow = ({
   onPhase = () => {},
 }) => {
   const classes = useStyles();
-  const [state, setState] = useState(null);
-  const current = useRef(null);
-  const alive = useRef(true);
-  const wallet = useRef({ name: null, api: null });
-  const [door, setDoor] = useState(false);
+  // the flow, driven as the salvage's is (useFlow.js): its state, the wallet's api, the door
+  const flow = useFlow(mintFlow);
+  const { state, current, alive, send, apiOf, door, setDoor } = flow;
   const [connecting, setConnecting] = useState(false);
-
-  // every event goes through the flow; the new state is known at once (the effects read it)
-  const send = useCallback((event) => {
-    const before = current.current;
-    if (!alive.current || !before) {
-      return before;
-    }
-    const next = mintFlow(before, event);
-    if (next !== before) {
-      current.current = next;
-      setState(next);
-    }
-    return next;
-  }, []);
 
   const askReadiness = useCallback(() => {
     const before = current.current;
@@ -230,12 +151,11 @@ const MintFlow = ({
       (answer) => send({ type: "readiness", answer, itemId: item.id }),
       (failure) => send({ type: "problem", failure, during: "readiness" })
     );
-  }, [item.id, send]);
+  }, [current, item.id, send]);
 
   // the first state: the explainer read before, this device's own key (never a mint target),
   // this tab's sign code of the item's operation; then the readiness
   useEffect(() => {
-    alive.current = true;
     // this run's own end (a second run of the effect never sees the first one's answers)
     let gone = false;
     const close = following.openDialog();
@@ -263,13 +183,11 @@ const MintFlow = ({
         wordsSubject,
         here: signingHere(),
       });
-      current.current = first;
-      setState(first);
+      flow.begin(first);
       askReadiness();
     })();
     return () => {
       gone = true;
-      alive.current = false;
       close();
     };
     // the dialog is made anew for each item
@@ -290,27 +208,7 @@ const MintFlow = ({
   }, [needsReadiness, askReadiness]);
 
   // one place polls an operation: the dialog while it shows it
-  const target = state ? pollTarget(state) : null;
-  useEffect(() => {
-    if (!target) {
-      return undefined;
-    }
-    const release = following.hold(target);
-    const stop = pollOperation({
-      fetch: () => held(chainApi.operation(target)),
-      onAnswer: (operation) => {
-        following.note(operation);
-        send({ type: "operation", operation });
-      },
-      onFailure: (failure) =>
-        send({ type: "problem", failure, during: "operation" }),
-      ended: (operation) => !operation || !RUNNING.includes(operation.state),
-    });
-    return () => {
-      stop();
-      release();
-    };
-  }, [target, send]);
+  useOperationPoll(state ? pollTarget(state) : null, send);
 
   // the item's mark changes with its operation: the stats are read again
   const operationState =
@@ -322,59 +220,9 @@ const MintFlow = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [operationState]);
 
-  // this tab's sign code lives as long as the flow holds it: dropped when the flow lets go of it
-  // (signed, ended, no longer taken, or the flow left the operation), kept when the dialog closes
-  const signCode = state ? state.signCode : null;
-  const operationId = state ? state.operationId : null;
-  const heldCode = useRef(null);
-  useEffect(() => {
-    const holding = signCode && operationId ? operationId : null;
-    if (heldCode.current && heldCode.current !== holding) {
-      dropCode(heldCode.current);
-    }
-    heldCode.current = holding;
-  }, [signCode, operationId]);
-
-  // an operation learned without its code (the dialog was closed while Mint now was out, then
-  // opened again; Mint now's answer came after the dialog stopped waiting for it): this tab may
-  // have kept it, or keeps it when that answer arrives
-  const learned =
-    state && state.operation && state.operation.state === "prepared"
-      ? state.operation.id
-      : null;
-  useEffect(() => {
-    if (!learned || signCode) {
-      return undefined;
-    }
-    const code = readCode(learned);
-    if (code) {
-      send({ type: "signCode", operationId: learned, signCode: code });
-      return undefined;
-    }
-    return onCode((id, kept) => {
-      if (id === learned) {
-        send({ type: "signCode", operationId: id, signCode: kept });
-      }
-    });
-  }, [learned, signCode, send]);
-
-  // the wallet door belongs to the wallet step and its sign code: it never stays open (nor opens
-  // again by itself on a later operation) once the step moves on or the code is gone (the poll
-  // ended the operation, another tab cancelled it)
-  const doorStep = state ? state.step : null;
-  useEffect(() => {
-    if (door && !(doorStep === "wallet" && signCode)) {
-      setDoor(false);
-    }
-  }, [door, doorStep, signCode]);
-
-  // a problem that asks for a new connection: the wallet's api is asked for anew
-  const problem = state ? state.problem : null;
-  useEffect(() => {
-    if (problem && problem.reconnect) {
-      wallet.current = { name: null, api: null };
-    }
-  }, [problem]);
+  // this tab's sign code lives as long as the flow holds it (and one kept for an operation the
+  // flow learned without it comes back to it)
+  useSignCode(state, send);
 
   // whether a minting runs here (the steps after Mint now, or an operation the flow follows),
   // and whether a signature attempt is out: Lab keeps the dialog open through a connection
@@ -390,97 +238,29 @@ const MintFlow = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running, signing]);
 
-  // the scroll area's cue: whether more of the step is above or below its view, from its real
-  // scroll state (measured after every render, on scrolling, and when its size or a child's
-  // changes)
-  const scrollArea = useRef(null);
-  const [cue, setCue] = useState({ above: false, below: false });
-  const measureCue = useCallback(() => {
-    const area = scrollArea.current;
-    if (!area) {
-      return;
-    }
-    const next = scrollCue(area);
-    setCue((before) =>
-      before.above === next.above && before.below === next.below ? before : next
-    );
-  }, []);
-  useLayoutEffect(() => {
-    measureCue();
-  });
-  const shownStep = state ? state.step : null;
-  useEffect(() => {
-    const area = scrollArea.current;
-    window.addEventListener("resize", measureCue);
-    const observer =
-      area && typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(measureCue)
-        : null;
-    if (observer) {
-      observer.observe(area);
-      [...area.children].forEach((child) => observer.observe(child));
-    }
-    return () => {
-      window.removeEventListener("resize", measureCue);
-      if (observer) {
-        observer.disconnect();
-      }
-    };
-  }, [measureCue, shownStep]);
+  // the scroll area's cue: whether more of the step is above or below its view
+  const {
+    ref: scrollArea,
+    cue,
+    measure: measureCue,
+  } = useScrollCue(state ? state.step : null);
 
   const now = useSignClock(
     state !== null && state.step === "wallet",
     state && state.operation ? state.operation.signUntil : null
   );
 
-  const apiOf = async (name) => {
-    if (wallet.current.name === name && wallet.current.api) {
-      return wallet.current.api;
-    }
-    const api = await walletApiOf(name);
-    wallet.current = { name, api };
-    return api;
-  };
+  const cancel = flow.cancel;
 
-  const sendCancel = () => {
-    const operation = current.current.operation;
-    held(chainApi.cancel(operation.id)).then(
-      (answer) => {
-        following.note(answer);
-        send({ type: "operation", operation: answer });
-      },
-      (failure) =>
-        send({
-          type: "problem",
-          failure,
-          during: "cancel",
-          operationId: operation.id,
-        })
-    );
-  };
-
-  const cancel = () => {
-    const before = current.current;
-    const next = send({ type: "request", what: "cancel" });
-    if (next !== before && next.pending === "cancel") {
-      sendCancel();
-    }
-  };
-
+  // Back: the explainer of a first minting goes back to the item; elsewhere the flow's Back (on
+  // the wallet step it cancels the prepared minting)
   const back = () => {
     const before = current.current;
     if (before.step === "explain" && !before.explained) {
       onToItem();
       return;
     }
-    const next = send({ type: "back" });
-    if (
-      next !== before &&
-      next.pending === "cancel" &&
-      before.pending !== "cancel"
-    ) {
-      sendCancel();
-    }
+    flow.back();
   };
 
   const howItWorks = () => {
@@ -553,53 +333,15 @@ const MintFlow = ({
     }
     const picked = pickedEntry(next);
     const other = picked && picked.name === name ? undefined : name;
-    const code = next.signCode;
     // every outcome names the operation it was for: a late one of a left operation is dropped
-    const operationId = next.operationId;
-    let api;
-    try {
-      api = await apiOf(name);
-    } catch (failure) {
-      send({
-        type: "problem",
-        failure,
-        during: "connect",
-        wallet: other,
-        operationId,
-      });
-      return;
-    }
-    let signed;
-    try {
-      const info = await held(chainApi.signInfo(code));
-      signed = await signPrepared(api, {
-        api: chainApi,
-        code,
-        info,
-        network: features.network(),
-      });
-    } catch (failure) {
-      send({
-        type: "problem",
-        failure,
-        during: "sign",
-        wallet: other,
-        operationId,
-      });
-      return;
-    }
-    try {
-      const answer = await held(chainApi.sign(code, signed.witness));
-      send({ type: "signed", answer });
-    } catch (failure) {
-      send({
-        type: "problem",
-        failure,
-        during: "submit",
-        wallet: other,
-        operationId,
-      });
-    }
+    await signOperation({
+      apiOf,
+      name,
+      code: next.signCode,
+      operationId: next.operationId,
+      other,
+      send,
+    });
   };
 
   const openWallet = () => {
@@ -613,12 +355,7 @@ const MintFlow = ({
 
   // Open wallet again on the phone path's waiting step: the wallet step, and its door at once
   // when signing is still open (the window, this tab's code)
-  const openWalletAgain = () => {
-    const next = send({ type: "walletAgain" });
-    if (next.step === "wallet" && canSign(next, Date.now())) {
-      openWallet();
-    }
-  };
+  const openWalletAgain = () => flow.openWalletAgain(openWallet);
 
   const lineAction = (action, line) => {
     if (action === "connect") {
@@ -626,19 +363,11 @@ const MintFlow = ({
     } else if (action === "goTo") {
       onGoTo(line.operation.itemId);
     } else {
-      send({ type: "retry" });
+      flow.retry();
     }
   };
 
-  const problemAction = (action) => {
-    if (action === "cancel") {
-      cancel();
-    } else if (action === "back") {
-      back();
-    } else {
-      send({ type: "retry" });
-    }
-  };
+  const problemAction = (action) => flow.problemAction(action, back);
 
   if (state === null) {
     return (
@@ -659,7 +388,10 @@ const MintFlow = ({
   const costs = safeCosts(state);
   const name = itemName(item.item);
   const cancellable = canCancel(state);
-  const ruledOut = noSigning(state);
+  // the wallet step without its prompts (walletStepView): a problem that rules signing out, or
+  // no sign code of this tab
+  const walletView = step === "wallet" ? walletStepView(state) : null;
+  const ruledOut = Boolean(walletView) && !walletView.prompts;
   // the picked wallet cannot sign on this device: the cost screen says where to mint, and
   // prepares nothing (Mint now would end at a door with no way to sign)
   const away = step === "costs" ? elsewhere(state) : null;
@@ -733,7 +465,7 @@ const MintFlow = ({
         <button
           type="button"
           className={classes.link}
-          onClick={() => send({ type: "retry" })}
+          onClick={() => flow.retry()}
           disabled={busy}
           data-testid="mint-recheck"
         >
@@ -797,7 +529,7 @@ const MintFlow = ({
     const window_ = signWindow(state.operation, now);
     const confirmed = walletTextKey(state) === "MINT_WALLET_TEXT";
     const exactShown = Boolean(costs) && costs.exact && costs.confirmed;
-    ownAction = cancellable && !ruledOut ? "back" : null;
+    ownAction = cancellable && walletView.back ? "back" : null;
     const box = (
       <div className={classes.walletBox} data-testid="mint-wallet-box">
         <div className={classes.walletRow}>
@@ -807,11 +539,15 @@ const MintFlow = ({
                 item's own deposit comes back to it), exact only once the wallet vouched for
                 the addresses: before that the sign page may build the minting anew for them,
                 and the fee can change */}
-            {costs ? `− ${amount(costs.give, exactShown)}` : ""}
+            {costs ? amount(costs.give, exactShown, { given: true }) : ""}
             {costs && costs.gameFee && !costs.gameFee.ada ? (
               <>
                 <br />
-                {`− ${t(tr.MINT_AMOUNT, costs.gameFee.amount, costs.gameFee.label)}`}
+                {t(
+                  tr.MINT_AMOUNT,
+                  `${MINUS}${costs.gameFee.amount}`,
+                  costs.gameFee.label
+                )}
               </>
             ) : null}
           </span>
@@ -822,7 +558,10 @@ const MintFlow = ({
             {t(tr.MINT_GET_ITEM, name, item.serial)}
             {costs && costs.stays ? (
               <span className={classes.stays} data-testid="mint-stays">
-                {t(tr.MINT_GET_DEPOSIT, amount(costs.stays, exactShown))}
+                {t(
+                  tr.MINT_GET_DEPOSIT,
+                  amount(costs.stays, exactShown, { round: "down" })
+                )}
               </span>
             ) : null}
           </span>
@@ -854,26 +593,35 @@ const MintFlow = ({
         ) : null}
       </>
     );
-    actions = ruledOut ? null : (
-      <div className={classes.buttons}>
-        <Button
-          color="primary"
-          onClick={openWallet}
-          disabled={!canSign(state, now)}
-          data-testid="mint-open-wallet"
-        >
-          {t(tr.MINT_OPEN_WALLET)}
-        </Button>
-        <Button
-          color="secondary"
-          onClick={back}
-          disabled={!cancellable}
-          data-testid="mint-back"
-        >
-          {t(tr.MINT_BACK)}
-        </Button>
-      </div>
-    );
+    const backButton = walletView.back ? (
+      <Button
+        color="secondary"
+        onClick={back}
+        disabled={!cancellable}
+        data-testid="mint-back"
+      >
+        {t(tr.MINT_BACK)}
+      </Button>
+    ) : null;
+    if (!ruledOut) {
+      actions = (
+        <div className={classes.buttons}>
+          <Button
+            color="primary"
+            onClick={openWallet}
+            disabled={!canSign(state, now)}
+            data-testid="mint-open-wallet"
+          >
+            {t(tr.MINT_OPEN_WALLET)}
+          </Button>
+          {backButton}
+        </div>
+      );
+    } else {
+      actions = backButton ? (
+        <div className={classes.buttons}>{backButton}</div>
+      ) : null;
+    }
   } else if (step === "sign") {
     ownAction = cancellable ? "cancel" : null;
     content = (
@@ -1003,7 +751,7 @@ const MintFlow = ({
         {again ? (
           <Button
             color="primary"
-            onClick={() => send({ type: "retry" })}
+            onClick={() => flow.retry()}
             disabled={busy}
             data-testid="mint-again"
           >
@@ -1059,35 +807,27 @@ const MintFlow = ({
           data-more-below={cue.below ? "true" : "false"}
         >
           {shown ? (
-            <div
-              className={classes.problem}
-              role="alert"
-              data-testid="mint-problem"
-              data-key={shown.key}
-            >
-              <p className={classes.problemText}>
-                {say(shown.key, shown.values)}
-              </p>
-              {shown.detail ? (
-                <p className={classes.detail}>
-                  {t(tr.LINK_DETAILS, shown.detail)}
-                </p>
-              ) : null}
-              {action ? (
-                <Button
-                  color={action === "cancel" ? "accent" : "secondary"}
-                  onClick={() => problemAction(action)}
-                  disabled={
-                    action === "cancel" || action === "back"
-                      ? !cancellable
-                      : busy
-                  }
-                  data-testid={ACTIONS[action][1]}
-                >
-                  {t(tr[ACTIONS[action][0]])}
-                </Button>
-              ) : null}
-            </div>
+            <ProblemBox
+              classes={classes}
+              testId="mint-problem"
+              problemKey={shown.key}
+              text={say(shown.key, shown.values)}
+              detail={shown.detail}
+              action={
+                action
+                  ? {
+                      label: t(tr[ACTIONS[action][0]]),
+                      testId: ACTIONS[action][1],
+                      color: action === "cancel" ? "accent" : "secondary",
+                      disabled:
+                        action === "cancel" || action === "back"
+                          ? !cancellable
+                          : busy,
+                      onClick: () => problemAction(action),
+                    }
+                  : null
+              }
+            />
           ) : null}
           {content}
         </div>
@@ -1097,28 +837,23 @@ const MintFlow = ({
         <MintConnect
           onDone={() => {
             setConnecting(false);
-            send({ type: "retry" });
+            flow.retry();
           }}
         />
       ) : null}
       {door && step === "wallet" && state.signCode ? (
-        <Suspense fallback={null}>
-          <WalletDoor
-            open
-            purpose="sign"
-            signPageUrl={signPageUrl(state.signCode)}
-            onClose={() => setDoor(false)}
-            onWallet={(walletName) => {
-              setDoor(false);
-              signWith(walletName);
-            }}
-            onPhone={() => {
-              setDoor(false);
-              send({ type: "signing", via: "phone", now: Date.now() });
-            }}
-            onDone={() => setDoor(false)}
-          />
-        </Suspense>
+        <SignDoor
+          signCode={state.signCode}
+          onClose={() => setDoor(false)}
+          onWallet={(walletName) => {
+            setDoor(false);
+            signWith(walletName);
+          }}
+          onPhone={() => {
+            setDoor(false);
+            send({ type: "signing", via: "phone", now: Date.now() });
+          }}
+        />
       ) : null}
     </Dialog>
   );

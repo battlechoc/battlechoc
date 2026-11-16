@@ -3,7 +3,7 @@
 // technical detail only for causes it cannot name (src/sign/messages.js).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { problemOf } from "../../src/sign/messages.js";
+import { BURN_LAST_WORDS, problemOf } from "../../src/sign/messages.js";
 import {
   ChainApiError,
   ChainUnreachableError,
@@ -252,4 +252,48 @@ test("a refusal without its numbers never writes a missing amount", () => {
       technical: false,
     });
   }
+});
+
+test("plan E: a burn's page says what its own refusals mean, and never a minting sentence", () => {
+  const burn = (step, failure) =>
+    problemOf(failure, { step, ...context, kind: "burn" });
+  const poor = burn(
+    "sign",
+    new ChainApiError("NOT ENOUGH ADA", {
+      status: 400,
+      details: { missing: "120000", needed: "2120000" },
+    })
+  );
+  assert.equal(poor.key, "SALVAGE_SIGN_NOT_ENOUGH_ADA");
+  assert.deepEqual(poor.values, ["0.12"]);
+  // at the rebuild the burn stays prepared (try again, or cancel in battlechoc); at the signature
+  // it was cancelled (start again there)
+  const moved = new ChainApiError("ITEM MOVED", { status: 409 });
+  assert.equal(burn("sign", moved).key, "SALVAGE_SIGN_ITEM_ELSEWHERE");
+  assert.equal(burn("submit", moved).key, "SALVAGE_SIGN_TOKEN_MOVED");
+  assert.ok(BURN_LAST_WORDS.includes("SALVAGE_SIGN_TOKEN_MOVED"));
+  assert.ok(!BURN_LAST_WORDS.includes("SALVAGE_SIGN_ITEM_ELSEWHERE"));
+  const left = new ChainApiError("ITEM LEFT WALLET", { status: 409 });
+  // at the rebuild the burn stays prepared (cancel in battlechoc, or it ends by itself); at the
+  // signature the server cancelled it already: the page says so, and offers nothing more
+  assert.equal(burn("sign", left).key, "SALVAGE_SIGN_LEFT_WALLET");
+  assert.equal(burn("submit", left).key, "SALVAGE_SIGN_LEFT_WALLET_CANCELLED");
+  assert.ok(BURN_LAST_WORDS.includes("SALVAGE_SIGN_LEFT_WALLET_CANCELLED"));
+  // the minting's texts as their salvage variants, the base kept for the page's own rules
+  const unheard = burn("submit", new ChainUnreachableError("network"));
+  assert.equal(unheard.key, "SALVAGE_SIGNED_UNHEARD");
+  assert.equal(unheard.base, "MINT_SIGNED_UNHEARD");
+  assert.equal(
+    burn("sign", new ChainApiError("UNKNOWN SIGN CODE", { status: 404 })).key,
+    "MINT_SIGN_EXPIRED"
+  );
+  assert.equal(
+    burn("submit", new ChainApiError("OPERATION NOT OPEN", { status: 409 }))
+      .key,
+    "SALVAGE_SIGN_NOT_OPEN"
+  );
+  // a no in the wallet says nothing, as for a mint
+  assert.equal(burn("sign", new WalletCancelledError({ code: 2 })), null);
+  // a mint's page is unchanged
+  assert.equal(at("submit", moved).key, "MINT_FAILED");
 });

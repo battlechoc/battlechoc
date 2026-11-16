@@ -52,6 +52,17 @@ CREATE OR REPLACE VIEW :views.item_events AS
     SELECT tx_hash, unit, quantity, mint_type AS kind, block AS block_no, slot, block_time
     FROM :index.assets;
 
+-- The burns of the policy's user tokens with the output each one spent to burn it: one row per
+-- burn and user token (a transaction may burn several), with the address that held the token (who
+-- that is, chainIndex.js decides from the address). A burn whose spent output the index does not
+-- hold (an index started after that output was made) has no row: nothing is known of its holder.
+CREATE OR REPLACE VIEW :views.item_burns AS
+    SELECT burn.unit, burn.tx_hash, burn.block_no, burn.slot, held.address
+    FROM :views.item_events burn
+    JOIN :index.tx_input spend ON spend.spent_tx_hash = burn.tx_hash
+    JOIN :views.item_outputs held ON held.tx_hash = spend.tx_hash AND held.output_index = spend.output_index AND held.unit = burn.unit
+    WHERE burn.kind = 'BURN' AND burn.quantity < 0;
+
 -- The block of every transaction that touches the policy's user tokens: it makes an output with
 -- one, mints or burns one, or spends such an output (a burn makes no output with the token).
 -- Spends count only for an output Yaci Store kept: it writes tx_input for every input.

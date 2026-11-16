@@ -239,13 +239,14 @@ by those few rows and needs no cleaning.
 
 ### What a player notices when the index is behind or down
 
-Only that minting waits. The API trusts the index only while its newest block is recent: at most
-`CHAIN_INDEX_MAX_LAG_MS` old (10 minutes by default). While the index is stopped, catching up or
-rebuilding, the API changes no ownership: no minted item leaves its player or arrives at a new
-one, and the game keeps working as before, matches included. A new mint cannot start meanwhile
-(the game's checklist says "battlechoc cannot read the Cardano network right now"), and a mint already signed
-stays "minting" until the index sees it. Once the index has caught up, the API applies what
-happened on the chain in the meantime.
+Only that minting and salvaging minted items wait. The API trusts the index only while its newest
+block is recent: at most `CHAIN_INDEX_MAX_LAG_MS` old (10 minutes by default). While the index is
+stopped, catching up or rebuilding, the API changes no ownership: no minted item leaves its player
+or arrives at a new one, and the game keeps working as before, matches included. A new mint or
+salvage cannot start meanwhile (for a mint the game's checklist says "battlechoc cannot read the
+Cardano network right now"), a mint already signed stays "minting" until the index sees it, and
+no salvaged item's ingredients are credited. Once the index has caught up, the API applies what happened on
+the chain in the meantime.
 
 ### Turning it on
 
@@ -331,6 +332,23 @@ the admin key, `contracts/README.md`): it records the deployment in
    its key as a bearer token. At the start the log names the kind and the host:
    `chain provider: koios at preprod.koios.rest`.
 
+   A Blockfrost-compatible service must answer `/assets/{unit}/addresses` (who holds a token) and
+   `/addresses/{address}/utxos/{unit}`. Blockfrost answers 404 for an asset the chain never saw,
+   and the API takes that as "nobody holds it"; a service without the first endpoint answers its
+   404 for every token, and the API cannot tell the two apart. With `CHAIN_CONFIG_POLICY_ID` set
+   such a service is noticed at once: the API finds no config NFT, logs that it cannot read the
+   config, and every mint answers `CHAIN UNAVAILABLE`: none is prepared. Without it (the config
+   found by `CHAIN_CONFIG_REF`) the worse case is a mint that landed but that the index does not
+   see: before the watcher expires a mint the index does not have, it asks the provider whether
+   the token is held, so that it never frees an item on the index's word alone, and such a service
+   answers "nobody" for every token, so the watcher would expire that mint and free an item whose
+   token exists. The credit of a salvaged item asks the provider the same question, so it would
+   rest on the index alone; a salvage in the game cannot even start (the burn finds the item's
+   store through the same endpoint: `CHAIN UNAVAILABLE`). Use Blockfrost itself or a service that
+   has both endpoints. An answer of the second endpoint that contradicts the first (a 404, or no UTxO with
+   the token at the address just named as its holder) counts as "provider unavailable": the API
+   waits.
+
    **Koios's size limit: set the free token.** Koios's public tier limits a request's body to
    1 kB, and a mint transaction is larger (about 2 to 3 kB). Whether its submit enforces that has
    not been tried, so the recommended setting is a free token in `CHAIN_PROVIDER_KEY`; without
@@ -346,12 +364,20 @@ the admin key, `contracts/README.md`): it records the deployment in
    token, run the scripts through Blockfrost (`CHAIN_PROVIDER_KIND=blockfrost`, see
    `contracts/README.md`) or a submit endpoint of your own.
 
-   **`CHAIN_K_FINAL`** is the owner's to set; it decides three things a player notices:
+   **`CHAIN_K_FINAL`** is the owner's to set; it decides four things a player notices:
    - when a mint counts as final. A player's next mint waits until the previous one is final (an
      included mint keeps its player's operation open), so that is the wait between two mints: K
      blocks of about 20 seconds each (10: some 3 to 4 minutes);
-   - how long a mint that never landed stays "minting" after its validity (20 minutes) is over: K
-     blocks more before the watcher calls it expired;
+   - when a salvaged minted item's ingredients arrive: the API credits a burn once it is K blocks
+     deep, so about K × 20 seconds after the burn's block, plus up to one watcher interval
+     (`CHAIN_WATCH_INTERVAL_MS`, 20 seconds); longer while the provider cannot answer or while the
+     wallet's 24-hour hop wait runs. The game tells the player the ingredients come "in a few minutes":
+     that holds only while K stays small (10: some 3 to 4 minutes; 30: about 10 minutes). With a
+     large K the game's text is wrong;
+   - how long a mint that never landed stays "minting", or a salvage that never landed "burning",
+     after its validity (20 minutes) is over: K blocks more before the watcher calls it
+     expired, and longer while the provider cannot answer (the expiry waits for the provider's
+     word on the token: nobody holds it for a mint, it is still held for a burn);
    - how deep a rollback the server survives without a wrong decision. 2160 (the network's own
      security parameter) would mean about 12 hours for each of the above.
 
@@ -436,14 +462,58 @@ value.
 | `CHAIN_INDEX_MAX_LAG_MS` | 600000 (10 minutes) | `CHAIN_INDEX_MAX_LAG_MS must be a whole number of milliseconds, at least 60000` |
 | `CHAIN_SERVER_KEY_PATH` (the key file, mounted as `CHAIN_SERVER_KEY_FILE`) | `/dev/null` | `CHAIN_SERVER_KEY_FILE: /run/secrets/chain-server.key is not a file` (the line is not set, or names a path that did not exist, which Docker then creates as a directory); `… is open to others (mode 644): chmod 600 it`; `… is not a key file (one line ed25519_sk1…)`; `CHAIN_SERVER_KEY_FILE cannot be read` (the file is not owned by uid 1000) |
 
-`CHAIN_K_FINAL` decides when a mint counts as final and how long the watcher waits after a
-transaction's validity has ended before it calls a mint that never landed expired; it has no
-default, and choosing it is yours (see [step 4](#turning-it-on): 10 on preprod, 20 to 30 on
+`CHAIN_K_FINAL` decides when a mint counts as final, when a burned item's ingredients are
+credited, and how long the watcher waits after a transaction's validity has ended before it calls a
+mint or a burn that never landed expired; it has no default, and choosing it is yours (see [step 4](#turning-it-on): 10 on preprod, 20 to 30 on
 mainnet). With `CHAIN_CONFIG_POLICY_ID` the
 API finds the config by its NFT wherever an admin update moved it; without it, after an update,
 the API reads a spent output and minting answers `CHAIN UNAVAILABLE` until `CHAIN_CONFIG_REF` is
 updated. The API keeps the config it read for a minute, so a pause or an update takes up to a
 minute to show.
+
+### Salvaging minted items
+
+A player salvages a minted item by burning its token, in the game or with any wallet outside it.
+The API gives the ingredients back once the burn is `CHAIN_K_FINAL` blocks deep, whoever made it
+(`docs/architecture.md`, "Salvaging a minted item"). What that means for the server:
+
+- **Migration 015** (`015_salvage_credits.js`) runs by itself when the API starts: the table
+  `salvage_credits` (one row per credited burn: the burn's transaction and token, the player
+  credited, the ingredients given back, the time; no wallet key), the column
+  `items.burn_tx`, and `chain_ops.fee_option` without `NOT NULL` (a burn has no fee option).
+  Nothing to do by hand.
+- **The credit needs the index.** The API credits only a burn the index lists together with the
+  output it spent (the view `chain.item_burns`). A burn the index does not see is not credited: the
+  item waits. When the index knows a burn but not the output it spent (an index started after
+  that output was made, or a filter that kept nothing of it), the log says once, as a warning,
+  `watcher: ownership: the chain index knows burns of tokens but not the outputs they spent, so they cannot be credited: check the index's filters and that it synced from before the tokens' last outputs`,
+  and the item leaves its player, unless the game's own burn of it is signed and not yet ended. Fix the
+  filters, or [rebuild the index](#rebuilding-the-index) from a start block before the tokens'
+  last outputs; the next run of the watcher then credits the burn. Never write `salvage_credits`,
+  `items.burned_at` or `chain_ops` by hand.
+- **The provider confirms every credit.** Before it credits, the API asks the provider whether
+  anybody still holds the token. `watcher: credit: the index shows burns of tokens the provider still sees: no credit until it does not; check the index`
+  (an error, logged once while the list stays the same) means the index lists a burn the chain
+  does not confirm: check the index as above. A salvage of the game whose token is gone but which
+  the index does not have stays "burning", and the log says
+  `watcher: operations: the index does not have a burn the provider sees (the token is gone): check the index's filters; the operations stay submitted`.
+- **"In a few minutes."** The game tells the player the ingredients come in a few minutes. That
+  depends on `CHAIN_K_FINAL`: blocks come about every 20 seconds, so the credit comes about K × 20
+  seconds after the burn's block (10: some 3 to 4 minutes). Keep K small (10 on preprod, 20 to 30
+  on mainnet, as recommended in [step 4](#turning-it-on)); with a large K the text is wrong.
+- **For the index's first-start checklist**, two more points:
+  - the burn query on the real index, once it holds a few burns: `explain analyze select unit,
+    tx_hash, block_no, address from chain.item_burns where unit = any(array['<policy id>000de140<…>'])
+    order by block_no, tx_hash, unit` (with the user token of a burned item). Note how long it
+    takes and whether it reads whole tables: at each run the watcher asks it about every minted
+    item, 500 at a time;
+  - that Yaci Store writes no `assets` row for a transaction that failed phase 2 (its script
+    failed, so the chain took its collateral and applied none of its mints or burns). If it does,
+    the index knows burns and mints that never happened. A burn is safe: the API still asks the
+    provider before any credit or expiry, so nothing is credited from it. A mint is not: the API
+    takes a mint the index shows in a block as included and, `CHAIN_K_FINAL` blocks later, as
+    final without asking the provider, so the item would count as minted without a token. Report
+    it at once.
 
 ### Rebuilding the index
 
@@ -462,7 +532,7 @@ docker compose restart api             # the API makes its views again (the drop
 
 ### Turning it off
 
-First look for mints that are still open:
+First look for operations that are still open, mints and salvages:
 
 ```sh
 docker compose exec -T postgres psql -U battlechoc -d battlechoc -c "select state, count(*) from chain_ops where state in ('prepared','submitted','included') group by state"
@@ -473,8 +543,11 @@ item shows "minting" and cannot be salvaged (`ITEM BUSY`), and the player cannot
 mint (the Mint action is gone anyway). A `prepared` one (not signed) ends at the next read of it
 once its sign window is over; a `submitted` or `included` one is in the hands of the chain: it may
 land while the chain is off, and once the chain is on again the watcher finds it in the index
-(minted, then final) or, past its validity, expires it. So turn it off when that query answers no
-`submitted` and no `included` rows, or accept that those items wait.
+(minted, then final) or, past its validity, expires it. A salvage works the same way: its item
+stays "burning", and no ingredients are credited while the chain is off; a burn that lands
+meanwhile, the game's or one made with a wallet outside it, is credited once the chain is on
+again and the index has it. So turn it off when that query answers no `submitted` and no `included` rows, or accept
+that those items wait.
 
 Then comment out `COMPOSE_PROFILES=chain` in `.env`, and `docker compose --profile chain stop
 yaci-store`. The API keeps the items as they were last seen; with the `CHAIN_*` lines commented

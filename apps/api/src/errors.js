@@ -74,6 +74,14 @@ const ErrorCode = Object.freeze({
     // the operation's owner address was chosen by the server alone: the wallet must name (and,
     // without the player's session, sign for) its addresses first
     ADDRESSES_NEEDED: 'ADDRESSES NEEDED',
+    // a burn (plan E) of an item that is not minted (409: a plain item is salvaged by /lab/salvage)
+    NOT_MINTED: 'NOT MINTED',
+    // a burn of an item whose token is no longer where the player's wallet holds it (409: nothing
+    // was signed or salvaged)
+    ITEM_LEFT_WALLET: 'ITEM LEFT WALLET',
+    // a burn whose token the player's wallet moved to another of its own UTxOs since the prepare
+    // (409: the burn was cancelled, nothing signed; prepare it again)
+    ITEM_MOVED: 'ITEM MOVED',
 });
 
 // The status of each code of the chain routes, in one place: the game tells "try later" (503)
@@ -97,6 +105,9 @@ const CHAIN_STATUS = Object.freeze({
     [ErrorCode.INVALID_WITNESS]: 400,
     [ErrorCode.OPERATION_NOT_OPEN]: 409,
     [ErrorCode.ADDRESSES_NEEDED]: 409,
+    [ErrorCode.NOT_MINTED]: 409,
+    [ErrorCode.ITEM_LEFT_WALLET]: 409,
+    [ErrorCode.ITEM_MOVED]: 409,
 });
 
 class HttpError extends Error {

@@ -96,15 +96,32 @@ const results = async (pool, playerId) => (await resultsOf(pool, [playerId])).ge
 
 const levelOf = player => ({ ...EmptyPlayerStats.level, ...(player.level || {}) });
 
+// the states of a burn operation that make its item burning: signed and sent, or in a block
+const BURNING_STATES = ['submitted', 'included'];
+
 /**
- * The mark of a minted item: { assetName, state: 'minted' } once its mint is in a block (asset name
- * and minted_at set) and while it is not burned (plan C); else, while a mint of it is open (plan
- * D: prepared or submitted, the asset name still null), { assetName, state: 'minting',
- * operationId, signing } (`signing`: it waits for the wallet's signature); else null. Plan E adds
- * 'burning'.
+ * The mark of an item (GET /user's `minted`):
+ * - its mint is in a block (asset name and minted_at set) and it is not burned (plan C):
+ *   - burning (plan E): a burn of its token the ownership sync sees (items.burn_tx, also one made
+ *     outside the game) or its open burn operation is submitted or included:
+ *     { assetName, state: 'burning', operationId } (the open burn operation's id, null without one);
+ *   - a prepared burn (nothing signed yet): still usable, { assetName, state: 'minted',
+ *     operationId, signing: true, kind: 'burn' };
+ *   - else { assetName, state: 'minted' };
+ * - else, while a mint of it is open (plan D: prepared or submitted, the asset name still null):
+ *   { assetName, state: 'minting', operationId, signing } (`signing`: it waits for the wallet's
+ *   signature);
+ * - else null.
  */
 const mintedOf = row => {
     if (row.asset_name && row.minted_at && !row.burned_at) {
+        const burn = row.op_kind === 'burn';
+        if (row.burn_tx || (burn && BURNING_STATES.includes(row.op_state))) {
+            return { assetName: row.asset_name, state: 'burning', operationId: burn ? row.op_id : null };
+        }
+        if (burn && row.op_state === 'prepared') {
+            return { assetName: row.asset_name, state: 'minted', operationId: row.op_id, signing: true, kind: 'burn' };
+        }
         return { assetName: row.asset_name, state: 'minted' };
     }
     if (row.op_kind === 'mint') {
@@ -116,15 +133,17 @@ const mintedOf = row => {
 /**
  * The crafted items of a player, newest first: one statement. An item has at most one open
  * operation (ops.insertPrepared; on Postgres also the partial unique index on chain_ops (item_id),
- * which serves the join); a player who never minted joins nothing.
+ * which serves the join); a player who never minted joins nothing. A burned item (burned_at set:
+ * its burn was credited, plan E) is no item of anybody's any more, also of the player it was
+ * credited to.
  */
 const itemsOf = async (db, playerId) => {
     const { rows } = await db.query(
-        `SELECT i.id, i.item_key, i.serial, i.crafted_by, i.created_at, i.asset_name, i.minted_at, i.burned_at, p.username AS crafter,
+        `SELECT i.id, i.item_key, i.serial, i.crafted_by, i.created_at, i.asset_name, i.minted_at, i.burned_at, i.burn_tx, p.username AS crafter,
             o.id AS op_id, o.kind AS op_kind, o.state AS op_state, o.asset_name AS op_asset_name
          FROM items i LEFT JOIN players p ON p.id = i.crafted_by
          LEFT JOIN chain_ops o ON o.item_id = i.id AND o.state IN ${OPEN_IN}
-         WHERE i.player_id = $1`, [playerId]);
+         WHERE i.player_id = $1 AND i.burned_at IS NULL`, [playerId]);
     return rows
         .map(row => ({
             id: row.id,
@@ -141,15 +160,18 @@ const itemsOf = async (db, playerId) => {
 const MAX_NOTICES = 20;
 
 /**
- * The unseen notices of a player (minted items that arrived in or departed from their wallets),
- * oldest first, at most MAX_NOTICES: [{ id, kind, item: { id, item, serial }, building, at }]. The
- * item's key and serial are read from items, whoever holds it now; a notice whose item row is
- * gone is left out.
+ * The unseen notices of a player (minted items that arrived in or departed from their wallets, and
+ * burned items whose ingredients they got), oldest first, at most MAX_NOTICES: [{ id, kind, item:
+ * { id, item, serial }, building, at }], and for kind 'salvaged' also `returned` ({ ingredient:
+ * amount }, {} for an item without a recipe), read from the credit (salvage_credits, by the item's
+ * asset name). The item's key and serial are read from items, whoever holds it now; a notice whose
+ * item row is gone is left out.
  */
 const noticesOf = async (db, playerId) => {
     const { rows } = await db.query(
-        `SELECT n.id, n.kind, n.building, n.created_at, i.id AS item_id, i.item_key, i.serial
+        `SELECT n.id, n.kind, n.building, n.created_at, i.id AS item_id, i.item_key, i.serial, c.returned
          FROM item_notices n JOIN items i ON i.id = n.item_id
+         LEFT JOIN salvage_credits c ON c.asset_name = i.asset_name
          WHERE n.player_id = $1 AND n.seen_at IS NULL ORDER BY n.created_at ASC, n.id ASC LIMIT ${MAX_NOTICES}`, [playerId]);
     return rows.map(row => ({
         id: row.id,
@@ -157,6 +179,7 @@ const noticesOf = async (db, playerId) => {
         item: { id: row.item_id, item: row.item_key, serial: Number(row.serial) },
         building: row.building,
         at: new Date(row.created_at).toISOString(),
+        ...(row.kind === 'salvaged' ? { returned: (typeof row.returned === 'string' ? JSON.parse(row.returned) : row.returned) ?? {} } : {}),
     }));
 };
 
@@ -177,9 +200,35 @@ const markNoticesSeen = async (db, playerId, ids, now) => {
 // slots of item ids per building type: { [entityType]: [itemId | null, itemId | null] }
 const equipmentOf = player => (player.equipment && typeof player.equipment === 'object' ? player.equipment : {});
 
-/** The item types in a player's slots, as the engine takes them (only owned items, within the rules). */
+/**
+ * `equipment` (equipmentOf's) with `itemId` taken out of every slot: its slots empty, a building
+ * whose slots are then all empty left out, as /user/equipment stores it. A new object; plain salvage
+ * and the credit of a burned item (chain/credit.js) write it.
+ */
+const equipmentWithout = (equipment, itemId) => {
+    const kept = {};
+    Object.entries(equipment).forEach(([entityType, slots]) => {
+        const left = (Array.isArray(slots) ? slots : []).map(id => (id === itemId ? null : id));
+        if (left.some(id => id !== null)) {
+            kept[entityType] = left;
+        }
+    });
+    return kept;
+};
+
+/**
+ * Whether an item of itemsOf's list can be played: every item but a burning one (plan E), which
+ * is out of the loadout and cannot be equipped until its burn is undone (a rollback, an expiry).
+ */
+const isUsable = entry => !entry.minted || entry.minted.state !== 'burning';
+
+/**
+ * The item types in a player's slots, as the engine takes them (only owned, usable items, within
+ * the rules). A burning item keeps its slot, as a token that left does (plan C), and is in the
+ * loadout again once its burn is undone; a match takes the loadout at its start.
+ */
 const loadoutOf = (player, items) => {
-    const keyOf = new Map(items.map(entry => [entry.id, entry.item]));
+    const keyOf = new Map(items.filter(isUsable).map(entry => [entry.id, entry.item]));
     const loadout = {};
     Object.entries(equipmentOf(player)).forEach(([entityType, slots]) => {
         const keys = (Array.isArray(slots) ? slots : []).filter(id => keyOf.has(id)).map(id => keyOf.get(id));
@@ -245,7 +294,7 @@ const statsOf = async (pool, player) => {
         items,
         equipment: equipmentOf(player),
         loadout: loadoutOf(player, items),
-        // minted items that arrived in or left the player's wallets, not seen yet
+        // minted items that arrived in or left the player's wallets, and burned ones credited to them, not seen yet
         notices,
         tutorialStarted: player.tutorial_started,
         tutorialSkipped: player.tutorial_skipped,
@@ -499,7 +548,7 @@ const removeIdentity = (pool, playerId, subject, { keepSession = null, now = Dat
 const hasProgress = async (pool, playerId) => {
     const checks = [
         "SELECT COUNT(*) AS n FROM track_records WHERE player_id = $1 AND result <> 'open'",
-        'SELECT COUNT(*) AS n FROM items WHERE player_id = $1',
+        'SELECT COUNT(*) AS n FROM items WHERE player_id = $1 AND burned_at IS NULL',
         'SELECT COUNT(*) AS n FROM recipe_discoveries WHERE player_id = $1',
     ];
     for (const sql of checks) {
@@ -517,5 +566,5 @@ module.exports = {
     hasProgress,
     findPlayer, findPlayerByName, setUsername, setLanguage, setTutorialStep, mergeTutorialFlags, freeRandomName, assignRandomName,
     createPlayer, stats, statsOf, results, ladderOf, advanceAiLadder, finishTutorial, rankOf, playerInfo, highscore, friendsOf, addFriend,
-    removeFriend, addTrackRecords, levelOf, itemsOf, noticesOf, markNoticesSeen, equipmentOf, loadoutOf,
+    removeFriend, addTrackRecords, levelOf, itemsOf, noticesOf, markNoticesSeen, equipmentOf, equipmentWithout, isUsable, loadoutOf,
 };

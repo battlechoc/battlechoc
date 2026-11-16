@@ -20,6 +20,7 @@ import {
   mintFlow,
   mintRequest,
   noSigning,
+  walletStepView,
   pollTarget,
   problemOf,
   shownValues,
@@ -27,6 +28,7 @@ import {
   walletTextKey,
 } from "../../src/ui/mint/mintFlow.js";
 import {
+  adaText,
   formatAda,
   SELF_SEND_LOVELACE,
   sumLovelace,
@@ -197,6 +199,22 @@ test("formatAda: no amount, a negative one, a fraction or an unknown rounding ar
 
 test("formatAda: an unknown language falls back to English", () => {
   assert.equal(formatAda("520000", "not a language!"), "0.52");
+});
+
+test("adaText: the flow's one text of an amount; what leaves the wallet carries its minus on the number, inside the ≈ (D47)", () => {
+  // the wallet step's and the sign page's total: "≈ −4,81 ADA", never "− ≈ 4,81 ADA"
+  assert.equal(adaText("4801234", "de", { given: true }), "≈ −4,81 ADA");
+  assert.equal(adaText("4801234", "en", { given: true }), "≈ −4.81 ADA");
+  assert.equal(
+    adaText("4801234", "de", { given: true, exact: true }),
+    "−4,801234 ADA"
+  );
+  assert.equal(adaText("4801234", "de", { exact: true }), "4,801234 ADA");
+  assert.equal(adaText("2000000", "en", { exact: true }), "2 ADA");
+  // an estimate rounds a cost up and what the player keeps down
+  assert.equal(adaText("1271234", "de"), "≈ 1,28 ADA");
+  assert.equal(adaText("1271234", "de", { round: "down" }), "≈ 1,27 ADA");
+  assert.throws(() => adaText(null, "de"), TypeError);
 });
 
 test("sumLovelace: exact, as a string, beyond Number's precision", () => {
@@ -2730,6 +2748,9 @@ const addressesNeeded = () =>
       during: "submit",
     }
   );
+// a dialog opened on a prepared minting that this tab has no sign code for (another tab's)
+const resumeLost = () => start({ operation: operation() });
+
 const pollFails = (state) =>
   run(state, {
     type: "problem",
@@ -2765,6 +2786,31 @@ test("9b: noSigning names the problems under which the wallet step offers no sig
   }
   assert.equal(noSigning(onWallet()), false);
   assert.equal(noSigning(pollFails(onWallet())), false);
+});
+
+test("D47: the wallet step without this tab's sign code shows no prompts; a failed poll may replace MINT_RESUME_LOST, and the view stays without them", () => {
+  // a dialog from a second tab: the problem, the wallet box and the problem's Cancel only
+  const lost = resumeLost();
+  assert.equal(lost.step, "wallet");
+  assert.equal(lost.problem.key, "MINT_RESUME_LOST");
+  assert.deepEqual(walletStepView(lost), { prompts: false, back: false });
+  // the poll cannot tell where it stands: its text, never "prepared … no ADA spent" as a fact; the
+  // view still offers no signature, and the step's Back cancels (the problem offers none)
+  const unknown = pollFails(lost);
+  assert.equal(unknown.problem.key, "MINT_STATUS_UNKNOWN");
+  assert.equal(canSign(unknown, NOW), false);
+  assert.deepEqual(walletStepView(unknown), { prompts: false, back: true });
+  // the poll answers again: the problem is back
+  assert.equal(
+    run(unknown, { type: "operation", operation: operation() }).problem.key,
+    "MINT_RESUME_LOST"
+  );
+  // the problems that rule signing out: their own action only
+  for (const make of [unheard, addressesNeeded]) {
+    assert.deepEqual(walletStepView(make()), { prompts: false, back: false });
+  }
+  // with this tab's code: the step as it is
+  assert.deepEqual(walletStepView(onWallet()), { prompts: true, back: true });
 });
 
 test("round 1, I2: the battlechoc fee is exact before the build too; only the network fee, the deposit and their total are estimates", () => {
@@ -3090,6 +3136,32 @@ test("C-I2: a picked wallet this device cannot sign with is unmet on the checkli
   );
 });
 
+test("D47-3: Check again reads anew what this device can sign with (an extension enabled meanwhile)", () => {
+  const desktop = { wallets: [], deeplink: false };
+  const away = run(start({ here: desktop }), {
+    type: "readiness",
+    itemId: ITEM.id,
+    answer: readiness(),
+  });
+  assert.equal(canContinue(checklistOf(away, NOW)), false);
+  // the player enables Eternl's extension and taps Check again: the checklist asks anew with it
+  const again = run(away, {
+    type: "retry",
+    here: { wallets: ["eternl"], deeplink: false },
+  });
+  assert.equal(again.step, "check");
+  assert.equal(again.readiness, null);
+  assert.deepEqual(again.here, { wallets: ["eternl"], deeplink: false });
+  const answered = run(again, {
+    type: "readiness",
+    itemId: ITEM.id,
+    answer: readiness(),
+  });
+  assert.equal(canContinue(checklistOf(answered, NOW)), true);
+  // a retry that says nothing about the device keeps what was known
+  assert.deepEqual(run(away, { type: "retry" }).here, desktop);
+});
+
 test("C-M11: the flow keeps no transaction of its own (the wallet signs what the server's sign info holds)", () => {
   assert.equal("prepared" in start(), false);
   assert.equal("prepared" in onWallet(), false);
@@ -3209,4 +3281,42 @@ test("C-I6: a dialog opened on a minting this tab cannot sign keeps saying so wh
     run(costs, { type: "request", what: "mint", path: "phone" }).problem,
     null
   );
+});
+
+test("a salvage that runs (kind burn) is another operation: one line, never this flow's steps, also for this item", () => {
+  for (const itemId of ["item-9", ITEM.id]) {
+    const burn = operation({
+      id: "op-burn",
+      kind: "burn",
+      state: "submitted",
+      itemId,
+      item: { item: "LONG_EARS", serial: 4 },
+    });
+    // passed in when opening, or in the readiness: the flow stays on its checklist
+    const opened = start({ operation: burn, signCode: "code-9" });
+    assert.equal(opened.step, "check");
+    assert.equal(opened.operation, null);
+    const state = run(opened, {
+      type: "readiness",
+      itemId: ITEM.id,
+      answer: readiness({ operation: burn }),
+    });
+    assert.equal(state.step, "check");
+    assert.equal(state.operation, null);
+    const line = checklistOf(state, NOW).find(
+      (entry) => entry.id === "operation"
+    );
+    assert.deepEqual(line, {
+      id: "operation",
+      met: false,
+      key: "MINT_CHECK_RUNNING_BURN",
+      text: "MINT_CHECK_RUNNING_TEXT",
+      values: { item: "LONG_EARS", serial: 4 },
+      action: "goTo",
+      operation: { id: "op-burn", itemId },
+    });
+    assert.equal(canContinue(checklistOf(state, NOW)), false);
+    // a poll's answer about it changes nothing either
+    assert.equal(run(state, { type: "operation", operation: burn }), state);
+  }
 });

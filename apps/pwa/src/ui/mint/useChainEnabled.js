@@ -8,9 +8,10 @@ const subscribeOnline = (listener) => connectivity.onChange(listener);
 
 /**
  * Whether the game shows minting here (features.showMinting): a build with a network, not the
- * Android app, the device online, and the server's minting on. The server is asked once a session
- * (chainEnabled.ask() remembers; a mount asks nothing new) and again only when the device comes
- * back online (chainEnabled.retry()), never on a timer.
+ * Android app, the device online, and the server's minting on. Each mount asks chainEnabled.ask():
+ * once the server gave a definite answer it is remembered for the session and a mount asks nothing
+ * new; until then (no answer, a timeout, a 5xx or a 429) a mount sends one request again. The
+ * server is also asked when the device comes back online (chainEnabled.retry()), never on a timer.
  */
 const useChainEnabled = () => {
   const serverEnabled = useSyncExternalStore(

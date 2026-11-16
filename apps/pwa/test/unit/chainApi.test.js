@@ -136,6 +136,50 @@ test("mint sends the item, the wallet and the fee option, and the wallet's addre
   });
 });
 
+test("burn sends the item and the wallet, and the wallet's addresses only when given; a refusal keeps its holder", async () => {
+  const prepared = {
+    operation: { id: "op-2", kind: "burn", state: "prepared" },
+    tx: "84ab",
+    signCode: "SfQzUoVazDOtPs2qxal6sA",
+    costs: {
+      networkFee: 368106,
+      gameFee: null,
+      deposit: 3710910,
+      deposits: { reference: 2448080, user: 1262830 },
+    },
+    returns: { MILK: 2, VANILLA: 2, GOLDLEAF: 1 },
+  };
+  const { api, calls } = apiOver((url, init) =>
+    JSON.parse(init.body).subject === "stake:cd"
+      ? json({ error: "NOT YOUR WALLET", holder: "stake:ab" }, 400)
+      : json(prepared, 201)
+  );
+  assert.deepEqual(
+    await api.burn({ itemId: "i1", subject: "stake:ab" }),
+    prepared
+  );
+  await api.burn({ itemId: "i1", subject: "stake:ab", addresses: ["01aa"] });
+  assert.deepEqual(calls[0], {
+    url: `${BASE}/chain/burn`,
+    method: "POST",
+    authorization: "Bearer t0ken",
+    body: { itemId: "i1", subject: "stake:ab" },
+  });
+  assert.deepEqual(calls[1].body, {
+    itemId: "i1",
+    subject: "stake:ab",
+    addresses: ["01aa"],
+  });
+  await assert.rejects(
+    api.burn({ itemId: "i1", subject: "stake:cd" }),
+    (failure) =>
+      failure instanceof ChainApiError &&
+      failure.code === "NOT YOUR WALLET" &&
+      failure.status === 400 &&
+      failure.holder === "stake:ab"
+  );
+});
+
 test("an operation is read and cancelled with the player's token", async () => {
   const view = { id: "op/1", state: "cancelled", error: "cancelled" };
   const { api, calls } = apiOver(() => json(view));

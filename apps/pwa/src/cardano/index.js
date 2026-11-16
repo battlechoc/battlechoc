@@ -167,6 +167,7 @@ export {
 export {
   signPageUrl,
   signPrepared,
+  subjectOfWallet,
   walletAddresses,
   OwnerNotConfirmedError,
   UnsupportedAddressError,

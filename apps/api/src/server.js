@@ -14,6 +14,7 @@ const { createChain, loadServerKey } = require('./chain');
 const { createWatcher } = require('./chain/watcher');
 const { operationsStep } = require('./chain/operationsStep');
 const { ownershipStep } = require('./chain/ownership');
+const { createCreditStep } = require('./chain/credit');
 
 // Docker waits 10 seconds after SIGTERM, then it kills the container: the process leaves on its
 // own before that, also when a part of the shutdown hangs.
@@ -33,14 +34,15 @@ const chainProviderWarning = chainConfig =>
 
 /**
  * With the chain features on, the watcher of the chain (its steps: the chain operations, then the
- * ownership sync, which must see a mint that landed as a minted item) in `runtime.watcher`,
- * started: the function that stops it. Off, no watcher: a stop that does nothing.
+ * ownership sync, which must see a mint that landed as a minted item, then the credit of burned
+ * items over `recipes`, after the sync has seen the burn) in `runtime.watcher`, started: the
+ * function that stops it. Off, no watcher: a stop that does nothing.
  */
-const startWatcher = ({ chain, pool, intervalMs, runtime, log = console }) => {
+const startWatcher = ({ chain, pool, intervalMs, runtime, recipes, log = console }) => {
     if (!chain.enabled) {
         return () => {};
     }
-    const watcher = createWatcher({ chain, pool, steps: [operationsStep, ownershipStep], intervalMs, log });
+    const watcher = createWatcher({ chain, pool, steps: [operationsStep, ownershipStep, createCreditStep({ recipes })], intervalMs, log });
     runtime.watcher = watcher;
     return watcher.start();
 };
@@ -161,7 +163,7 @@ const main = async ({ wrap = app => app, env = process.env, chainOverrides, appO
     server.listen(config.port, () => {
         console.log(`battlechoc api listening on ${config.port}`);
         if (chain.enabled) {
-            stopWatcher = startWatcher({ chain, pool, intervalMs: config.chain.watchIntervalMs, runtime });
+            stopWatcher = startWatcher({ chain, pool, intervalMs: config.chain.watchIntervalMs, runtime, recipes });
         }
     });
 

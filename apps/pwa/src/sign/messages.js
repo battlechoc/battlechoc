@@ -19,6 +19,7 @@ import {
   WalletOtherAccountError,
 } from "../cardano/signTx.js";
 import { formatAda, SELF_SEND_LOVELACE } from "../ui/mint/ada.js";
+import { salvageKey } from "../ui/mint/salvageTexts.js";
 
 // the wallet's failures the page can name, each with the wallet's name as its one value
 const NAMED_WALLET_FAILURES = [
@@ -32,7 +33,8 @@ const NAMED_WALLET_FAILURES = [
 // the server's codes with a text of their own: (context) → [key, values]
 const API_PROBLEMS = {
   "UNKNOWN SIGN CODE": () => ["MINT_SIGN_EXPIRED", []],
-  // signed, cancelled or its time ran out: the item in battlechoc shows which
+  // signed, cancelled, prepared again (another page's rebuild won) or its time ran out during the
+  // signature: the item in battlechoc shows which
   "OPERATION NOT OPEN": () => ["MINT_SIGN_NOT_OPEN", []],
   // "tap your wallet again" (the page has no Check again)
   "NOT ENOUGH ADA": ({ failure, language }) => {
@@ -79,14 +81,68 @@ const maybeDone = (failure) =>
     ? failure.reason !== "busy"
     : failure.status >= 500 && failure.code !== "CHAIN UNAVAILABLE";
 
+// the burn's own refusals on this page (plan E, the salvage of a minted item): (context) → [key,
+// values]; the page cannot cancel (no session): where that helps, the text says to cancel in
+// battlechoc
+const BURN_PROBLEMS = {
+  "NOT ENOUGH ADA": ({ failure, language }) => {
+    const details = failure.details || {};
+    return details.missing == null
+      ? ["SALVAGE_SIGN_NOT_ENOUGH_ADA_PLAIN", []]
+      : ["SALVAGE_SIGN_NOT_ENOUGH_ADA", [formatAda(details.missing, language)]];
+  },
+  // at the rebuild the burn stays prepared: the wallet names its addresses again (try again), or
+  // it is cancelled in battlechoc; at the signature it was cancelled: start again there
+  "ITEM MOVED": ({ step }) =>
+    step === "submit"
+      ? ["SALVAGE_SIGN_TOKEN_MOVED", []]
+      : ["SALVAGE_SIGN_ITEM_ELSEWHERE", []],
+  // at the rebuild the burn stays prepared (cancel it in battlechoc, or it ends by itself); at
+  // the signature the server cancelled it (token-moved)
+  "ITEM LEFT WALLET": ({ step }) =>
+    step === "submit"
+      ? ["SALVAGE_SIGN_LEFT_WALLET_CANCELLED", []]
+      : ["SALVAGE_SIGN_LEFT_WALLET", []],
+};
+
+/** The problems after which a burn's page offers no button any more (nothing a retry can mend). */
+export const BURN_LAST_WORDS = [
+  "SALVAGE_SIGN_TOKEN_MOVED",
+  "SALVAGE_SIGN_LEFT_WALLET",
+  "SALVAGE_SIGN_LEFT_WALLET_CANCELLED",
+];
+
 /**
  * The problem behind `failure` at `step` ("info": reading the sign code; "enable": connecting the
  * wallet; "sign": signPrepared, the proof and the signature; "submit": posting the witness), for
  * the wallet named `wallet` and the network label `network`, amounts in `language`:
  * { key, values, technical } (a translation key, its values in placeholder order; technical: show
  * the detail line), or null when there is nothing to say (the player said no in the wallet).
+ * `kind` "burn" (the salvage of a minted item): its own refusals first, and every minting text
+ * as its salvage variant (salvageTexts.js); `base` is then the minting's key.
  */
-export const problemOf = (failure, { step, wallet, network, language }) => {
+export const problemOf = (failure, context) => {
+  if (context.kind !== "burn") {
+    return mintProblemOf(failure, context);
+  }
+  if (
+    failure instanceof ChainApiError &&
+    Object.prototype.hasOwnProperty.call(BURN_PROBLEMS, failure.code)
+  ) {
+    const [key, values] = BURN_PROBLEMS[failure.code]({
+      failure,
+      step: context.step,
+      language: context.language,
+    });
+    return { key, values, technical: false, base: key };
+  }
+  const problem = mintProblemOf(failure, context);
+  return problem === null
+    ? null
+    : { ...problem, key: salvageKey(problem.key), base: problem.key };
+};
+
+const mintProblemOf = (failure, { step, wallet, network, language }) => {
   const plain = (key, values = [], technical = false) => ({
     key,
     values,

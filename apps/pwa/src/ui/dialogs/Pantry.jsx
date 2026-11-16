@@ -6,18 +6,8 @@ import {
 import Dialog from "./Dialog";
 import IngredientBag from "../ingredients/IngredientBag";
 import IngredientIcon from "../ingredients/IngredientIcon";
-
 // "3 d", "5 h" or "40 min" until a batch spoils
-const formatDuration = (ms) => {
-  const minutes = Math.max(1, Math.round(ms / 60000));
-  if (minutes >= 48 * 60) {
-    return `${Math.floor(minutes / (24 * 60))} d`;
-  }
-  if (minutes >= 120) {
-    return `${Math.floor(minutes / 60)} h`;
-  }
-  return `${minutes} min`;
-};
+import { formatDuration } from "../ingredients/duration";
 
 // Every ingredient there is (the ones the player has none of greyed out), and when the
 // spoiling ones go off.

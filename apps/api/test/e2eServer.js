@@ -20,8 +20,8 @@
 //   request (main's appOptions: no cached copy), so a mint is built, co-signed and submitted onto
 //   the double for real, and a config change shows at once. A browser test mints, moves and burns
 //   tokens, produces blocks and rolls them back, changes the config and the faults through these
-//   routes. Each POST runs the watcher (the chain operations, then the ownership sync) before it
-//   answers, so the test sees the effect at once; the watcher's own timer
+//   routes. Each POST runs the watcher (the chain operations, the ownership sync, then the credit
+//   of burned items) before it answers, so the test sees the effect at once; the watcher's own timer
 //   (CHAIN_WATCH_INTERVAL_MS) is long, the tests drive the runs.
 //
 // CHAIN_SERVER_KEY_FILE=generate writes a server key made fresh for this run (freshServerKey: a

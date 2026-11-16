@@ -29,10 +29,11 @@ const TOKENS_PER_MINUTE = 120;
 // network): `perAddress` in front of those routes is looser and only stops a client that hammers.
 // The sign routes have no session: `signPerAddress`. A player starts a mint once per try (and again
 // after a refusal they fixed); each mint asks the provider and builds, a refused one two or three
-// times: `mintsPerPlayer`, besides the player's bucket.
+// times: `mintsPerPlayer`, besides the player's bucket; a burn of a minted item (plan E) the same:
+// `burnsPerPlayer`.
 // GET /chain/status, which every web game asks once a session and which touches nothing, has a
 // light limit per address of its own: `statusPerAddress`.
-// A rebuild of a prepared mint from the wallet's addresses asks the provider and builds:
+// A rebuild of a prepared mint or burn from the wallet's addresses asks the provider and builds:
 // `rebuildsPerAddressAndOperation`, so a stranger with the sign code cannot use up the player's.
 // A cancel (DELETE /chain/operations/:id) has a bucket of its own per player, `cancelsPerPlayer`,
 // instead of the player's: two tabs polling an operation cannot starve the cancel of it.
@@ -41,6 +42,7 @@ const CHAIN_LIMITS = Object.freeze({
     perPlayer: 30,
     signPerAddress: 30,
     mintsPerPlayer: 5,
+    burnsPerPlayer: 5,
     cancelsPerPlayer: 10,
     statusPerAddress: 60,
     rebuildsPerAddressAndOperation: 5,
@@ -52,8 +54,8 @@ const createApp = ({
     // the chain of the server (chain/index.js), off unless configured, for the routes of the items
     // on the chain; the reader of its on-chain config (chain/config.js), one per app for its cache;
     // requests per minute (CHAIN_LIMITS): per address to the sign routes, per address and per
-    // player to the others, mints and cancels per player, per address to the status, rebuilds per
-    // address and operation; how readiness asks the provider (readiness.js
+    // player to the others, mints, burns and cancels per player, per address to the status,
+    // rebuilds per address and operation; how readiness asks the provider (readiness.js
     // READINESS_FAN_OUT, for tests) and how long it keeps a wallet's UTxOs (UTXO_CACHE; 0 keeps
     // nothing); where those routes report a config they cannot read and a mint they could not build
     chain = { enabled: false, missing: [] },
@@ -62,6 +64,7 @@ const createApp = ({
     chainAddressPerMinute = CHAIN_LIMITS.perAddress,
     chainPlayerPerMinute = CHAIN_LIMITS.perPlayer,
     chainMintsPerMinute = CHAIN_LIMITS.mintsPerPlayer,
+    chainBurnsPerMinute = CHAIN_LIMITS.burnsPerPlayer,
     chainCancelsPerMinute = CHAIN_LIMITS.cancelsPerPlayer,
     chainStatusPerMinute = CHAIN_LIMITS.statusPerAddress,
     chainRebuildsPerMinute = CHAIN_LIMITS.rebuildsPerAddressAndOperation,
@@ -121,11 +124,13 @@ const createApp = ({
         pool,
         user,
         chain,
+        recipes,
         config: chainConfig,
         limit: rateLimit({ windowMs: 60000, max: chainPerMinute, now }),
         sessionLimit: rateLimit({ windowMs: 60000, max: chainAddressPerMinute, now }),
         playerPerMinute: chainPlayerPerMinute,
         mintsPerMinute: chainMintsPerMinute,
+        burnsPerMinute: chainBurnsPerMinute,
         cancelsPerMinute: chainCancelsPerMinute,
         rebuildsPerMinute: chainRebuildsPerMinute,
         readinessFanOut: chainReadinessFanOut,

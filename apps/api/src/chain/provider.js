@@ -202,9 +202,12 @@ const createBlockfrostProvider = ({ url, key, network, fetch = globalThis.fetch,
     /**
      * The unspent output that holds `unit` (policy id and asset name, hex), for a unit with one
      * holder (an NFT: the config NFT, an item's tokens): at the address the provider names first as
-     * its holder; for a unit many outputs hold, only that first one. Undefined if nobody holds it;
-     * an output it answers that does not hold the unit is a provider that answers wrongly
-     * (ProviderError 'unavailable'), never another output.
+     * its holder; for a unit many outputs hold, only that first one. Undefined if nobody holds it
+     * (a 404 for the asset: the chain never saw it; no holder). A 404 or no UTxO with the unit at
+     * the address just named as its holder, and an output it answers that does not hold the unit,
+     * are a provider that cannot answer (ProviderError 'unavailable'), never another output. A
+     * service without /assets/{unit}/addresses answers its 404 for every unit, which reads as
+     * "never minted" (deploy/README.md).
      */
     const utxoByUnit = async unit => {
         if (!isUnit(unit)) {
@@ -217,11 +220,11 @@ const createBlockfrostProvider = ({ url, key, network, fetch = globalThis.fetch,
         if (!Array.isArray(holders) || typeof holders[0]?.address !== 'string') {
             throw unreadable('utxoByUnit');
         }
-        const entries = await get('utxoByUnit', `/addresses/${encodeURIComponent(holders[0].address)}/utxos/${unit}`);
-        if (entries === undefined || (Array.isArray(entries) && entries.length === 0)) {
-            return undefined;
-        }
-        if (!Array.isArray(entries)) {
+        // the address was just named as the holder, so Blockfrost knows it: a 404 is a service without
+        // the endpoint, and [] contradicts the first answer (the token moved in between, a replica
+        // lags); neither says "nobody holds it"
+        const entries = await get('utxoByUnit', `/addresses/${encodeURIComponent(holders[0].address)}/utxos/${unit}`, { absent: false });
+        if (!Array.isArray(entries) || entries.length === 0) {
             throw unreadable('utxoByUnit');
         }
         const [utxo] = await utxosOfEntries('utxoByUnit', [entries[0]]);

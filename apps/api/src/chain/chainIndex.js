@@ -12,15 +12,15 @@
 
 const fs = require('fs');
 const path = require('path');
-const { Time, mainnet, preprod, preview } = require('@evolution-sdk/evolution');
+const { AddressEras, Time, mainnet, preprod, preview } = require('@evolution-sdk/evolution');
 const { chain: rules } = require('@battlechoc/battlechoc-shared-functions');
-const { holderOf } = require('./addresses');
+const { holderOf, keysOfAddress } = require('./addresses');
 const { IndexUnavailableError } = require('./indexUnavailable');
 
 const NAME = /^[a-z_][a-z0-9_]{0,40}$/;
 const POLICY_ID = /^[0-9a-f]{56}$/;
 const SUBJECT = /^(stake|pay):([0-9a-f]{56})$/;
-/** The most asset names one holdersOf or eventsAmong call takes (the caller batches). */
+/** The most asset names one holdersOf, eventsAmong or burnsOf call takes (the caller batches). */
 const MAX_ASSET_NAMES = 500;
 // the tables of Yaci Store the views read: ensureViews waits until all of them exist
 const YACI_TABLES = ['cursor_', 'address_utxo', 'tx_input', 'assets'];
@@ -44,6 +44,20 @@ const slotConfigOf = network => {
         throw new TypeError('chain index: the network has no slot configuration');
     }
     return Object.freeze({ zeroTime: BigInt(config.zeroTime), zeroSlot: BigInt(config.zeroSlot), slotLength: config.slotLength });
+};
+
+/**
+ * The keys of the address `bech32` that held a burned token: { stake, payment, script }
+ * (addresses.keysOfAddress; anything that is no address: both null, `script` false). Who that is
+ * in the game is addresses.subjectsOfKeys of them, as holderOf decides: a script holds nothing,
+ * else the stake key, else the payment key.
+ */
+const holderKeysOf = bech32 => {
+    try {
+        return keysOfAddress(AddressEras.fromBech32(bech32));
+    } catch {
+        return keysOfAddress(null);
+    }
 };
 
 // a list of at most MAX_ASSET_NAMES asset names for `call`, else a TypeError or a RangeError
@@ -116,7 +130,7 @@ const readOnly = async ({ pool, readRole }, sql, params = []) => {
  * The index over the views in `viewSchema` of Yaci Store's tables in `indexSchema` (ensureViews
  * makes them), read as `readRole`, on `network` (shared/cardano/network.js; its slot configuration
  * gives the tip's time): { ensureViews, tip, holdersOf, tokensHeldBy, transaction, mintOf,
- * eventsAmong }. A TypeError for a name off NAME, a policy id that is not 56 hex digits or a
+ * eventsAmong, burnsOf }. A TypeError for a name off NAME, a policy id that is not 56 hex digits or a
  * network without a slot configuration, before any SQL.
  */
 const createChainIndex = ({ pool, policyId, network, indexSchema = 'yaci_store', viewSchema = 'chain', readRole = 'chain_reader' }) => {
@@ -273,7 +287,26 @@ const createChainIndex = ({ pool, policyId, network, indexSchema = 'yaci_store',
         return events;
     };
 
-    return Object.freeze({ ensureViews, tip, holdersOf, tokensHeldBy, transaction, mintOf, eventsAmong });
+    /**
+     * The burns of the user tokens `assetNames` (at most MAX_ASSET_NAMES; more is a RangeError)
+     * that are in blocks: [{ assetName, txHash, block, holder: { stake, payment, script } }], one
+     * entry per (burn transaction, asset name), by block, transaction and name. `assetName` is
+     * the user token's name as items.asset_name and chain_ops.asset_name hold it (000de140 + 56
+     * hex); `block` the burn's block number; `holder` the keys of the address of the output the
+     * burn spent that held the token (holderKeysOf). A name the index holds no burn of is absent,
+     * and so is a burn whose spent output the index does not hold.
+     */
+    const burnsOf = async assetNames => {
+        checkedNames('burnsOf', assetNames);
+        if (assetNames.length === 0) {
+            return [];
+        }
+        const units = assetNames.map(name => policyId + name);
+        const rows = await read(`SELECT unit, tx_hash, block_no, address FROM ${views}.item_burns WHERE unit = ANY($1::text[]) ORDER BY block_no, tx_hash, unit`, [units]);
+        return rows.map(row => ({ assetName: row.unit.slice(policyId.length), txHash: row.tx_hash, block: Number(row.block_no), holder: holderKeysOf(row.address) }));
+    };
+
+    return Object.freeze({ ensureViews, tip, holdersOf, tokensHeldBy, transaction, mintOf, eventsAmong, burnsOf });
 };
 
-module.exports = { IndexUnavailableError, MAX_ASSET_NAMES, createChainIndex, readOnly };
+module.exports = { IndexUnavailableError, MAX_ASSET_NAMES, createChainIndex, holderKeysOf, readOnly };

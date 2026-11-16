@@ -13,8 +13,8 @@
 //   depth always counts from the block the transaction is really in. An inclusion and a rollback
 //   clear the noted tip beyond the ttl (it was noted on a fork that is gone), so the run of a
 //   rollback can at most note a new one, never expire on the old one;
-// - submitted, the index has it: included (the item becomes a minted item), final at once if it
-//   is K_FINAL deep already;
+// - submitted, the index has it: included (a mint's item becomes a minted item; a burn changes no
+//   item here, plan E's credit does), final at once if it is K_FINAL deep already;
 // - submitted, not in the index, the tip before the ttl (the ttl is exclusive: the transaction can
 //   land while tip.slot < ttl): submitted again at most once a minute (a node's mempool forgets);
 // - submitted, not in the index, the tip at or past the ttl: the first such tip is noted
@@ -22,16 +22,25 @@
 //   provably no longer land (only a rollback deeper than K_FINAL could bring a block from before
 //   the ttl that holds it). 'rejected' if the network refused it and took no submit since, else
 //   'expired'. A rollback that has the tip before the ttl again clears the noted tip.
-//   The expiry is irreversible (the item is free again, and a second mint would make a second
-//   token for it), so the index alone never decides it: the provider is asked for the user token
-//   first, once a run for each operation the index's rule would expire, and the expiry happens only
-//   when it answers that nobody holds it. A provider that cannot answer leaves the operation for
-//   the next run (no failure), and the run asks it no more. A token the provider sees and the index does not means the index
-//   misses mints (its filters, or a sync that skipped blocks): the operation stays submitted (the
-//   item minting) and that is logged once as an error. What an operator does then: fix the
-//   index (deploy/chain/application-plugins.yml's filters, a sync from before the mint's block),
-//   never the operation; once the index has the transaction, the next run includes it (and finalises
-//   it when it is deep enough) as any other.
+//   The expiry is irreversible (the item is free again: a second mint would make a second token
+//   for it, a burn that landed after all would leave a usable item whose token is gone), so the
+//   index alone never decides it: the provider is asked for the user token first, once a run for
+//   each operation the index's rule would expire, and the expiry happens only when its answer says
+//   the transaction did not land: for a mint, nobody holds the token; for a burn (plan E) the
+//   mirror, the token is still held. A provider that cannot answer leaves the operation for the
+//   next run (no failure), and the run asks it no more. An answer that says it landed (a mint's
+//   token held, a burn's gone) where the index has no such transaction means the index misses
+//   them (its filters, or a sync that skipped blocks): the operation stays submitted (the item
+//   minting, or burning) and that is logged once as an error, one line for mints and one for
+//   burns. A burn's token can also be gone because another transaction burned it (the holder may
+//   burn alone, outside the game): the index's burns of the token decide then. Another burn
+//   K_FINAL deep (the server's one depth rule) ends ours expired with the error
+//   'burned-elsewhere' (its input is spent for good; the credit step credits the other burn);
+//   one less deep, or ours in the index's burns, decides nothing this run; no burn known is the
+//   index missing ours, the lasting line. What an operator does then: fix the index (deploy/chain/application-plugins.yml's
+//   filters, a sync from before the transaction's block), never the operation; once the index has
+//   the transaction, the next run includes it (and finalises it when it is deep enough) as any
+//   other.
 //
 // One operation's failure (the provider, a database error) does not stop the others: it is
 // counted, logged when it starts and when it changes (lastingLog), and tried again at the next
@@ -131,15 +140,15 @@ const advanceOperations = async ({ pool, chain, now, tip, fresh, log = console, 
         }
     };
 
-    // operations the index's rule would expire whose user token the provider sees; whether the
-    // provider could not say for one (then the lasting line is not cleared: nothing is over yet)
-    const notIndexed = [];
+    // operations the index's rule would expire that the provider's answer says landed (a mint
+    // whose user token it sees, a burn whose user token it does not); whether the provider could
+    // not say for one (then the lasting lines are not cleared: nothing is over yet)
+    const notIndexed = { mint: [], burn: [] };
     let undecided = false;
 
     // whether the provider sees the user token of `row` ('held', 'none'), or cannot say ('unknown';
     // also, without asking, once the provider gave no answer this run: each call could wait for its
-    // timeout). For a mint, held is the evidence that it landed (plan E: for a burn it is the
-    // opposite, the token gone; until then only mints exist)
+    // timeout). Held is the evidence that a mint landed and that a burn did not.
     const tokenOnChain = async row => {
         if (undecided || submitFailure !== null) {
             return 'unknown';
@@ -152,6 +161,24 @@ const advanceOperations = async ({ pool, chain, now, tip, fresh, log = console, 
             }
             throw error;
         }
+    };
+
+    // For a burn `row` whose token the provider no longer sees, the index's burns of its token:
+    // 'final' when another transaction burned it K_FINAL deep (ours can never land: its input is
+    // spent for good); 'undecided' when another transaction burned it less deep (a rollback may
+    // still undo that burn), or when the index has ours (then it is ours, and the next run that
+    // finds the transaction includes it); 'none' when the index knows no burn of it (it misses ours).
+    // One call of the index, only for an operation in this branch.
+    const burnedElsewhere = async row => {
+        const burns = await chain.index.burnsOf([row.asset_name]);
+        if (burns.some(entry => entry.txHash === row.tx_hash)) {
+            return 'undecided';
+        }
+        const others = burns.filter(entry => entry.assetName === row.asset_name);
+        if (others.some(entry => tip.blockNo - entry.block >= chain.kFinal)) {
+            return 'final';
+        }
+        return others.length > 0 ? 'undecided' : 'none';
     };
 
     const advanceSubmitted = async (row, found) => {
@@ -171,14 +198,27 @@ const advanceOperations = async ({ pool, chain, now, tip, fresh, log = console, 
         const passed = row.ttl_passed_block === null ? moved('note the ttl', await ops.noteTtlPassed(pool, row, tip.blockNo)) : row;
         if (tip.blockNo - passed.ttl_passed_block >= chain.kFinal) {
             const token = await tokenOnChain(passed);
-            if (token === 'held') {
-                notIndexed.push(passed.id);
-            }
             undecided = undecided || token === 'unknown';
-            if (token !== 'none') {
+            if (token === 'unknown') {
                 return;
             }
-            moved('expire', await ops.expireSubmitted(pool, passed, at));
+            const burn = passed.kind === 'burn';
+            const landed = burn ? token === 'none' : token === 'held';
+            let because = null;
+            if (landed && burn) {
+                // the token is gone: ours, or another transaction burned it (the holder may burn alone)
+                const elsewhere = await burnedElsewhere(passed);
+                if (elsewhere === 'undecided') {
+                    undecided = true;
+                    return;
+                }
+                because = elsewhere === 'final' ? ops.BURNED_ELSEWHERE : null;
+            }
+            if (landed && because === null) {
+                notIndexed[burn ? 'burn' : 'mint'].push(passed.id);
+                return;
+            }
+            moved('expire', await ops.expireSubmitted(pool, passed, at, { because }));
             result.expired += 1;
         }
     };
@@ -238,12 +278,21 @@ const advanceOperations = async ({ pool, chain, now, tip, fresh, log = console, 
     } else if (submitAnswered) {
         lasting.clear('submit', () => log.info('watcher: operations: submitting works again'));
     }
-    if (notIndexed.length > 0) {
-        lasting.report('notIndexed', notIndexed.join(' '), () =>
-            log.error('watcher: operations: the index does not have a mint the provider sees: check the index\'s filters; the operations stay submitted', { operations: notIndexed })
+    if (notIndexed.mint.length > 0) {
+        lasting.report('notIndexed', notIndexed.mint.join(' '), () =>
+            log.error('watcher: operations: the index does not have a mint the provider sees: check the index\'s filters; the operations stay submitted', { operations: notIndexed.mint })
         );
     } else if (fresh && !chainDown && !undecided) {
         lasting.clear('notIndexed', () => log.info('watcher: operations: the index has every mint the provider sees again'));
+    }
+    if (notIndexed.burn.length > 0) {
+        lasting.report('burnNotIndexed', notIndexed.burn.join(' '), () =>
+            log.error('watcher: operations: the index does not have a burn the provider sees (the token is gone): check the index\'s filters; the operations stay submitted', {
+                operations: notIndexed.burn,
+            })
+        );
+    } else if (fresh && !chainDown && !undecided) {
+        lasting.clear('burnNotIndexed', () => log.info('watcher: operations: the index has every burn the provider sees again'));
     }
     if (failures > 0) {
         const reason = reasonOf(failure);

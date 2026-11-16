@@ -14,8 +14,12 @@ export const persistStats = (changes) =>
     )
     .catch((error) => logger.warn("could not cache the lab state", error));
 
-/** Reloads the stats' pantry, items and equipment; `updateStats(changes)` takes them in. */
-export const reloadItems = (updateStats) =>
+/**
+ * Reloads the stats' pantry, items and equipment; `updateStats(changes)` takes them in. With
+ * `notices` the notices about minted items too (the ingredients of a salvaged one arrived: the
+ * title screen shows them).
+ */
+export const reloadItems = (updateStats, { notices = false } = {}) =>
   fetchOwnProfile()
     .then(({ stats }) => {
       const { pantry, spoiling, items, equipment, loadout } = stats;
@@ -26,6 +30,9 @@ export const reloadItems = (updateStats) =>
         items,
         equipment,
         loadout,
+        ...(notices && Array.isArray(stats.notices)
+          ? { notices: stats.notices }
+          : {}),
       };
       updateStats(changes);
       persistStats(changes);

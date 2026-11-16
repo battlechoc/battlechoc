@@ -19,6 +19,7 @@ import {
 import { connectivity } from "./api/connectivity";
 import { fontsLoaded } from "./firstLoad";
 import { warmOnDemand } from "./ui/onDemand";
+import { wakeChunks } from "./helper/loadChunk";
 import promiseDispatch from "./helper/promiseDispatch";
 import { configureStore } from "@reduxjs/toolkit";
 import { hydrateSettings, createSettingsPersistence } from "./settingsSlice";
@@ -107,9 +108,11 @@ window.addEventListener("online", () => {
 // not (the toasts above follow the browser's network)
 connectivity.onChange((status) => {
   store.dispatch(connectivityChanged(status));
-  // a name chosen offline is claimed as soon as the server answers
+  // a name chosen offline is claimed as soon as the server answers; a chunk still on its way is
+  // asked for at once (the browser's own online event may not come)
   if (status === "online") {
     multiplayer.syncPendingUsername();
+    wakeChunks();
   }
 });
 connectivity.start();

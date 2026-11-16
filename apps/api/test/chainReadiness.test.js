@@ -482,12 +482,13 @@ describe('GET /chain/readiness', () => {
         expect((await readiness(players[1].account).expect(429)).body).toEqual({ error: 'TOO MANY REQUESTS' });
     });
 
-    test('the defaults: 30 a minute per player, 120 per address, 5 mints and 10 cancels per player; 30 per address to the sign routes, 60 to the status, 5 rebuilds per address and operation', () => {
+    test('the defaults: 30 a minute per player, 120 per address, 5 mints, 5 burns and 10 cancels per player; 30 per address to the sign routes, 60 to the status, 5 rebuilds per address and operation', () => {
         expect(require('../src/app').CHAIN_LIMITS).toEqual({
             perAddress: 120,
             perPlayer: 30,
             signPerAddress: 30,
             mintsPerPlayer: 5,
+            burnsPerPlayer: 5,
             cancelsPerPlayer: 10,
             statusPerAddress: 60,
             rebuildsPerAddressAndOperation: 5,

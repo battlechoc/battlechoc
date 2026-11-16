@@ -264,7 +264,7 @@ export const signMintTx = async (walletApi, { tx, network, subject }) => {
 export class UnexpectedProofTextError extends Error {
   constructor(field) {
     super(
-      `the text to sign is not battlechoc's address proof for this mint (${field})`
+      `the text to sign is not battlechoc's address proof for this operation (${field})`
     );
     this.name = "UnexpectedProofTextError";
     this.field = field;
@@ -300,11 +300,25 @@ const textOfHex = (hex) => {
   }
 };
 
-// the sign-in's rule for the address proof: sign battlechoc's text for exactly this operation
-// (`info`, the sign info) and this list (`addresses`, as they are sent), nothing else
+// the proof's purpose for the kind of operation a sign info is for: a mint's text for a mint, a
+// salvage's (plan E) for a burn; no text for any other kind
+const PROOF_PURPOSES = { mint: "mint", burn: "burn" };
+
+// the sign-in's rule for the address proof: sign battlechoc's text of the purpose of this
+// operation's kind for exactly this operation (`info`, the sign info) and this list
+// (`addresses`, as they are sent), nothing else
 const checkProofText = async ({ payload, info, addresses, network }) => {
+  const purpose = Object.prototype.hasOwnProperty.call(
+    PROOF_PURPOSES,
+    info.kind
+  )
+    ? PROOF_PURPOSES[info.kind]
+    : null;
+  if (purpose === null) {
+    throw new UnexpectedProofTextError("kind");
+  }
   const text = textOfHex(payload);
-  const proof = text === null ? null : cardano.addressProofOf(text);
+  const proof = text === null ? null : cardano.addressProofOf(text, purpose);
   if (!proof) {
     throw new UnexpectedProofTextError("text");
   }
@@ -345,7 +359,9 @@ const checkProofText = async ({ payload, info, addresses, network }) => {
  * address of the info's subject (its reward address for "stake:", its payment address for
  * "pay:", as signWithWallet chooses it), `{ signature, key }` as the wallet gives it.
  * Before the wallet is asked anything: TypeError for an empty list; UnexpectedProofTextError
- * (`field`) for a payload that is not battlechoc's address proof (shared cardano.addressProofOf:
+ * (`field`: "kind" for an operation that is neither a mint nor a burn) for a payload that is not
+ * battlechoc's address proof of the purpose of the info's `kind` (a mint's for a mint, a
+ * salvage's for a burn: shared cardano.addressProofOf(text, purpose):
  * "text" for one that is no hex, no UTF-8 or no such text at all, a leading byte order mark
  * included) for this game's domain, `network` and the info's network, the info's operation, item
  * and serial, the address of its subject, exactly `addresses` (count and digest) and an expiry
@@ -388,8 +404,8 @@ export const proveAddresses = async (
 
 /**
  * The server answered the proof with no confirmed rebuild of this operation (`info`: its answer):
- * `reason` "not-confirmed" (no `ownerConfirmed: true`), "subject" or "operation" (another subject
- * or operation than the first sign info's), "tx" (no transaction to sign), "address" (the item
+ * `reason` "not-confirmed" (no `ownerConfirmed: true`), "kind", "subject" or "operation" (another
+ * kind, subject or operation than the first sign info's), "tx" (no transaction to sign), "address" (the item
  * would not go to one of the wallet's addresses). A fault of the server, not of the player.
  */
 export class OwnerNotConfirmedError extends Error {
@@ -415,6 +431,9 @@ const rebuildProblem = async (addresses, first, rebuilt) => {
     rebuilt.ownerConfirmed !== true
   ) {
     return "not-confirmed";
+  }
+  if (rebuilt.kind !== first.kind) {
+    return "kind";
   }
   if (rebuilt.subject !== first.subject) {
     return "subject";

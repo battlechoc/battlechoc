@@ -12,6 +12,7 @@ import {
   isMinted,
   groupMinted,
   withoutAwayItems,
+  labEquipment,
   chipMarks,
   scrollCue,
   shelfView,
@@ -218,6 +219,54 @@ test("a slot whose item the player does not have (a minted item away from the wa
     [EntityType.RUM_TRUFFLE_CANNON]: [null, null],
     [EntityType.CACAOTREE]: [],
   });
+});
+
+test("the Lab's equipment: a burning item's slot is free and counts nothing, as the server's loadout has it; away items too; minted and prepared ones stay", () => {
+  const burning = {
+    id: "b1",
+    item: "DARK_WALLS",
+    serial: 2,
+    minted: { assetName: "a", state: "burning", operationId: "op-1" },
+  };
+  const outside = {
+    id: "b2",
+    item: "LIGHT_BARREL",
+    serial: 3,
+    minted: { assetName: "c", state: "burning", operationId: null },
+  };
+  const prepared = {
+    id: "p1",
+    item: "NUT_BRICKS",
+    serial: 4,
+    minted: {
+      assetName: "d",
+      state: "minted",
+      operationId: "op-2",
+      signing: true,
+      kind: "burn",
+    },
+  };
+  const minted = { id: "m1", item: "NUT_BRICKS", serial: 5, minted: MINTED };
+  const equipment = {
+    [EntityType.FACTORY]: ["b1", "away"],
+    [EntityType.RUM_TRUFFLE_CANNON]: ["b2", "m1"],
+    [EntityType.FACTORY_EXTENSION]: ["p1", null],
+  };
+  assert.deepEqual(
+    labEquipment(equipment, [burning, outside, prepared, minted]),
+    {
+      [EntityType.FACTORY]: [null, null],
+      [EntityType.RUM_TRUFFLE_CANNON]: [null, "m1"],
+      [EntityType.FACTORY_EXTENSION]: ["p1", null],
+    }
+  );
+  // the slot fills again from the same stats once the burn rolled back or expired
+  const again = { ...burning, minted: MINTED };
+  assert.deepEqual(labEquipment(equipment, [again])[EntityType.FACTORY], [
+    "b1",
+    null,
+  ]);
+  assert.deepEqual(labEquipment(undefined, [burning]), {});
 });
 
 test("a serial chip: the chosen one is chosen, a minted one gets the mark only with the marks on", () => {
@@ -432,4 +481,88 @@ test("a shelf tile wears the stamp when every copy is minted, else the minting r
   assert.equal(groupMark([plain, minted("a")]), null);
   // a state this build does not know: plain
   assert.equal(groupMark([{ id: "x", minted: { state: "burning" } }]), null);
+});
+
+test("plan E: a minted item is salvaged (its token burned) only where minting shows; never while it is being minted or salvaged, or while a salvage waits for a signature", async () => {
+  const { salvageKind, isBurning, burnWaiting, equippable } =
+    await import("../../src/ui/lab/itemActions.js");
+  const plain = { id: "p", item: "NUT_BRICKS", serial: 1, minted: null };
+  const minted = { ...plain, minted: { state: "minted", assetName: "aa" } };
+  const minting = {
+    ...plain,
+    minted: { state: "minting", operationId: "op-1", signing: false },
+  };
+  const waiting = {
+    ...plain,
+    minted: {
+      state: "minted",
+      assetName: "aa",
+      operationId: "op-2",
+      signing: true,
+      kind: "burn",
+    },
+  };
+  const burning = {
+    ...plain,
+    minted: { state: "burning", operationId: "op-2" },
+  };
+  const outside = { ...plain, minted: { state: "burning" } };
+  const unknown = { ...plain, minted: { state: "melting" } };
+  const actions = (item, online, mintingShows) =>
+    cardActions({ item, online, minting: mintingShows });
+  // minting shows: Salvage for a minted item, Equip as before
+  assert.deepEqual(actions(minted, true, true), { equip: true, salvage: true });
+  // minting does not show (the server's switch off, offline, the Android app): no Salvage
+  assert.deepEqual(actions(minted, true, false), {
+    equip: true,
+    salvage: false,
+  });
+  assert.deepEqual(actions(minted, false, true), {
+    equip: false,
+    salvage: false,
+  });
+  // a plain item: as before, whatever the switch says
+  assert.deepEqual(actions(plain, true, false), { equip: true, salvage: true });
+  // being minted: usable, not salvaged
+  assert.deepEqual(actions(minting, true, true), {
+    equip: true,
+    salvage: false,
+  });
+  // a salvage prepared, not signed: still minted and usable; its mark offers Continue
+  assert.deepEqual(actions(waiting, true, true), {
+    equip: true,
+    salvage: false,
+  });
+  // being salvaged (signed, or seen on the chain): neither
+  for (const item of [burning, outside]) {
+    assert.deepEqual(actions(item, true, true), {
+      equip: false,
+      salvage: false,
+    });
+    assert.equal(isBurning(item), true);
+    assert.equal(equippable(item), false);
+  }
+  // a state this build does not know: usable, not salvaged
+  assert.deepEqual(actions(unknown, true, true), {
+    equip: true,
+    salvage: false,
+  });
+  assert.equal(burnWaiting(waiting), true);
+  assert.equal(burnWaiting(minted), false);
+  assert.equal(salvageKind(minted), "minted");
+  assert.equal(salvageKind(waiting), "minted");
+  assert.equal(salvageKind(plain), "plain");
+  // the picker never takes one being salvaged, also when the card chose it
+  assert.equal(instanceToEquip([burning, minted], new Set(), "p"), minted);
+  assert.equal(
+    instanceToEquip(
+      [
+        { ...burning, id: "b" },
+        { ...plain, id: "c" },
+      ],
+      new Set(),
+      "b"
+    ).id,
+    "c"
+  );
 });
