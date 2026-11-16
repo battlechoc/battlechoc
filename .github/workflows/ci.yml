@@ -55,12 +55,61 @@ jobs:
   # A release pull request (release-please) changes only the version and the changelog of a main
   # that was tested on its push, so its tests are skipped; a skipped job counts as passed for the
   # required checks. The push of its merge to main runs everything before the deploy.
-  test-and-build:
+  checks-and-build:
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     runs-on: ubuntu-latest
-    # usually about 8 minutes (an estimate from a local run): the chain suites of the API tests
-    # (apps/api/test/chain.*.test.js: the builds evaluate the validators) take about half of it
+    # about 6 minutes; the API tests run next to it (api-tests)
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # `npm run verify` runs the same checks on a contributor's machine (package.json), and the
+      # API tests of api-tests on the in-memory database; not the API tests on a real Postgres
+      # and the image check, which need Docker: a step added here belongs there too
+      - name: Formatting of the files Prettier covers (.prettierignore names the rest)
+        run: npm run format:check
+      - name: ESLint (correctness rules, eslint.config.js)
+        run: npm run lint
+      - name: Changelog script tests
+        run: npm run test:changelog
+      - name: Shared rules engine unit tests
+        run: npm test
+      - name: Tutorial scenarios on the engine
+        run: npm run test:unit
+      - name: Whitepaper economy simulator tests
+        run: npm run test:whitepaper
+      # a release publishes this image (api-image.yml): it must build and start before that
+      - name: The API image starts with the server's compose file
+        run: deploy/test-image.sh
+      - name: PWA production build
+        run: npm run build
+      - name: The published build has no test hooks
+        run: npm run check:build
+
+  # The API tests in three parallel jobs of about seven to ten minutes each. In one job, after
+  # checks-and-build's other steps, they took over 26 minutes once minting was in (run
+  # 43896368453: 16 min on the in-memory database alone, then the job's timeout cancelled CI):
+  # the suites that build transactions evaluate the validators, and a runner has four cores.
+  #   chain:    apps/api/test/chain.*.test.js, the suites that use no database
+  #   memory:   every other suite on the in-memory Postgres (pg-mem)
+  #   postgres: the same suites on Postgres 17
+  # A new suite runs in memory and postgres, or in chain if its name starts with "chain.". When
+  # a job nears its timeout, split it with Jest's --shard (the durations are in the jobs' logs).
+  api-tests:
+    name: api (${{ matrix.suite }})
+    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
+    runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [chain, memory, postgres]
+    # only "postgres" uses it; a service cannot depend on the matrix without tricks, and starting
+    # it takes about 15 seconds
     services:
       postgres:
         image: postgres:17-alpine
@@ -80,36 +129,47 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      # `npm run verify` runs the same checks on a contributor's machine (package.json), except
-      # the API tests on a real Postgres and the image check, which need Docker: a step added
-      # here belongs there too
-      - name: Formatting of the files Prettier covers (.prettierignore names the rest)
-        run: npm run format:check
-      - name: ESLint (correctness rules, eslint.config.js)
-        run: npm run lint
-      - name: Changelog script tests
-        run: npm run test:changelog
-      - name: Shared rules engine unit tests
-        run: npm test
-      - name: Tutorial scenarios on the engine
-        run: npm run test:unit
-      - name: Whitepaper economy simulator tests
-        run: npm run test:whitepaper
-      - name: API tests (in-memory Postgres)
-        run: npm run test:api
-      # the chain suites use no database: they ran in the step above. The second `--` hands the
-      # option to Jest (one alone hands it to npm, which drops it and runs the word as a pattern)
-      - name: API tests (Postgres 17, without the chain suites)
-        run: npm run test:api -- -- --testPathIgnorePatterns '/test/chain\.'
+      # The second `--` hands the options to Jest (one alone hands them to npm, which drops an
+      # option and runs its word as a pattern). The two patterns split the suites without a rest:
+      # what the first names, the second leaves out.
+      - name: API tests of the suite
         env:
-          TEST_DATABASE_URL: postgres://postgres:test@localhost:5432/postgres
-      # a release publishes this image (api-image.yml): it must build and start before that
-      - name: The API image starts with the server's compose file
-        run: deploy/test-image.sh
-      - name: PWA production build
-        run: npm run build
-      - name: The published build has no test hooks
-        run: npm run check:build
+          SUITE: ${{ matrix.suite }}
+        run: |
+          case "$SUITE" in
+            chain)
+              npm run test:api -- -- '/test/chain\.'
+              ;;
+            memory)
+              npm run test:api -- -- --testPathIgnorePatterns '/test/chain\.'
+              ;;
+            postgres)
+              export TEST_DATABASE_URL=postgres://postgres:test@localhost:5432/postgres
+              npm run test:api -- -- --testPathIgnorePatterns '/test/chain\.'
+              ;;
+            *)
+              echo "unknown suite: $SUITE"
+              exit 1
+              ;;
+          esac
+
+  # the required check "test-and-build" (ruleset): passes when the checks, the build and every
+  # API test job passed, or none ran (a release pull request)
+  test-and-build:
+    needs: [checks-and-build, api-tests]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: The checks, the build and every API test job passed
+        env:
+          CHECKS: ${{ needs.checks-and-build.result }}
+          API: ${{ needs.api-tests.result }}
+        run: |
+          echo "checks-and-build: $CHECKS, api-tests: $API"
+          for result in "$CHECKS" "$API"; do
+            [ "$result" = success ] || [ "$result" = skipped ]
+          done
 
   # The Aiken contracts (contracts/). Not part of `npm run verify`: Aiken is not an npm tool, so a
   # contributor without it can still verify the rest; `npm run check:contracts` runs the same
@@ -138,13 +198,14 @@ jobs:
           git status --porcelain -- plutus.json
           test -z "$(git status --porcelain -- plutus.json)"
 
-  # The browser tests in six parallel jobs of about seven to eleven minutes each (in one job they
-  # took 29 min), next to test-and-build instead of after it. Each job builds the e2e build and
+  # The browser tests in eight parallel jobs of about five to eleven minutes each (in one job they
+  # took 29 min), next to checks-and-build instead of after it. Each job builds the e2e build and
   # runs the specs of its group; a spec not named in a group, a new one too, runs in "rest".
   # signin.spec.js (42 tests, about 19 min) is split per test into two halves (--fully-parallel
   # lets --shard split inside the file; its tests share no state): in "rest" it pushed the job
   # past its timeout and cancelled CI on main (5.4.0, run 42708108451), which skips the deploy.
-  # Rebalance by the test durations in the jobs' logs.
+  # The minting specs have their own two groups (mint, salvage): with them "rest" took 26 of its
+  # 30 minutes (run 43896368453). Rebalance by the test durations in the jobs' logs.
   e2e-group:
     name: e2e (${{ matrix.group }})
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
@@ -154,7 +215,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [challenge, online, realtime, signin-1, signin-2, rest]
+        group:
+          [challenge, online, realtime, signin-1, signin-2, mint, salvage, rest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -181,12 +243,14 @@ jobs:
           online="test/online.spec.js test/first-load.spec.js"
           realtime="test/realtime.spec.js test/lab.spec.js test/info.spec.js"
           signin="test/signin.spec.js"
+          mint="test/mint.spec.js test/chain.spec.js"
+          salvage="test/salvage-minted.spec.js test/item-page.spec.js"
           specs=()
           options=()
           case "$GROUP" in
             rest)
               for spec in test/*.spec.js; do
-                [[ " $challenge $online $realtime $signin " == *" $spec "* ]] || specs+=("$spec")
+                [[ " $challenge $online $realtime $signin $mint $salvage " == *" $spec "* ]] || specs+=("$spec")
               done
               ;;
             signin-*)
