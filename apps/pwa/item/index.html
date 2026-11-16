@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="google" content="notranslate" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#457B82" />
+    <title>battlechoc</title>
+    <!-- link previews in chats and on marketplaces: chat apps run no script, so the preview is the
+    same for every item (the game's index.html does the same; no og:url, so the shared address
+    stays the item's) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="battlechoc" />
+    <meta property="og:title" content="A battlechoc item" />
+    <meta
+      property="og:description"
+      content="What this item does in battlechoc, the real-time chocolate strategy game: its serial, its tier and its effects today."
+    />
+    <meta
+      property="og:image"
+      content="https://battlechoc.com/images/challenge-preview.jpg"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+
+  <body class="item-page">
+    <!-- The public item page (minting plan F): what the battlechoc item of a token is in the game,
+    for anyone who holds or is offered one (src/itempage/main.js). It shows no holder. -->
+    <header class="bar">
+      <span class="brand">battlechoc</span>
+      <span class="where" data-where></span>
+    </header>
+    <main id="item" class="page" data-state="loading" aria-busy="true">
+      <!-- without JavaScript the page cannot ask for the item: it says so in each of the game's
+      languages (it cannot know the reader's before its script runs) -->
+      <noscript>
+        <p lang="de">Schalte JavaScript ein, um dieses Item zu sehen.</p>
+        <p lang="en">Turn on JavaScript to see this item.</p>
+        <p lang="es">Activa JavaScript para ver este objeto.</p>
+        <p lang="fr">Active JavaScript pour voir cet objet.</p>
+        <p lang="it">Attiva JavaScript per vedere questo oggetto.</p>
+        <p lang="pt">Ative o JavaScript para ver este item.</p>
+        <p lang="ja">このアイテムを見るにはJavaScriptを有効にしてね。</p>
+        <p lang="vi">Hãy bật JavaScript để xem vật phẩm này.</p>
+      </noscript>
+    </main>
+    <!-- the privacy policy, in the reader's language once the script knows it (main.js) -->
+    <footer class="foot" data-foot></footer>
+    <script type="module" src="/src/itempage/main.js"></script>
+  </body>
+</html>

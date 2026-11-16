@@ -1,0 +1,235 @@
+/* The public item page (minting plan F, the owner's mockup "Öffentliche Item-Seite"): a chocolate
+   bar at the top, then one column on cream: the item's circle with its stamp, its name and line,
+   what it does today, how to use it, the way to the game. The fonts and the type scale are the
+   game's (src/index.css); every colour and size of the page is here. The stamp's ring and tag
+   come from src/ui/lab/itemText.js (STAMP), set by main.js. */
+body.item-page {
+  min-height: 100vh;
+  overflow: auto;
+  background: #fff8ec;
+  color: #2b1a10;
+}
+
+.item-page .bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: max(14px, env(safe-area-inset-top)) 20px 14px;
+  background: #4d2c1b;
+  color: #fff8ec;
+}
+
+.item-page .bar .brand {
+  font-family: var(--font-display);
+  font-size: 24px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.item-page .bar .where {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.page {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: min(480px, 100%);
+  margin: 0 auto;
+  padding: 24px 20px max(32px, env(safe-area-inset-bottom));
+  font-family: var(--font-body);
+  text-align: center;
+}
+
+.page p,
+.page h1,
+.page h2 {
+  margin: 0;
+}
+
+/* the item's icon, drawn as the game's ItemIcon draws it: its size, font size, face and the tag's
+   room below are set by main.js */
+.page .icon {
+  position: relative;
+  flex: none;
+  border-radius: 50%;
+}
+
+.page .icon.waiting {
+  background: #f4e3c3;
+  box-shadow: inset 0 0 0 6px #e6d3b8;
+}
+
+.page .icon img {
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+.page .icon .tag {
+  position: absolute;
+  font-family: var(--font-display);
+  white-space: nowrap;
+}
+
+/* a result's heading takes the focus for screen readers (main.js); no ring for that */
+.page h1:focus {
+  outline: none;
+}
+
+.page .skeleton {
+  border-radius: 8px;
+  background: #efe1c9;
+}
+
+.page .name-skeleton {
+  width: 60%;
+  height: 34px;
+}
+
+.page .line-skeleton {
+  width: 85%;
+  height: 18px;
+}
+
+.page .name {
+  max-width: 100%;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  color: #4d2c1b;
+  overflow-wrap: anywhere;
+}
+
+.page .line {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* the facts never break; the minted-on day may wrap (a long date in a narrow column) */
+.page .line .part {
+  display: block;
+}
+
+.page .line .part:first-child {
+  white-space: nowrap;
+}
+
+.page .notice {
+  align-self: stretch;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #4d2c1b;
+  color: #fff8ec;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.page .box {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border: 2px solid #e6d3b8;
+  border-radius: 14px;
+  background: #ffffff;
+  text-align: left;
+}
+
+.page .box h2 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: #4d2c1b;
+}
+
+.page .effect {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.page .effect.good {
+  color: #1f6b12;
+}
+
+.page .effect.bad {
+  color: #a3214f;
+}
+
+.page .box .text {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.page .note {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #5a4636;
+}
+
+.page .message {
+  margin-top: 24px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+/* the way to the game and the retry: the game's green, at least 44 px to tap */
+.page .button {
+  align-self: stretch;
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 10px 16px;
+  border: 3px solid #8fd12a;
+  border-radius: 999px;
+  background: linear-gradient(0deg, #0a6e52, #37850f);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.page .button.secondary {
+  border-color: #c9a46a;
+  background: #ffffff;
+  color: #4d2c1b;
+}
+
+.page .button:focus-visible {
+  outline: 3px solid #4d2c1b;
+  outline-offset: 3px;
+}
+
+/* the privacy policy, below the page's column */
+.item-page .foot {
+  display: flex;
+  justify-content: center;
+  padding: 0 20px max(16px, env(safe-area-inset-bottom));
+  font-family: var(--font-body);
+}
+
+.item-page .foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  color: #5a4636;
+  font-size: 13px;
+}

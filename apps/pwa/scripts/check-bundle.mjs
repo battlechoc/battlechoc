@@ -8,7 +8,9 @@
 // - a chunk of the 3D engine is among them: Babylon belongs to the lazy scene. One static import
 //   of src/AssetLoader.jsx and one of src/3d/cannonPick.js once put 2 MB of it in front of the
 //   title screen. What the first screens need of such a module goes into a file without Babylon
-//   (src/firstLoad.js, src/match/fruitCannon.js).
+//   (src/firstLoad.js, src/match/fruitCannon.js), or
+// - the public item page (item/index.html) is missing, or the service worker precaches it or the
+//   item tokens' pictures (items/).
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
@@ -108,6 +110,26 @@ if (!cardanoOn && fs.existsSync(serviceWorker)) {
   if (sdk.length > 0) {
     problems.push(
       `the Cardano sign-in is off (no VITE_CARDANO_NETWORK in mode ${mode}), but the service worker precaches the Evolution SDK (${sdk.join(", ")}): see NEVER_IMPORTED in vite.config.js`
+    );
+  }
+}
+// The public item page (minting plan F, vite.link.config.js) is built, and neither it nor the
+// item tokens' pictures (public/items/) are precached: every device that installs the game
+// would download them, and the game never shows them.
+if (!fs.existsSync(path.join(build, "item/index.html"))) {
+  problems.push(
+    "item/index.html is missing: the public item page was not built (vite.link.config.js, its input `item`)"
+  );
+}
+if (fs.existsSync(serviceWorker)) {
+  const precachedItems = [
+    ...fs.readFileSync(serviceWorker, "utf8").matchAll(/"url":\s*"([^"]+)"/g),
+  ]
+    .map((match) => match[1])
+    .filter((url) => /^\/?items?\//.test(url));
+  if (precachedItems.length > 0) {
+    problems.push(
+      `the service worker precaches the item page or the item pictures (${precachedItems.join(", ")}): see NOT_PRECACHED in vite.config.js`
     );
   }
 }
