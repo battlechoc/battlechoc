@@ -120,6 +120,93 @@ and everything a player may not see to itself.
 - **Ingredients** (`packages/shared/ingredients.js`, `progression.js`) drop after matches and
   pay for equipment in the Choclab.
 
+## Items
+
+Items are the equipment of the Choclab (`packages/shared/equipment.js`). The recipes are the
+server's and stay private until a player discovers them; the server keeps the items
+(`apps/api/src/lab/`). The numbers of minting are in `packages/shared/chain.js`, except the
+battlechoc fee, which the on-chain config sets.
+
+**Crafting.** Once anyone has discovered a recipe, every player can craft its item: the recipe's
+ingredients plus a price in cocoa beans by tier, 50 for a common item, 100 for a rare one and 200
+for an epic one. No ADA and no other fee. Each item gets the next serial number of its item type
+(No. 1, No. 2, …); a number is never given twice, also after a salvage.
+
+**Equipping.** Each building type has two slots. An item goes only on its own building, the same
+item type at most once per building, and the whole loadout within a budget of 10 points: a common
+item costs 2, a rare one 3, an epic one 5. A match uses the loadout the player had when it
+started, whatever happens to the items during the match.
+
+**The shelf and the card.** "Your items" in the Choclab shows every item the player has; a tap
+opens its card with the name, tier, effects and serial and the actions Equip, Salvage and, where
+minting is on, Mint.
+
+**Salvaging** needs the server. It destroys the item, takes it off its slot and gives back
+ingredients from the item's recipe as the recipe is at the salvage. They come back fresh: their
+whole shelf life starts when they are credited. The cocoa price of crafting never comes back, and
+battlechoc charges nothing for salvaging. An item whose recipe is no longer in the Choclab cannot
+be salvaged.
+
+- A **plain item** gives back half of each ingredient amount of its recipe, rounded down
+  (`packages/shared/salvage.js`), at once.
+- A **minted item** gives back its rare and legendary ingredients in full and the common and
+  uncommon ones as a plain item does. Salvaging it burns its token, so the game offers it only
+  where minting shows (below), never in the Android app: the holder's wallet signs and pays the
+  network fee (about 0.4 ADA), and the part of the deposit that was locked with the item (about
+  2.4 ADA) comes back with the same transaction. Once the burn is signed and sent, or a burn of
+  its token is seen on the chain, the item is out of the loadout: it cannot be used in new
+  matches while it is being salvaged, and a match already running keeps it. The ingredients
+  follow once the burn is `CHAIN_K_FINAL` blocks deep (a few minutes with the 10 blocks
+  recommended on the test network), credited once, to the player the wallet that held the token
+  is linked to when the credit is made, and only once that wallet's hop wait (below) for them is
+  over. A token burned outside the game is credited the same way, with nothing if its recipe is
+  gone; if no player's wallet held it, nobody is credited. Through the game a player can salvage
+  only a minted item that is theirs, so not one in a wallet whose hop wait runs; a wallet linked
+  by its payment key alone may first have to send the item to its own receiving address.
+
+So a round of craft, mint and salvage loses at least half of the common and uncommon
+ingredients, the cocoa price, two network fees and the battlechoc fee, and keeps the rare and
+legendary ones, which come back fresh.
+
+**Minting** turns an item into a CIP-68 token in the player's own Cardano wallet. It is opt-in,
+one item at a time, and final: a minted item never becomes a plain one again; the only way out is
+salvaging. It shows in the web game while the server has its chain features on, never in the
+Android app, where minted items still work in matches.
+
+- **Who and how often.** The first mint needs 10 verified online matches
+  (`MINT_MIN_ONLINE_MATCHES`). A player mints at most 3 items per UTC day (`MINTS_PER_DAY`; a mint
+  counts once it was signed, unless it expired) and runs one chain operation at a time: the next
+  mint or salvage of a minted item waits until the last one is final.
+- **Signing.** The wallet must sign within 10 minutes (`SIGN_WINDOW_MS`); the transaction is valid
+  for 20 (`TX_VALIDITY_MS`). Until the mint is in a block the item stays usable and equipped but
+  cannot be salvaged or minted again; a mint that is cancelled, not signed in time or expired leaves
+  it a plain item, and nothing was spent.
+- **What it costs**, paid in ADA from the player's wallet:
+  - the network fee, to the Cardano network: about 0.5 ADA;
+  - the battlechoc fee, into the battlechoc treasury: 1, 2 or 4 ADA for a common, rare or epic item
+    (the on-chain config's fee option);
+  - the deposit, which Cardano requires and which stays with the item: about 3.7 ADA, of which
+    about 1.3 ADA travel with the token in the holder's wallet and about 2.4 ADA are locked with the
+    item and come back on salvage.
+
+  The amounts before the wallet opens are estimates ("about"); the wallet shows the exact ones.
+  The wallet also needs some ADA for the change and the collateral of the transaction, which is
+  not spent; the checklist says how much a wallet needs in all.
+
+**Ownership by wallet.** A minted item belongs to the player whose linked wallet holds its token:
+the wallet's stake key, else its payment key. A token at a script address (a marketplace listing)
+belongs to nobody.
+
+- **Departure** counts at once: when a transaction that moves the token away is in a block, the
+  item leaves the player and its slot is ignored (the slot keeps it, so it is back in its slot if
+  it returns).
+- **Arrival** counts once one more block is on top (depth 1).
+- **The hop wait.** The items of a wallet that was linked to another player before count for the
+  new player 24 hours after the link (`WALLET_HOP_WAIT_MS`); unlinking and linking again does not
+  shorten it. Until then the game also refuses to mint into that wallet.
+- The player gets a notice when an item arrives in or leaves one of their wallets, and when the
+  ingredients of a salvaged minted item are credited.
+
 ## The AI opponents
 
 - **Tom Toffee** decides every 2.5 to 4 s, builds trees and truffle cannons, hides under cream

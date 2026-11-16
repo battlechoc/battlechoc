@@ -226,7 +226,8 @@ server signs last and submits, and the watcher follows the transaction until it 
 in the game is spent: while a mint runs the item is only locked (no salvage, no second mint), and
 it stays usable in matches. The contracts and the transaction builder are plan B's
 ([contracts/README.md](../contracts/README.md), `apps/api/src/chain/tx.js`); how the server reads
-the chain is the section above.
+the chain is the section above. Salvaging a minted item (burning its token, and the credit of its
+ingredients) has a section of its own ([Salvaging a minted item](#salvaging-a-minted-item)).
 
 ### The operation
 
@@ -262,6 +263,12 @@ item the minter's plain item again and withdraws its unseen notices. An item who
 without landing can be salvaged (plain salvage deletes its ended operations first); one with an
 open operation answers 409 `ITEM BUSY` (`apps/api/src/lab/salvage.js`). The stats show an
 item with an open mint as `minted: { state: 'minting', operationId, signing }`.
+
+An ended operation (`final`, `cancelled`, `expired`) is deleted 90 days after its `ended_at`
+(`ops.cleanupEnded`, `ENDED_KEEP_MS`), by the server's hourly cleanup (`apps/api/src/cleanup.js`,
+beside the notices' `cleanupNotices`); an open one is never deleted, however old. Nothing reads an
+ended operation that late: the day's mints count today's, and the game follows open operations
+only. With the chain features off the table is empty and the cleanup deletes nothing.
 
 ### Three signatures, in this order
 
@@ -457,6 +464,41 @@ fixture deployment sits on the chain double, a fresh server key is written for e
 fake wallet (`apps/pwa/test/helpers/wallet.js`) signs transactions and address proofs in the test
 process. Its test routes also credit verified matches (`/test/matches`), change the on-chain
 config and reset the chain between tests (`/test/chain/config`, `/test/chain/reset`).
+
+### The item page, the pictures and the guide
+
+Every token's datum names two addresses on battlechoc.com for good (`packages/shared/chain.js`
+`itemImageUrl`, `itemPageUrl`): its picture and its page. Neither shows who holds the item.
+
+- **`GET /items/:assetName`** (`apps/api/src/routes/items.js`, no session, 60 requests per address
+  and minute): the public data of a minted item by the hex name of its user token, from the
+  database and the shared `Items` alone: `{ assetName, item, entityType, tier, points, serial,
+  mintedAt, burnedAt, effects }`, the effects of today's balance. It answers whether the chain
+  features are on or off (a token's page must not vanish while they are off) and never asks the
+  provider, the index or the config. Every name that is not a minted item's (unknown, malformed,
+  still minting, a key that is not an own entry of `Items`) answers the same 404 `UNKNOWN ITEM`;
+  the last case is only a safety net, because an item key is never renamed or removed once it may
+  have been minted (retire an item by its recipe, never its key). A found item is
+  `Cache-Control: public, max-age=60`, everything else `no-store`. It gives nothing of the player,
+  the crafter, the holder columns or the operations.
+- **The item page** `/item/?a=<asset name>` (`item/index.html`, `apps/pwa/src/itempage/`: `main.js`
+  builds the page with `textContent`, `view.js` decides which `a` it asks for and which answers it
+  trusts): the item's icon with the stamp, its name, serial, tier, building and today's effects,
+  the minting date, whether it was salvaged, and how to use it. It is a third input of
+  `vite.link.config.js` beside the link and sign pages, never precached (`NOT_PRECACHED`), and asks
+  no host but its own and the API.
+- **The pictures** `apps/pwa/public/items/<kebab key>.png`, one 512 × 512 PNG per item type: the
+  game's plain item icon, drawn by headless Chromium from the same look the shelf uses
+  (`npm run items:pictures -w apps/pwa`, `apps/pwa/scripts/item-pictures.mjs`, which never deletes
+  a picture: a token names its picture's URL for good). The game never shows them; the service
+  worker neither precaches nor caches them. `LICENSE-ASSETS` covers the folder.
+- **The guide** `/guide/` (`apps/pwa/public/guide/index.html`, a static page in German and English,
+  no scripts): what a wallet is, which wallet apps, how to get ADA, what minting costs, selling,
+  salvaging a minted item. The game links its sections only through `apps/pwa/src/cardano/guide.js`
+  `guideLink(section, language)` (`/guide/#<section>-de` for German, `-en` otherwise): the minting
+  checklist, the profile's wallet row and the Info dialog, each only where minting shows.
+  `apps/pwa/scripts/check-bundle.mjs` fails a build whose item page is missing or whose precache
+  holds the item page or the pictures.
 
 ## Salvaging a minted item
 
