@@ -201,6 +201,20 @@ const fitsOrCues = async (page, step, primary, language) => {
 const aboutDe = (lovelace) => say(DE, "MINT_ABOUT", adaIn(DE, lovelace), "ADA");
 const exactDe = (lovelace) =>
   say(DE, "MINT_AMOUNT", adaIn(DE, lovelace, { exact: true }), "ADA");
+// what leaves the wallet: its minus on the number, inside the "≈" ("≈ −4,81 ADA")
+const MINUS = "\u2212";
+const givenAboutDe = (lovelace) =>
+  say(DE, "MINT_ABOUT", `${MINUS}${adaIn(DE, lovelace)}`, "ADA");
+const givenExactDe = (lovelace) =>
+  say(
+    DE,
+    "MINT_AMOUNT",
+    `${MINUS}${adaIn(DE, lovelace, { exact: true })}`,
+    "ADA"
+  );
+// what the player keeps, an estimate rounded down
+const keptAboutDe = (lovelace) =>
+  say(DE, "MINT_ABOUT", adaIn(DE, lovelace, { round: "down" }), "ADA");
 
 // holds the requests of `page` to `pattern` (method `method`) until the answer's release(); the
 // first one held resolves `held`
@@ -333,7 +347,7 @@ test("the extension path: explainer, checklist, three costs, the wallet, minting
   expect(deposits.user).toBeGreaterThan(0);
   // "You give": what leaves the wallet (a CIP-30 wallet shows the net change of its balance)
   await expect(dialog.getByTestId("mint-total")).toHaveText(
-    `− ${exactDe(String(networkFee + gameFee.amount + deposits.reference))}`
+    givenExactDe(String(networkFee + gameFee.amount + deposits.reference))
   );
   // "You get": the item, and the ADA that stays with it in the wallet
   await expect(dialog.getByTestId("mint-stays")).toHaveText(
@@ -631,10 +645,10 @@ test("the phone path through the sign page: the wallet confirms its addresses, t
   // addresses, so the total is an estimate
   const { networkFee, gameFee, deposits } = unconfirmed.costs;
   await expect(dialog.getByTestId("mint-total")).toHaveText(
-    `− ${aboutDe(String(networkFee + gameFee.amount + deposits.reference))}`
+    givenAboutDe(String(networkFee + gameFee.amount + deposits.reference))
   );
   await expect(dialog.getByTestId("mint-stays")).toHaveText(
-    say(DE, "MINT_GET_DEPOSIT", aboutDe(String(deposits.user)))
+    say(DE, "MINT_GET_DEPOSIT", keptAboutDe(String(deposits.user)))
   );
   const box = dialog.getByTestId("mint-wallet-box");
   expect(await linesOf(box, say(DE, "MINT_YOU_GIVE"))).toBe(1);
@@ -753,10 +767,10 @@ test("the phone path through the sign page: the wallet confirms its addresses, t
     aboutDe(String(unconfirmed.costs.deposit))
   );
   await expect(signPage.getByTestId("mint-sign-give")).toHaveText(
-    `− ${aboutDe(String(networkFee + gameFee.amount + deposits.reference))}`
+    givenAboutDe(String(networkFee + gameFee.amount + deposits.reference))
   );
   await expect(signPage.getByTestId("mint-sign-stays")).toHaveText(
-    say(DE, "MINT_GET_DEPOSIT", aboutDe(String(deposits.user)))
+    say(DE, "MINT_GET_DEPOSIT", keptAboutDe(String(deposits.user)))
   );
   await expect(signPage.locator("body")).toContainText(
     say(DE, "MINT_SIGN_TWICE")
@@ -780,7 +794,23 @@ test("the phone path through the sign page: the wallet confirms its addresses, t
       proofs += 1;
     }
   });
+  // the wallet is asked within the tap, before the page reads the sign info again (D47: some
+  // in-app browsers drop a tap's user activation over a round trip)
+  await signPage.evaluate(() => {
+    const eternl = window.cardano.eternl;
+    const enable = eternl.enable;
+    eternl.enable = (...args) => {
+      window.walletEnabledAtTap = true;
+      return enable(...args);
+    };
+  });
+  const reread = await holdRequests(signPage, /\/chain\/sign\/[^/?]+$/, "GET");
   await button.click();
+  await reread.held;
+  expect(
+    await signPage.evaluate(() => window.walletEnabledAtTap === true)
+  ).toBe(true);
+  reread.release();
   await expect(signPage.getByTestId("mint-sign-waiting")).toBeVisible();
   await proof.held;
   // while the wallet is asked, no wallet button can be tapped, and none looks as if it could: grey,
@@ -821,13 +851,13 @@ test("the phone path through the sign page: the wallet confirms its addresses, t
     exactDe(String(signedCosts.deposit))
   );
   await expect(signPage.getByTestId("mint-sign-give")).toHaveText(
-    `− ${exactDe(
+    givenExactDe(
       String(
         signedCosts.networkFee +
           signedCosts.gameFee.amount +
           signedCosts.deposits.reference
       )
-    )}`
+    )
   );
   await expect(signPage.getByTestId("mint-sign-stays")).toHaveText(
     say(DE, "MINT_GET_DEPOSIT", exactDe(String(signedCosts.deposits.user)))
@@ -1028,15 +1058,20 @@ test("the answer after the signature is lost: no second signature, and the poll 
   expect((await chainState(request)).mempool).toContain(submitted.txHash);
   await shot(page, "answer-lost");
 
-  // a poll sent before the witness arrived answers "prepared" only now: still no signature
-  // offered, the problem stays
-  await expect.poll(() => polls.length).toBeGreaterThan(0);
+  // a poll answers "prepared" late, after the witness arrived: still no signature offered, the
+  // problem stays. The page drops a poll held over ANSWER_MS (20 s) and asks again 5 s later, so
+  // an old held poll proves nothing: wait for one just sent and answer that one
   const sentBefore = pollsSent;
-  await polls.shift().fulfill({ json: preparedView });
-  // the answer was taken in: the poll asks again only after it handled one (operationPoll)
+  await expect
+    .poll(() => pollsSent, { timeout: 30000 })
+    .toBeGreaterThan(sentBefore);
+  const answered = pollsSent;
+  await polls.pop().fulfill({ json: preparedView });
+  // the answer was taken in: the next poll comes MIN_POLL_MS (5 s) after it, where a dropped
+  // one would come only 25 s after it was sent (operationPoll)
   await expect
     .poll(() => pollsSent, { timeout: 15000 })
-    .toBeGreaterThan(sentBefore);
+    .toBeGreaterThan(answered);
   await settle(page);
   await expect(problem).toHaveAttribute("data-key", "MINT_SIGNED_UNHEARD");
   await expect(dialog.getByTestId("mint-cancel")).toHaveCount(0);
@@ -1550,6 +1585,61 @@ test("a desktop without the linked wallet's extension: the checklist says where 
   // nothing was prepared, the item is free
   expect((await readiness(request, nele, item.id)).operation).toBeNull();
   expect(await markOf(request, nele, item.id)).toBeNull();
+  // the player enables Eternl's extension now: Check again reads the browser's wallets anew
+  // (D47), and the line is met
+  await page.evaluate(() => {
+    window.cardano = {
+      eternl: {
+        name: "eternl",
+        apiVersion: "0.1.0",
+        enable: async () => {
+          throw { code: -3, info: "not asked in this test" };
+        },
+        isEnabled: async () => false,
+      },
+    };
+  });
+  await mintDialog(page).getByTestId("mint-recheck").click();
+  await expect(walletLine).toHaveAttribute("data-met", "true");
+  await expect(walletLine).toContainText(say(DE, "MINT_CHECK_WALLET"));
+});
+
+test("a minting dialog whose chunk does not arrive says that it loads, and one closed meanwhile does not open by itself", async ({
+  browser,
+  request,
+}) => {
+  const odette = await player(browser, request, "Odette", { language: DE });
+  const { page } = odette;
+  // the dialog's chunk does not arrive (a phone without a connection, a deploy that replaced it)
+  let failing = true;
+  let served = 0;
+  await page.route(/\/assets\/MintDialog-[^/]+\.js$/, (route) => {
+    if (failing) {
+      return route.abort("internetdisconnected");
+    }
+    served += 1;
+    return route.fallback();
+  });
+  await openItemCard(page);
+  await page.getByTestId("mint-open").click();
+  // the tap shows the dialog's frame at once, with its close
+  const waiting = page.getByTestId("chunk-waiting");
+  await expect(waiting).toHaveText(say(DE, "MINT_LOADING"));
+  await expect(page.getByText(say(DE, "MINT_CHECK_TITLE"))).toBeVisible();
+  await expect(page.getByText(say(DE, "ERROR_RECOVERY_TEXT"))).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(waiting).toHaveCount(0);
+  // the chunk arrives on a later try: the dialog the player closed stays closed
+  failing = false;
+  await expect.poll(() => served, { timeout: 20000 }).toBe(1);
+  await settle(page);
+  await expect(mintDialog(page)).toHaveCount(0);
+  await expect(waiting).toHaveCount(0);
+  // asked for again, it opens
+  await shelfTile(page).click();
+  await expect(page.getByTestId("item-card")).toBeVisible();
+  await page.getByTestId("mint-open").click();
+  await atStep(page, "explain");
 });
 
 test("Mint now's answer after the dialog stopped waiting: its sign code is kept, and the dialog opened again signs with it", async ({
@@ -1604,7 +1694,9 @@ test("Mint now's answer after the dialog stopped waiting: its sign code is kept,
   await status.getByTestId("mint-continue").click();
   await atStep(page, "wallet");
   await expect(problem).toHaveAttribute("data-key", "MINT_RESUME_LOST");
-  await expect(mintDialog(page).getByTestId("mint-open-wallet")).toBeDisabled();
+  // signing is ruled out until the code comes: the problem, the wallet box, its Cancel (D47)
+  await noWalletPrompts(page);
+  await expect(problem.getByTestId("mint-cancel")).toBeEnabled();
   expect(await tabCode(page, operationId)).toBeNull();
 
   // the late answer: its code is this tab's, and the open dialog takes it
@@ -1671,9 +1763,9 @@ test("a second page on the same minting cannot sign it, but can cancel it", asyn
   const problem = mintDialog(second).getByTestId("mint-problem");
   await expect(problem).toHaveAttribute("data-key", "MINT_RESUME_LOST");
   await expect(problem).toContainText(say(DE, "MINT_RESUME_LOST"));
-  await expect(
-    mintDialog(second).getByTestId("mint-open-wallet")
-  ).toBeDisabled();
+  // this tab cannot sign: no prompts, no grey Open wallet, no Back; the problem's Cancel (D47)
+  await noWalletPrompts(second);
+  await expect(mintDialog(second).getByTestId("mint-back")).toHaveCount(0);
   const cancel = problem.getByTestId("mint-cancel");
   await expect(cancel).toBeEnabled();
   await shot(second, "second-tab");
@@ -1755,7 +1847,8 @@ test("the sign page: Try again when the server cannot be reached and while no wa
   const answers = [
     (route) => route.abort("internetdisconnected"),
     (route) => route.fulfill({ json: info }),
-    (route) => route.fulfill({ json: { ...info, kind: "burn" } }),
+    // a kind this build does not sign (a burn is signed since plan E)
+    (route) => route.fulfill({ json: { ...info, kind: "trade" } }),
   ];
   let asked = 0;
   await page.route(/\/chain\/sign\/[^/?]+$/, (route) => {
@@ -1780,10 +1873,10 @@ test("the sign page: Try again when the server cannot be reached and while no wa
   expect(asked).toBe(2);
   await expect(page.getByTestId("mint-sign-costs")).toBeVisible();
   await expect(page.getByTestId("mint-sign-give")).toHaveText(
-    `− ${aboutDe("4200000")}`
+    givenAboutDe("4200000")
   );
   await expect(page.getByTestId("mint-sign-stays")).toHaveText(
-    say(DE, "MINT_GET_DEPOSIT", aboutDe("1200000"))
+    say(DE, "MINT_GET_DEPOSIT", keptAboutDe("1200000"))
   );
   await expect(again).toBeVisible();
   // the box keeps to the page's width: the item and what stays with it wrap inside it

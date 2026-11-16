@@ -80,14 +80,14 @@ const FLOW = [
   "fr-wallet",
 ];
 
-const fileOf = (name, kind) => {
-  const index = FLOW.indexOf(name);
+const fileOf = (name, kind, { prefix = "d", flow = FLOW } = {}) => {
+  const index = flow.indexOf(name);
   if (index < 0) {
     throw new Error(`shot: ${name} is not in the flow`);
   }
   return path.join(
     SHOTS_DIR,
-    `d-${String(index + 1).padStart(2, "0")}-${name}-${kind}.png`
+    `${prefix}-${String(index + 1).padStart(2, "0")}-${name}-${kind}.png`
   );
 };
 
@@ -105,8 +105,12 @@ export const settle = (page) =>
  * `kind` ("desktop" or "phone"); a desktop page also once more at 390×844 as "narrow" (the
  * viewport goes back after it). Animations are stopped (their end state).
  */
-export const shot = async (page, name, { kind = "desktop" } = {}) => {
-  if (!FLOW.includes(name)) {
+const shotIn = async (
+  page,
+  name,
+  { kind = "desktop", prefix = "d", flow = FLOW } = {}
+) => {
+  if (!flow.includes(name)) {
     throw new Error(`shot: ${name} is not in the flow`);
   }
   if (!SHOTS_DIR) {
@@ -114,20 +118,35 @@ export const shot = async (page, name, { kind = "desktop" } = {}) => {
   }
   mkdirSync(SHOTS_DIR, { recursive: true });
   await settle(page);
-  await page.screenshot({ path: fileOf(name, kind), animations: "disabled" });
+  await page.screenshot({
+    path: fileOf(name, kind, { prefix, flow }),
+    animations: "disabled",
+  });
   if (kind === "desktop") {
     const size = page.viewportSize();
     await page.setViewportSize(PHONE_VIEWPORT);
     await settle(page);
     await settle(page);
     await page.screenshot({
-      path: fileOf(name, "narrow"),
+      path: fileOf(name, "narrow", { prefix, flow }),
       animations: "disabled",
     });
     await page.setViewportSize(size);
     await settle(page);
   }
 };
+
+export const shot = (page, name, options = {}) =>
+  shotIn(page, name, { ...options, prefix: "d", flow: FLOW });
+
+/**
+ * The `shot` of another flow (plan E's salvage): its screens' names in their order (`flow`), the
+ * files `<prefix>-<nn>-<name>-<kind>.png` in MINT_SHOTS_DIR.
+ */
+export const shotsOf =
+  (prefix, flow) =>
+  (page, name, options = {}) =>
+    shotIn(page, name, { ...options, prefix, flow });
 
 // ---------------------------------------------------------------------------------------------
 // The browser contexts a test opened: closed after it, also when it failed (a page left open
