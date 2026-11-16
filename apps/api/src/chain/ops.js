@@ -403,6 +403,19 @@ const openOperations = async (db, { after = null, limit }) => {
     return rows.map(normalized);
 };
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** How long an ended operation is kept after it ended (`ended_at`). */
+const ENDED_KEEP_MS = 90 * DAY_MS;
+
+/**
+ * Deletes the operations that ended (final, cancelled, expired) more than ENDED_KEEP_MS before
+ * `now` (ms); an open one stays, however old (cleanup.js). Nothing reads an ended operation that
+ * long after: the day's mints count today's, and the game follows only open operations.
+ */
+const cleanupEnded = async (db, now) => {
+    await db.query(`DELETE FROM chain_ops WHERE state IN ${ENDED_IN} AND ended_at < $1`, [timeOf(now - ENDED_KEEP_MS)]);
+};
+
 const POLICY_HEX_LENGTH = 56;
 
 /**
@@ -483,6 +496,8 @@ module.exports = {
     noteSubmit,
     noteTtlPassed,
     openOperations,
+    ENDED_KEEP_MS,
+    cleanupEnded,
     feeAssetLabel,
     view,
 };
