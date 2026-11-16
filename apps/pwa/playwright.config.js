@@ -91,6 +91,9 @@ export default defineConfig({
       url: `http://127.0.0.1:${apiPort}/health`,
       reuseExistingServer: true,
       timeout: 30000,
+      // SIGTERM, not Playwright's default SIGKILL: the server shuts down (at most 8 s, server.js)
+      // and exits, which removes the server key directory e2eServer.js wrote into the temp directory
+      gracefulShutdown: { signal: "SIGTERM", timeout: 10000 },
       env: {
         PORT: String(apiPort),
         DATABASE_URL: "memory",
@@ -105,6 +108,30 @@ export default defineConfig({
         // test/signin.spec.js creates many devices from one address in a minute
         ACCOUNTS_PER_MINUTE: "500",
         CARDANO_PER_MINUTE: "1000",
+        // the chain features on, over the chain double of e2eServer.js with plan B's fixture
+        // deployment on it (its /test/chain routes, test/helpers/chain.js): the policy is
+        // test/chainDouble.js TEST_POLICY_ID, the config is found by the fixture's config NFT
+        // (its policy; CHAIN_CONFIG_REF is only the fallback, never used: the NFT is there), and
+        // the server refuses other policies; the provider URL is never called (the double
+        // answers instead), and "generate" makes e2eServer.js write the fixture's server key
+        // (the one its config lists) into the OS temp directory
+        CHAIN_POLICY_ID:
+          "7b74a5bddaeee2acb07f59f8c9a98e4ebb3a09f0d827b085da71ee61",
+        CHAIN_CONFIG_POLICY_ID:
+          "57e7507db9c453389eb999af28af71e751ba44101d5943222291cd69",
+        CHAIN_CONFIG_REF: "0".repeat(64) + "#0",
+        CHAIN_SERVER_KEY_FILE: "generate",
+        // the double speaks Blockfrost's JSON to the Blockfrost adapter
+        CHAIN_PROVIDER_KIND: "blockfrost",
+        CHAIN_PROVIDER_URL: "http://127.0.0.1:9",
+        CHAIN_PROVIDER_KEY: "e2e",
+        CHAIN_K_FINAL: "10",
+        // the tests drive the watcher's runs through the routes; its own timer stays out of the way
+        CHAIN_WATCH_INTERVAL_MS: "600000",
+        // blocks take the real clock, and a rollback can leave a tip made long before in the run
+        // (CI runs take about 30 min): trusted for 50 min, still less than the hour of the
+        // double's "stale" fault
+        CHAIN_INDEX_MAX_LAG_MS: "3000000",
       },
     },
   ],

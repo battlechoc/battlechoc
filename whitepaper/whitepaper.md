@@ -1,6 +1,6 @@
 # battlechoc Whitepaper
 
-**Draft for review.** Version 0.3, October 2026. This document describes a planned extension of battlechoc. Nothing in sections 4 to 12 exists yet. All numbers are initial values: they will change after the points-only season zero, after the test-network seasons and after legal review. This document is not an offer of any kind, and it does not promise any financial return.
+**Draft for review.** Version 0.4, November 2026. This document describes a planned extension of battlechoc. Of sections 4 to 12, two parts exist: the game's ingredients, recipes and items (section 6; its shelf lives and drop rates are economy design, the game's current table is `packages/shared/ingredients.js`), and minting items as tokens on the Cardano test network with the battlechoc treasury collecting its fee (sections 5.4, 5.8, 6.3, 6.4 and 8.2). Nothing else there exists yet. All numbers are initial values: they will change after the points-only season zero, after the test-network seasons and after legal review. This document is not an offer of any kind, and it does not promise any financial return.
 
 ## Contents
 
@@ -21,6 +21,7 @@
 15. [Parameters](#15-parameters)
 16. [Glossary](#16-glossary)
 - [Appendix: changes since version 0.2](#appendix-changes-since-version-02)
+- [Appendix: changes in version 0.4](#appendix-changes-in-version-04)
 
 ## 1. Abstract
 
@@ -29,12 +30,12 @@ battlechoc is an open-source real-time strategy game for two players. Each playe
 This whitepaper describes a competitive layer that makes winning in battlechoc count for something real:
 
 - **Monthly seasons** with a skill rating. The players who take part share a prize pot in **CHOC**, a token on Cardano with a fixed supply of 10,000,000 indivisible coins. CHOC is never sold: every coin enters circulation as a prize.
-- **Ingredients** that players find after verified online matches. They cannot be traded and they spoil, like real food.
-- **Recipes** that turn ingredients into **equipment**: items on Cardano that belong to the player, change how units behave, always with a trade-off, and within the same loadout budget for everyone.
+- **Ingredients** that players find after verified online matches. They cannot be traded themselves and they spoil, like real food. An item made from them can be minted and traded, and whoever salvages a minted item gets its rare and legendary ingredients back in full (section 6.4).
+- **Recipes** that turn ingredients into **equipment**: items of the game that change how units behave, always with a trade-off, and within the same loadout budget for everyone. Their owner may mint an item as an NFT on Cardano, which then belongs to whoever holds it in their wallet.
 
 Coins that players spend flow back into the prize pots. A smooth halving reduces new issuance every month, so over time the prizes are paid by the players who use the economy rather than by new coins.
 
-The design was tested with an agent-based simulation of 25 years in four player scenarios, including one where most players hoard every coin. The simulator, its tests and all figures are part of this repository (section 7).
+The design of version 0.3 was tested with an agent-based simulation of 25 years in four player scenarios, including one where most players hoard every coin; version 0.4 replaces its crafting fee with the minting fee, and the simulation will be re-run (section 7.1). The simulator, its tests and all figures are part of this repository (section 7).
 
 ## 2. Principles
 
@@ -43,13 +44,13 @@ The token exists to make the game more meaningful, not to make the game a financ
 **What CHOC and the items are for:**
 
 - **Earned, not bought.** Every CHOC enters circulation as a prize for competitive play. There is no sale, no presale, no team allocation and no investor allocation.
-- **Owned by the players.** Coins and items sit in the players' own wallets. They stay there even if battlechoc's servers go away.
+- **Owned by the players.** Coins and minted items sit in the players' own wallets. They stay there even if battlechoc's servers go away.
 - **Verifiable.** The rules that concern coins (the supply, the issuance, the payouts) run as published smart contracts on Cardano. Season results and recipes are committed on-chain, so anyone can check that nothing was changed afterwards.
 - **Fair.** Every player has the same loadout budget. Items are side-grades with trade-offs, not upgrades. Money cannot buy a stronger army.
 
 **What battlechoc will not do:**
 
-- **No paid randomness.** Paying CHOC never buys a chance: no loot boxes, no random crafting results, no lotteries. Random drops exist only in free play, and what they give cannot be traded.
+- **No paid randomness.** Paying CHOC never buys a chance: no loot boxes, no random crafting results, no lotteries. Random drops exist only in free play; they cannot be bought, and they cannot be traded themselves. They reach another player only inside an item that someone crafted, minted and gave away or sold (section 6.4).
 - **No financial promises.** No staking yields, no buybacks, no burns for price effects, no price targets, no marketing of CHOC as an investment.
 - **No crypto required to play.** Single player works offline without an account. Online play needs no wallet. Only the competitive season layer needs one.
 - **No personal data.** battlechoc never stores names, email addresses, documents or birth dates (section 10).
@@ -189,7 +190,7 @@ The minting policy checks each season's amount with integer arithmetic, so the s
 
 - **Phase 1, free entry:** while less than half of the supply is issued, about the first 4 years, registration is free.
 - **Phase 2, registration fee:** from the first season after 50 % of the supply is issued, registration costs **20 CHOC**. 19 CHOC go to the pot, 1 CHOC to the team. Phase 2 starts only after a legal review confirms that paid entry is allowed in the eligible countries (section 9.3). Until then, registration stays free.
-- **Phase 3, issuance fades:** after about 25 years, new issuance is negligible. The pots are then funded by registration fees, crafting fees and returning prizes.
+- **Phase 3, issuance fades:** after about 25 years, new issuance is negligible. The pots are then funded by registration fees, the CHOC that the battlechoc treasury passes to the prize pool (section 5.8, planned) and returning prizes.
 
 **Why a fee at all?** The fee is what returns prize coins to the pot. In the simulation, without a fee, players who only collect coins drained the pots: in the hoarding scenario, prizes per season fell to about 60 CHOC by year 25 with free entry, and stayed at about 27,000 CHOC with the fee (section 7.4). In the baseline and boom scenarios, the prize per entrant after 25 years was about six times higher with the fee than with free entry. Its cost is that some interested players cannot afford it; they keep playing the free open ladder, which still gives ingredients.
 
@@ -198,18 +199,27 @@ The minting policy checks each season's amount with integer arithmetic, so the s
 | Use | Amount | Where it goes |
 | --- | --- | --- |
 | Season registration (phase 2) | 20 CHOC per season | 95 % pot, 5 % team |
-| Crafting a common item | 50 CHOC | 90 % pot, 10 % team |
-| Crafting a rare item | 100 CHOC | 90 % pot, 10 % team |
-| Crafting an epic item | 200 CHOC | 90 % pot, 10 % team |
 | Experimenting in the kitchen | free (costs ingredients only) | — |
 
-**Round amounts.** Every fee is a multiple of 10 CHOC, so the 90/10 split is always exact. Registration fees are multiples of 20 CHOC, so the 95/5 split is exact as well. Payouts are rounded down; the remainder stays in the pot.
+**Crafting costs no CHOC.** An item costs its ingredients and a price in cacao beans, an ingredient (section 6.2). Only minting an item costs a battlechoc fee, paid in ADA for now and later also in CHOC (planned; below).
 
-**Network fees.** Every Cardano transaction costs a small fee in ADA, typically 0.2 to 0.4 ADA. Players pay it for the transactions they start: claiming, registering, crafting and salvaging. A wallet output holding tokens also has to carry a minimum amount of ADA (about 1.2 ADA), which stays with the tokens and is not spent. battlechoc pays the fees of its own transactions, such as minting a season's coins and publishing roots.
+**Round amounts.** Registration fees are multiples of 20 CHOC, so the 95/5 split is always exact. Payouts are rounded down; the remainder stays in the pot.
+
+**Network fees.** Every Cardano transaction costs a small fee in ADA, typically 0.2 to 0.4 ADA, and measured at about 0.4 to 0.5 ADA for minting or salvaging an item. Players pay it for the transactions they start: minting and salvaging an item, claiming and registering. A wallet output holding tokens also has to carry a minimum amount of ADA, which stays with the tokens and is not spent. battlechoc pays the fees of its own transactions, such as minting a season's coins and publishing roots. It never pays or sends ADA for players.
+
+**Minting an item.** Minting is opt-in, per item (section 6.3). The player pays from their own wallet, in ADA:
+
+| Part | Amount | Where it goes |
+| --- | --- | --- |
+| Network fee | about 0.5 ADA | to the Cardano network |
+| battlechoc fee | 1 / 2 / 4 ADA for a common / rare / epic item; later also payable in USDCx or CHOC, CHOC at a lower price (planned) | into the battlechoc treasury (section 5.8) |
+| Deposit | about 3.7 ADA | stays with the item: about 1.3 ADA travel with the token in the holder's wallet, about 2.4 ADA are locked with the item's reference token and come back to whoever salvages it |
+
+The battlechoc fee is set in the items' on-chain configuration, which only its admins can change (section 8.3). Salvaging a minted item costs only its network fee, about 0.4 ADA; battlechoc charges no fee for it. The amounts of the network fee and the deposit were measured on the test network and depend on Cardano's protocol parameters.
 
 ### 5.5 How coins move
 
-The diagrams show the average coins per season in the simulated baseline scenario with the recommended design: in year 3, while issuance pays most of the prizes, and in year 15, when players' spending does.
+The diagrams show the average coins per season in the simulated baseline scenario with the recommended design: in year 3, while issuance pays most of the prizes, and in year 15, when players' spending does. They come from the simulation of version 0.3, which still charged a crafting fee in CHOC (section 7.1).
 
 ![How CHOC moves in year 3](figures/value-flow-early.svg)
 
@@ -224,7 +234,7 @@ The diagrams show the average coins per season in the simulated baseline scenari
 | Team share | 5,000 | 7,200 |
 | Coins that leave with players who stop playing | 75,800 | 50,100 |
 
-Two things stand out. First, the economy shifts from issuance-funded to spending-funded, as intended. Second, the largest outflow is not the team share but **players who stop playing and keep their coins**. That is their right, and it is the main reason why the pantry (section 5.7) and the fee exist.
+Two things stand out in version 0.3's model. First, the economy shifts from issuance-funded to spending-funded, as intended; in year 3 that spending was crafting fees, which version 0.4 no longer has. Second, the largest outflow is not the team share but **players who stop playing and keep their coins**. That is their right, and it is the main reason why the pantry (section 5.7) and the fee exist.
 
 ### 5.6 No initial liquidity
 
@@ -235,22 +245,32 @@ battlechoc does not provide a liquidity pool, does not sell coins and does not p
 Prizes do not go straight into wallets. They are recorded in the season's payout root, and the **prize-claims contract** (the "pantry") holds them for each player:
 
 - a player can **withdraw** their prizes to their wallet at any time, with a proof;
-- a player can **spend** them directly from the pantry on registration and crafting, without withdrawing first;
+- a player can **spend** them directly from the pantry on registration, without withdrawing first;
 - prizes that are neither withdrawn nor spent within **24 months** after their season return to the pot of the season in which they expire.
 
 The pantry does not take anything away from active players: withdrawing is always possible, and the deadline is known in advance. It brings back the prizes of players who stopped playing without ever collecting them. In the simulation, this was the single most effective measure against coins ending up in abandoned wallets (section 7.4).
+
+### 5.8 The battlechoc treasury
+
+The battlechoc fee for minting an item (section 5.4) is paid into the **battlechoc treasury**, a contract on Cardano.
+
+- **Today, on the test network,** the treasury only collects ADA: each mint pays one plain output to the treasury's address, and spending from it needs the signatures of the admins of the items' configuration (section 8.3).
+- **Planned, together with CHOC and the seasons:** the player chooses to pay the fee in ADA, USDCx or CHOC, with CHOC at a lower price. Prices across the three come from an oracle: Pyth where it has a feed, a pool on a decentralised exchange for CHOC. At the start of each season one rollover transaction, whose rules the treasury contract checks, rebalances the treasury to 80 % CHOC and 20 % USDCx at the oracle's prices. The CHOC goes to the season's prize pool, possibly up to a cap, with the rest staying in the treasury; the USDCx pays the team.
+- **Nothing of the planned part is built or verified.** The oracle, USDCx on Cardano and the exchanges' order contracts are researched first. Turning fees into CHOC means buying CHOC on the market; how that fits the principles of section 2, and its legal and tax treatment, are settled with the legal review before it is built (section 9).
 
 ## 6. Ingredients, recipes and equipment
 
 ![From a match to equipment: the crafting loop](figures/crafting-loop.svg)
 
+*The figure still shows version 0.3: a crafting fee in CHOC with 90 % to the tournament pot and 10 % to the team; "Only equipment is on-chain and tradable" and every item a CIP-68 NFT owned by the player; salvage giving half of the ingredients back with a short shelf life. Since version 0.4 crafting costs cacao beans and no CHOC, an item is on-chain only once its owner mints it, minting pays the battlechoc fee into the treasury, and salvage returns fresh ingredients, a minted item's rare and legendary ones in full (sections 5.4, 5.8, 6.3 and 6.4). Where the figure and the text differ, the text applies. The figure will be redrawn.*
+
 ### 6.1 Ingredients
 
-- After a **qualifying online match** in the open ladder, a player may find one ingredient. Ingredients are **game items stored by the server, not tokens**. They **cannot be traded**, and they **spoil**.
+- After a **qualifying online match** in the open ladder, a player may find one ingredient. Ingredients are **game items stored by the server, not tokens**. They **cannot be traded** themselves, and they **spoil**. An item crafted from them can be minted and traded, and whoever salvages a minted item gets its rare and legendary ingredients back in full (section 6.4).
 - **Qualifying** means: hosted by the server, at least 3 minutes long, and both players took actions. Matches against the server-hosted AI count with half the chance.
 - **Chance per match:** 50 % after a loss, 80 % after a win, plus one more try when beating an opponent rated at least 100 points higher.
 - **Daily limit:** the first 5 qualifying matches of a day (UTC) count fully, the next 10 with half the chance, then none. The same two players can earn drops against each other in at most 3 matches per day.
-- **Rarity:** common 80 %, uncommon 17 %, rare 3 %.
+- **Rarity:** common 80 %, uncommon 17 %, rare and legendary 3 %. Gold leaf is the one legendary ingredient, the rarity above rare.
 - **No drops in paid tournaments.** Season matches give no ingredients once registration costs a fee. A paid entry is never combined with a chance-based reward.
 
 | Ingredient | Rarity | Shelf life |
@@ -262,13 +282,13 @@ The pantry does not take anything away from active players: withdrawing is alway
 | Hazelnuts | uncommon | 14 days |
 | Rum | uncommon | 180 days |
 | Vanilla | rare | 5 days |
-| Gold leaf | rare | 2 days |
+| Gold leaf | legendary | 3 days |
 
-Rare ingredients spoil fastest, so they reward players who are active when they find them, not players who stockpile.
+Rare and legendary ingredients spoil fast, so they reward players who are active when they find them, not players who stockpile.
 
 ### 6.2 Recipes and the kitchen
 
-- A **recipe** combines 3 to 5 ingredients and a crafting fee into an item.
+- A **recipe** combines 3 to 5 ingredients into an item. Crafting also costs cacao beans (50, 100 or 200 by tier), never CHOC or ADA.
 - **Recipes are discovered, not published.** In the kitchen, players combine ingredients. A combination that matches a recipe reveals it; one that does not uses up the ingredients, but never coins.
 - **Six new recipes per season:** three common, two rare and one epic.
 - **First discoverer:** the first player to find a recipe is named in the recipe's record, and the first item crafted from it carries the edition mark #1. The first edition is not stronger than later ones.
@@ -278,7 +298,10 @@ Rare ingredients spoil fastest, so they reward players who are active when they 
 
 ### 6.3 Equipment
 
-- Equipment is an **NFT on Cardano** (CIP-68) in the player's wallet. Each item is unique: it records its recipe, its crafter, the season and a serial number.
+- Equipment is an **item of the game**, kept by the server. Its owner **may mint** it, one item at a time: it becomes an **NFT on Cardano** (CIP-68) in the owner's own wallet. Minting is opt-in and final: a minted item never becomes a plain one again, and the only way out is salvaging (section 6.4).
+- **What the token holds.** It names the item type, its name, a picture and its serial number. It carries no player, no crafter, no season and no effects.
+- **The wallet decides who has a minted item.** It belongs, in the game, to the player whose linked wallet holds it. Sold or sent away, it leaves that player's loadout; bought or received, it can be equipped within the same loadout budget. A running match keeps the loadout it started with.
+- **Brakes on trading.** Minting needs 10 verified online matches and is limited to 3 items per player and day (UTC), one at a time. Items in a wallet that was linked to another player before count only 24 hours after the new link.
 - **Every item has a gameplay effect.** It may also change how a unit looks, which tells the opponent what a player uses, unless the unit is hidden under cream. There are no purely cosmetic items.
 - **Side-grades, not upgrades.** Every effect has a trade-off of at least 10 %, and no item changes a value by more than 30 %. Examples:
 
@@ -289,24 +312,29 @@ Rare ingredients spoil fastest, so they reward players who are active when they 
   | Dark chocolate walls (factory) | rare | +30 % hit points | building slots 10 % slower |
   | Turbo conveyor (factory) | epic | building slots 15 % faster | one storage space less |
 
-- **Loadout budget: 10 points for every player.** Common items cost 2 points, rare items 3, epic items 5. At most one item per building type.
+- **Loadout budget: 10 points for every player.** Common items cost 2 points, rare items 3, epic items 5. Two slots per building type, and the same item type at most once on a building.
 - **Rotation.** An item is tournament-legal in the season it was crafted and the two seasons after. It stays usable in the open ladder forever.
-- **Balance updates.** Item effects live in CIP-68 reference data. The team multisig (section 8.3) can change them at most once per season, announced at least 7 days in advance with the reasons. Holders should expect effects to change when the game is rebalanced.
-- **Royalties.** Secondary sales carry a CIP-27 royalty of 2.5 %, paid in ADA to the **security fund**, which pays for audits and bug bounties and is reported publicly (section 11.3).
+- **Balance updates.** Item effects come from the game's balance, not from the token, so a balance change needs no token update. The team changes them at most once per season, announced at least 7 days in advance with the reasons. Holders should expect effects to change when the game is rebalanced; each minted item's page on battlechoc.com shows what it does today.
+- **Royalties.** Not in the first version of minting. The plan is a royalty of 2.5 % on secondary sales, paid in ADA to the **security fund**, which pays for audits and bug bounties and is reported publicly (section 11.3).
 
 ### 6.4 Salvaging
 
-Any holder can burn an item to get back **half of its ingredients**, rounded down, but at least one of the main ingredient:
+Salvaging turns an item back into ingredients. battlechoc charges no fee for it.
 
-- the crafting fee is not refunded;
-- returned ingredients have a shelf life of 7 days, so crafting cannot be used to keep ingredients from spoiling;
-- salvaging is the natural way out for rotated items, and it gives every item a lower bound for its usefulness.
+- **A plain item** gives back **half of each ingredient amount** of its recipe, rounded down.
+- **A minted item** is salvaged by burning its token, which the holder alone can do. Its **rare and legendary ingredients come back in full** (legendary is the rarity above rare, section 6.1), the common and uncommon ones as for a plain item. The deposit locked with the item (section 5.4) returns with the burn. The ingredients are credited once the burn is `K_FINAL` blocks deep (section 15), to the player the wallet that held the token is linked to at that time. A burn made outside the game is credited the same way, with nothing if the item's recipe is gone; if the wallet belongs to no player, nobody is credited.
+- The cacao beans paid for crafting never come back.
+- Returned ingredients are **fresh**: their shelf life starts again when they are credited.
+- **Never more than the craft took.** Salvage reads the recipe as it is at the salvage, so an existing recipe is only changed this way: no rare or legendary amount is raised, and no other amount more than doubled. Each round of craft, mint and salvage loses at least half of the common and uncommon ingredients, the cacao beans of the crafting price, two network fees and the battlechoc fee. It keeps the rare and legendary ones, by design: a minted item preserves them from spoiling, and makes them tradable inside the item, although the ingredients themselves cannot be traded (sections 6.1 and 9.3).
+- Salvaging is the natural way out for rotated items, and it gives every item a lower bound for its usefulness.
 
 ## 7. Simulation and evidence
 
 The parameters in this paper were chosen with an agent-based simulation. The simulator is in [`whitepaper/simulator`](simulator), runs without dependencies and is covered by tests: no coin is ever created or lost, every amount is a whole coin, and the pot moves exactly by its recorded flows. All charts in this paper are generated by it. Full results are in [`simulator/results.md`](simulator/results.md).
 
 ### 7.1 Model
+
+**Note for version 0.4.** The figures of this section, and every simulated figure elsewhere in this paper (sections 5.2, 5.3, 5.5 and 11.2), were modelled with the crafting fee of version 0.3 (50 / 100 / 200 CHOC per item, 90 % to the pot) as one of the ways coins return to the pot. Version 0.4 drops that fee: only minting costs a battlechoc fee, which goes into the treasury (sections 5.4 and 5.8). The simulation will be re-run with the minting fee; until then its figures are those of version 0.3.
 
 - **One step is one monthly season**, over 25 years, with 8 random seeds per case.
 - **Players** join to follow the scenario's population curve and leave with a chance of 5 % per month. Each player is a *spender* (enters, crafts, buys coins when short), a *casual* player (enters sometimes, sells more) or a *hoarder* (enters only while it is free and never spends, sells or buys).
@@ -335,7 +363,7 @@ The parameters in this paper were chosen with an agent-based simulation. The sim
 | Smooth 4-year halving | the issuance of section 5.2 |
 | Pantry | prizes in a claims contract; unwithdrawn prizes of former players return after 24 months |
 | Free qualifiers | the top 10 % of the open ladder enter the paid season for free |
-| **Recommended** | smooth 4-year halving, the pantry, and the 20 CHOC fee from 50 % issued: **this paper's design** |
+| **Recommended** | smooth 4-year halving, the pantry, and the 20 CHOC fee from 50 % issued: **this paper's design**, modelled with version 0.3's crafting fee (section 7.1) |
 
 ### 7.4 Findings
 
@@ -392,6 +420,8 @@ The command regenerates every chart in `whitepaper/figures` (except the three ha
 
 ![Who does what: player, server and Cardano](figures/architecture.svg)
 
+*The figure still shows version 0.3: the server key co-signs crafting; the equipment policy mints "with fee" (the crafting fee); the team multisig sets "seasonal item effects"; the player signs crafting; the configuration and the treasury are missing. Since version 0.4 the server key co-signs minting, the player signs minting and salvaging, item effects are in the game's balance, and the contracts and keys are those of sections 8.2 and 8.3. Where the figure and the text differ, the text applies. The figure will be redrawn.*
+
 ### 8.1 Game server
 
 - The battlechoc server hosts all online matches and is the only authority on their state. It receives players' actions, applies the rules, draws random numbers from a secret seed and sends each player only what they may see.
@@ -407,15 +437,17 @@ All validators are written in Aiken. Their source code is open, and the deployed
 | CHOC minting policy | minting validator with a state token | One mint per season, into the pot only; the amount follows section 5.2; the total never exceeds 10,000,000; no admin key. |
 | Tournament pot | spending validator | Coins leave only into the prize-claims contract, against a season's payout root signed by the team multisig, and only after the dispute window. |
 | Prize claims (pantry) | spending validator | A player withdraws or spends their prize with a Merkle proof and their own signature; after 24 months, unclaimed prizes can only move back to the pot. |
-| Equipment minting policy | minting validator (CIP-68) | Minting requires the crafting fee, split 90/10 to the pot and the team, and the server's co-signature confirming the ingredients were used. Burning (salvaging) is always allowed. |
+| Items (`items`) | minting and spending validator (CIP-68) | Minting an existing game item needs the server's and the owner's signatures and pays the battlechoc fee of the fee option the player chose from the configuration. The reference token with the item's data stays locked at the validator, the user token goes to the owner. Burning (salvaging) needs the holder alone; the deposit locked with the reference token goes to whoever burns. No path changes a minted item's data. |
+| Configuration (`config`) | a one-shot NFT at a spending validator | Holds the server keys, the admins and their threshold, the pause and the fee options of minting. It moves only with the admins' signatures. |
+| Treasury (`treasury`) | spending validator | Collects the battlechoc fee of minting; spending needs the configuration's admins. Planned: the season rollover of section 5.8. |
 | State anchor | data on-chain | The Merkle Patricia Forestry root of ratings, results, ingredients and recipe commitments, published twice a week. |
 
-Players sign all their transactions with their own wallets. battlechoc never holds custody of players' coins or items.
+The items, configuration and treasury contracts are built for the Cardano test network; the others are planned. Players sign all their transactions with their own wallets. battlechoc never holds custody of players' coins or items.
 
 ### 8.3 Keys
 
-- **Team multisig, 2 of 3:** Fabian Bormann, Sebastian Bode and a backup key held offline by an independent trustee. It publishes payout roots and anchors, updates item effects at most once per season, and receives the team share. It cannot mint CHOC, change the schedule, or touch coins in players' wallets or the pantry. In governance stage 3 it is replaced by the council's multisig (section 12).
-- **Server key:** signs match results and co-signs crafting. It cannot move coins, mint CHOC or change item effects. It is rotated once a year and immediately after any incident, by the team multisig.
+- **Team multisig, 2 of 3:** Fabian Bormann, Sebastian Bode and a backup key held offline by an independent trustee. It publishes payout roots and anchors, is the admin of the items' configuration (the battlechoc fee, the pause and the server keys) and of the treasury, and receives the team share. It cannot mint CHOC, change the schedule, change a minted item's data, or touch coins or items in players' wallets or the pantry. On the test network one admin key stands in for it; the configuration supports any m of n. In governance stage 3 it is replaced by the council's multisig (section 12).
+- **Server key:** signs match results and co-signs minting, and the game's own burns. It holds no funds and cannot move coins or items, mint CHOC, or mint an item without its owner's signature. It is rotated once a year and immediately after any incident, by the team multisig.
 - **No admin key** exists for the CHOC minting policy.
 
 ### 8.4 Security
@@ -434,7 +466,7 @@ This section states the position battlechoc intends to take and the design choic
 - CHOC is a crypto-asset in the sense of the EU's Markets in Crypto-Assets Regulation. It is neither an e-money token nor an asset-referenced token: it is not pegged to any currency or asset.
 - MiCA's duties for issuers of such tokens (a crypto-asset white paper, notification of the authority) arise when someone offers the token to the public or asks for its admission to a trading platform. battlechoc does neither: it sells no CHOC, collects no money for it and does not apply for listings. Coins are distributed only as prizes.
 - **If the legal review finds that MiCA's white-paper duty applies anyway,** for example because of the registration fee, battlechoc will publish a MiCA-compliant crypto-asset white paper and notify the competent authority before the first mainnet season.
-- **Equipment** items are unique: each has its own serial, crafter, season and history. Unique, non-fungible crypto-assets are outside MiCA's scope. Because many items share a recipe, the legal review will also assess whether they could be treated as fungible.
+- **Minted items** are unique: each token carries its item type, its name, a picture and its own serial number, and records no crafter, no season and no player. Unique, non-fungible crypto-assets are outside MiCA's scope. Because many items share a recipe, the legal review will also assess whether they could be treated as fungible.
 
 ### 9.2 Securities and investment rules
 
@@ -442,7 +474,7 @@ battlechoc avoids everything that makes a token look like an investment: there i
 
 ### 9.3 Gambling, prize competitions and loot boxes
 
-- **No paid randomness.** Nothing that costs CHOC has a random result. Crafting is deterministic, the kitchen costs no coins, and random drops exist only in free play, giving items that cannot be traded.
+- **No paid randomness.** Nothing that costs CHOC has a random result. Crafting is deterministic, the kitchen costs no coins, and random drops exist only in free play. Drops are free and cannot be bought, and the ingredients they give cannot be traded themselves: they reach another player only inside an item that someone crafted, minted and gave away or sold, and whoever salvages that item gets its rare and legendary ingredients back in full (section 6.4). The legal review will also assess whether this path matters for the rules on prize competitions and loot boxes.
 - **Phase 1 is a free prize competition.** As long as registration is free, players stake nothing.
 - **Phase 2 is a paid skill competition.** Whether paid entry to a skill competition with prizes is allowed depends on the country. Phase 2 starts only after a legal review confirms it for the eligible countries; countries where it is not allowed are excluded from paid seasons or keep free entry.
 - **Skill must dominate.** The tournament ruleset (section 4.3) removes avoidable chance. Season zero measures how well ratings predict results, and the analysis is published before phase 2. As a target, a player rated 200 points higher should win at least 70 % of tournament matches.
@@ -468,8 +500,8 @@ Excluded are all countries under EU or UN sanctions, and all countries where the
 ## 10. Privacy
 
 - battlechoc stores **no personal data**: no names, email addresses, phone numbers, birth dates or documents. Accounts are anonymous device accounts.
-- For seasons, battlechoc stores a wallet address and a pseudonymous credential identifier. Under EU data protection law, wallet addresses can be personal data, so they are treated as such: they are used only for the season layer, never shared beyond the published results, and covered by the privacy policy.
-- **Only roots and payouts go on-chain.** Full results are published off-chain, so that they can be removed on request; the root stays, but without the published list it reveals nothing.
+- For seasons, battlechoc stores a wallet address and a pseudonymous credential identifier; for minting, the linked wallets' keys, the address each item went to and which wallet key holds each minted item. Under EU data protection law, wallet addresses can be personal data, so they are treated as such: they are used only for the season layer and for minted items, never shared beyond the published results and the chain data service the server asks, and covered by the privacy policy.
+- **Only roots, payouts and the items players choose to mint go on-chain.** Full results are published off-chain, so that they can be removed on request; the root stays, but without the published list it reveals nothing. A minted item's token carries no player name or account, but which wallet holds it is public on the chain for good; battlechoc shows nowhere which wallet belongs to which player.
 - Player names are chosen freely and should not be real names.
 - Single player stores everything on the player's device.
 
@@ -481,18 +513,19 @@ battlechoc is developed by Fabian Bormann and Sebastian Bode, together with cont
 
 ### 11.2 Income
 
-The team receives no coins from minting and holds no allocation. Its only income from the economy:
+The team receives no coins from the issuance of CHOC and holds no allocation. Its only income from the economy:
 
-- 10 % of crafting fees and 5 % of registration fees, in CHOC;
+- 5 % of registration fees, in CHOC;
+- its part of the battlechoc treasury: planned, the 20 % in USDCx at each season's start (section 5.8); today the treasury only collects;
 - nothing from royalties, which go to the security fund.
 
-In the simulated baseline, the team share was about 5,000 CHOC per season in year 3 and about 7,200 CHOC in year 15.
+In the simulated baseline, which still had the crafting fee of version 0.3 (section 7.1), the team share was about 5,000 CHOC per season in year 3 and about 7,200 CHOC in year 15.
 
 ### 11.3 Spending and reporting
 
 - The team sells its CHOC for USDCx, a USD stablecoin on Cardano, in small amounts spread over each month, so that its sales do not move the market.
 - The money pays for servers, network fees, development, audits that the security fund does not cover, and marketing that explains the game, never the coin's price.
-- A **quarterly report** shows income, sales and spending. A public dashboard shows the pot, the pantry, the security fund and the team multisig live from the chain.
+- A **quarterly report** shows income, sales and spending. A public dashboard shows the pot, the pantry, the treasury, the security fund and the team multisig live from the chain.
 
 ### 11.4 Trademark
 
@@ -519,7 +552,7 @@ battlechoc starts with a small team, because decisions need to be fast while the
 | Parameter | Bounds |
 | --- | --- |
 | Registration fee | 0 to 100 CHOC, in steps of 20, at most once a year |
-| Crafting fees | 10 to 500 CHOC, multiples of 10 |
+| battlechoc fee for minting | set in the items' on-chain configuration by its admins; its bounds are set with the treasury (section 5.8) |
 | Participation share and rank exponent | 10–25 %, and 0.8–1.5 |
 | Minimum matches and opponents | 10–40 matches, 5–20 opponents |
 | Drop rates, shelf lives, recipes, item effects | within the side-grade rules of section 6.3 |
@@ -527,7 +560,7 @@ battlechoc starts with a small team, because decisions need to be fast while the
 
 **What nobody can change:** the maximum supply, the issuance schedule, the absence of any allocation or sale, and the absence of an admin key. These are enforced on-chain.
 
-**If the team stops.** If the team can no longer run the servers, it hands the servers, the recipe data and the multisig to the council. If there is no council yet, it publishes the recipe data and the server configuration, so that the community can continue. Coins and items stay in the players' wallets in any case, and prizes in the pantry remain withdrawable until the end of their 24 months.
+**If the team stops.** If the team can no longer run the servers, it hands the servers, the recipe data and the multisig to the council. If there is no council yet, it publishes the recipe data and the server configuration, so that the community can continue. Coins and minted items stay in the players' wallets in any case, and prizes in the pantry remain withdrawable until the end of their 24 months.
 
 ## 13. Roadmap
 
@@ -573,8 +606,13 @@ Initial values. "Fixed" means enforced on-chain and not changeable by anyone; "g
 | Claim period (pantry) | 24 months | fixed per season at opening | 5.7 |
 | Registration fee | free until 50 % issued, then 20 CHOC | governance | 5.3 |
 | Registration split | 95 % pot, 5 % team | governance (team share can only fall) | 5.4 |
-| Crafting fees | 50 / 100 / 200 CHOC | governance | 5.4 |
-| Crafting split | 90 % pot, 10 % team | governance (team share can only fall) | 5.4 |
+| Crafting price | 50 / 100 / 200 cacao beans by tier; no CHOC, no ADA | governance | 6.2 |
+| battlechoc fee for minting | 1 / 2 / 4 ADA for a common / rare / epic item (test network); later also USDCx or CHOC (planned) | the configuration's admins | 5.4 |
+| Treasury rollover (planned) | 80 % CHOC for the prize pool, 20 % USDCx for the team, at each season's start | open, set with the treasury | 5.8 |
+| Mint gate | 10 verified online matches | governance | 6.3 |
+| Mint limit | 3 mints per player and UTC day, one at a time | governance | 6.3 |
+| Wallet hop wait | 24 hours | governance | 6.3 |
+| `K_FINAL` | set by the operator (10 blocks recommended on the test network) | operator | 6.4 |
 | Kitchen experiments | no coin fee | governance | 6.2 |
 | Participation share | 15 % | governance | 4.6 |
 | Rank weights | 1 / rank | governance | 4.6 |
@@ -582,14 +620,14 @@ Initial values. "Fixed" means enforced on-chain and not changeable by anyone; "g
 | Rating | Glicko-2, ranked by rating − 2 × uncertainty | governance | 4.4 |
 | Disconnect limit | 60 seconds | governance | 4.7 |
 | Ingredient drops | 50 % per loss, 80 % per win, daily limits | governance | 6.1 |
-| Shelf lives | 2 to 180 days | governance | 6.1 |
+| Shelf lives | 3 to 180 days | governance | 6.1 |
 | New recipes per season | 6 (3 common, 2 rare, 1 epic) | governance | 6.2 |
 | Loadout budget | 10 points (common 2, rare 3, epic 5) | governance | 6.3 |
 | Item effect bounds | trade-off ≥ 10 %, no change above 30 % | governance | 6.3 |
 | Rotation | the crafting season plus 2 | governance | 6.3 |
-| Item effect updates | at most once per season, 7 days' notice | governance | 6.3 |
-| Salvage return | 50 % of the ingredients, 7-day shelf life | governance | 6.4 |
-| Royalties | 2.5 % in ADA to the security fund | governance | 6.3 |
+| Item effect updates | in the game's balance, not in the tokens; at most once per season, 7 days' notice | governance | 6.3 |
+| Salvage return | plain 50 %, rounded down; minted: rare and legendary 100 %, the others 50 %; fresh shelf life | governance | 6.4 |
+| Royalties | none in the first version of minting; planned 2.5 % in ADA to the security fund | governance | 6.3 |
 | State anchoring | twice a week | governance | 8.2 |
 | Team multisig | 2 of 3 (Fabian, Sebastian, trustee) | stage 3: council, 3 of 5 | 8.3 |
 | Age limit | 18 | fixed by law | 9.4 |
@@ -603,15 +641,19 @@ Initial values. "Fixed" means enforced on-chain and not changeable by anyone; "g
 | CHOC | The battlechoc coin. |
 | CIP | Cardano Improvement Proposal. CIP-26: off-chain token metadata registry. CIP-27: royalties. CIP-30: wallet connection for web apps. CIP-68: tokens with reference metadata. |
 | Credential | A digitally signed statement about a person, proven without revealing more than needed. |
+| Deposit | The ADA that Cardano requires an output holding tokens to carry. A minted item's deposit stays with the item. |
 | Glicko-2 | A rating system that tracks a player's skill and how certain that estimate is. |
+| `K_FINAL` | The depth in blocks from which battlechoc treats a Cardano transaction as final. |
 | KERI | Key Event Receipt Infrastructure: a system for self-managed identifiers and keys. |
 | Merkle Patricia Forestry (MPF) | A data structure whose single root value commits to a large set of records; a short proof shows that a record is part of it. |
 | MiCA | The EU's Markets in Crypto-Assets Regulation. |
+| Minting (an item) | Turning a game item into an NFT in its owner's wallet. Not to be confused with the issuance of CHOC. |
 | Multisig | A key that needs signatures from several people to act. |
 | Open ladder | Free online matches outside the season tournament. |
 | Pantry | The prize-claims contract that holds a player's prizes until they withdraw or spend them. |
 | Season | One calendar month of tournament play, ending with a payout. |
 | Spending validator | A Cardano script that decides when coins at its address may be spent. |
+| Treasury | The contract that collects the battlechoc fee of minting (section 5.8). |
 | USDCx | A USD stablecoin on Cardano. |
 | Veridian | An identity wallet and platform for KERI/ACDC credentials. |
 
@@ -630,3 +672,30 @@ Initial values. "Fixed" means enforced on-chain and not changeable by anyone; "g
 | Governance | stages without triggers | fixed triggers, one person one vote, bounds | community transition |
 | Royalties | open | 2.5 % to the security fund | royalties should not reward the team for trading |
 | All other open parameters | open | decided initial values (section 15) | — |
+
+## Appendix: changes in version 0.4
+
+| Topic | Version 0.3 | Version 0.4 | Reason |
+| --- | --- | --- | --- |
+| Items on Cardano (1, 2, 6.3) | every piece of equipment an NFT in the player's wallet | items are game items; their owner may mint one, opt-in, per item and final; "coins and minted items" sit in the wallets | owner's decision; built on the test network |
+| What the token holds (6.3, 9.1) | recipe, crafter, season, serial; effects in CIP-68 reference data | item type, name, picture and serial; no player, no crafter, no season, no effects | a name on chain cannot be deleted; balance changes need no token update |
+| Crafting fee (5.3, 5.4, 5.5, 5.7, 6.2, 6.4, 7.1, 8.2, 8.3, 11.2, 12, 15, the figures of 6 and 8) | 50 / 100 / 200 CHOC, 90 % pot, 10 % team, co-signed by the server | gone: crafting costs ingredients and cacao beans, never CHOC or ADA; only minting costs a battlechoc fee | owner's decision (2026-11-14) |
+| Minting fee (5.4, 15) | none | network fee (about 0.5 ADA) + battlechoc fee 1 / 2 / 4 ADA by tier into the treasury + a deposit of about 3.7 ADA that stays with the item | owner's decision; measured on the test network |
+| Network fees (5.4) | players pay for claiming, registering, crafting and salvaging | for minting and salvaging an item, claiming and registering; battlechoc never pays or sends ADA for players | only minting and salvaging are transactions now |
+| Treasury (5.8, 8.2, 11.2, 15) | none | collects the minting fee; planned: fees in USDCx and CHOC and a season rollover to 80 % CHOC (prize pool) and 20 % USDCx (team) | owner's decision (2026-11-14) |
+| Salvaging (6.4, 15) | half of the ingredients, at least one of the main ingredient; 7-day shelf life | plain: half of each amount, rounded down; minted: rare and legendary in full; fresh; no fee; credited at `K_FINAL`, also for burns outside the game | owner's decision: a minted item preserves rare ingredients |
+| Brakes on trading (6.3, 15) | none | 10 verified online matches, 3 mints a day, a 24-hour wallet hop wait | second accounts and wallet hopping |
+| Royalties (6.3, 15) | 2.5 % CIP-27 royalty | not in the first version; planned as before | not built yet |
+| Balance updates (6.3, 15) | effects in reference data, changed by the multisig | effects in the game's balance; the notice period stays | balance changes must not need token updates |
+| Contracts and keys (8.2, 8.3) | an equipment policy requiring the crafting fee; the server co-signs crafting; the multisig updates item effects | `items`, `config` and `treasury` built; the server co-signs minting; the configuration's admins govern the fee, the pause and the server keys | as built |
+| Privacy (10) | only roots and payouts on-chain | plus the items players choose to mint, with no name | minting is public |
+| Simulation (5.5, 7.1, 11.2) | figures with the crafting fee as a sink | figures unchanged, marked as modelled with the crafting fee; to be re-run with the minting fee | not re-run yet |
+| What exists (header) | nothing of sections 4 to 12 | the game's ingredients, recipes and items, and minting on the test network | as built |
+| Figures (6, 8) | crafting loop and architecture with the crafting fee | unchanged, each with a note naming what still shows version 0.3; the text applies | to be redrawn |
+| Ingredients and trading (1, 2, 6.1, 6.4, 9.3) | ingredients and what drops give cannot be traded | ingredients cannot be traded themselves; inside a minted item they reach other players, and its salvage returns the rare and legendary ones in full; a point for the legal review | a consequence of the minted salvage rule, stated openly |
+| Legendary rarity (6.1) | gold leaf rare, 2 days | gold leaf legendary, 3 days, as in the game (shelf lives in section 15 now 3 to 180 days); the game's current table is `packages/shared/ingredients.js` | the minted salvage rule names legendary ingredients |
+| Slots (6.3) | at most one item per building type | two slots per building type, the same item type at most once on a building | as in the game |
+| Dashboard (11.3) | pot, pantry, security fund, team multisig | plus the treasury | the treasury is new |
+| If the team stops (12) | coins and items stay in the wallets | coins and minted items | only minted items are in wallets |
+| Glossary (16) | — | Deposit, `K_FINAL`, Minting (an item), Treasury | new terms |
+| Simulation as evidence (1, 5.5, 7.3) | the design was tested | marked as version 0.3's model | the minting fee is not modelled yet |

@@ -9,6 +9,7 @@ import {
 import Dialog from "../dialogs/Dialog";
 import Button from "../controls/Button";
 import ItemIcon from "./ItemIcon";
+import { equippable, groupMinted, instanceToEquip } from "./itemActions";
 import { effectLines, itemName, labColors, TIER_COLORS } from "./itemText";
 import { bangers, gamePanel } from "../styles";
 
@@ -77,6 +78,7 @@ const useStyles = createUseStyles((theme) => {
 /**
  * Picks the item for one slot: the player's items of this building, one row per item type
  * (with how many they have), with effect and trade-off; items that cannot go into the slot say why.
+ * `chosenId`: the copy the item card chose; its row equips that one.
  */
 const InventoryPicker = ({
   open,
@@ -89,6 +91,7 @@ const InventoryPicker = ({
   budgetUsed,
   onEquip,
   busy,
+  chosenId,
 }) => {
   const classes = useStyles();
   const slots = equipment[entityType] || [];
@@ -104,9 +107,12 @@ const InventoryPicker = ({
 
   const types = [];
   items
+    // an item being salvaged (its ingredients on the way) goes into no slot
     .filter(
       (entry) =>
-        Items[entry.item] && Items[entry.item].entityType === entityType
+        Items[entry.item] &&
+        Items[entry.item].entityType === entityType &&
+        equippable(entry)
     )
     .forEach((entry) => {
       let group = types.find((candidate) => candidate.item === entry.item);
@@ -140,10 +146,8 @@ const InventoryPicker = ({
         {types.map(({ item, instances }) => {
           const definition = Items[item];
           const isCurrent = item === currentKey;
-          // prefer an instance that is not equipped anywhere
-          const free =
-            instances.find((entry) => !equippedIds.has(entry.id)) ||
-            instances[0];
+          // the copy the item card chose, else one that is not equipped anywhere
+          const free = instanceToEquip(instances, equippedIds, chosenId);
           let reason;
           if (item === otherKey) {
             reason = t(tr.LAB_ALREADY_EQUIPPED);
@@ -160,7 +164,16 @@ const InventoryPicker = ({
               className={`${classes.row} ${isCurrent ? classes.current : ""}`}
               data-item={item}
             >
-              <ItemIcon item={item} size="3.4em" />
+              {/* the stamp when every item of the row is minted, as on the shelf, or the
+                  copy the item card chose is */}
+              <ItemIcon
+                item={item}
+                size="3.4em"
+                minted={
+                  free.id === chosenId ? free.minted : groupMinted(instances)
+                }
+                serial={free.serial}
+              />
               <div className={classes.text}>
                 <div className={classes.name}>{itemName(item)}</div>
                 <div className={classes.meta}>

@@ -16,6 +16,7 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import { features } from "../../cardano";
+import { guideLink } from "../../cardano/guide";
 import { outlined } from "../styles";
 
 // the wallet door (plan 3): loaded when it opens
@@ -312,6 +313,11 @@ const SaveProgress = ({ playerName }) => {
         state={state}
         network={network}
         policyHref={policyLink()}
+        mintMarks={features.showMintMarks()}
+        networkName={
+          features.enabled() ? networkLabel(features.network().name) : null
+        }
+        guideHref={guideLink("wallet")}
         passkeyBusy={keys.passkeyBusy}
         error={errorIn === "safety" ? error : null}
         onBackUp={openKeepWords}

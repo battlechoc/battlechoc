@@ -54,6 +54,9 @@ module.exports.SLOTS_PER_BUILDING = equipment.SLOTS_PER_BUILDING;
 module.exports.sanitizeLoadout = equipment.sanitizeLoadout;
 module.exports.loadoutPoints = equipment.loadoutPoints;
 module.exports.applyStat = equipment.applyStat;
+const salvage = require('./salvage');
+module.exports.salvageReturns = salvage.salvageReturns;
+module.exports.salvageRule = salvage.salvageRule;
 const rating = require('./rating');
 module.exports.updateRating = rating.updateRating;
 module.exports.rateMatch = rating.rateMatch;
@@ -82,12 +85,15 @@ module.exports.getDefaultLanguage = i18n.getDefaultLanguage;
 module.exports.translate = i18n.translate;
 module.exports.translateIn = i18n.translateIn;
 module.exports.translationKeys = i18n.translationKeys;
+module.exports.placeholdersOf = i18n.placeholdersOf;
 
 // Cardano: the networks and the sign-in challenge text (cardano/)
 module.exports.cardano = {
     ...require('./cardano/network'),
     ...require('./cardano/message'),
 };
+// minting items into a wallet: the rules, windows and URLs (chain.js)
+module.exports.chain = require('./chain');
 
 // Real-time engine
 const realtimeEngine = require('./engine');

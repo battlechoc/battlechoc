@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>battlechoc – Items prägen: so geht's / Minting items: how it works</title>
+    <meta name="description" content="Was eine Wallet ist, wie du zu ADA kommst und was das Prägen eines Items kostet. What a wallet is, how to get ADA and what minting an item costs." />
+    <link rel="icon" href="/favicon.ico" />
+    <!-- A page of its own, without the game's scripts, like the privacy policy (its head and
+         styles): readable without JavaScript, and nothing from other servers. The game links its
+         sections through src/cardano/guide.js (guideLink): every h2's id is <section>-de or
+         <section>-en, and test/unit/guide.test.js checks that each one is here. German first,
+         then the English section saying the same, paragraph for paragraph; every language but
+         German reads the English one. The ADA amounts are the game's estimates
+         (packages/shared/chain.js) and the battlechoc fee of the deployment's configuration
+         (1 / 2 / 4 ADA by tier on preprod): change them together. -->
+    <style>
+      @font-face {
+        font-family: "Bangers";
+        font-display: swap;
+        src: url("/fonts/bangers-latin-400-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Montserrat";
+        font-weight: 400;
+        font-display: swap;
+        src: url("/fonts/montserrat-latin-400-normal.woff2") format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212;
+      }
+      @font-face {
+        font-family: "Montserrat";
+        font-weight: 400;
+        font-display: swap;
+        src: url("/fonts/montserrat-latin-ext-400-normal.woff2") format("woff2");
+        unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+      }
+      @font-face {
+        font-family: "Montserrat";
+        font-weight: 700;
+        font-display: swap;
+        src: url("/fonts/montserrat-latin-700-normal.woff2") format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212;
+      }
+      :root {
+        --paper: #fff8ee;
+        --ink: #4d2c1b;
+        --heading: #772549;
+        --link: #1b4e69;
+        --rule: #e8d6c0;
+        --box: #ffffff;
+        --note: #fdebd3;
+        --warn: #fff1cf;
+        --gold: #c98a1a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 16px/1.6 "Montserrat", system-ui, sans-serif;
+      }
+      main {
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 1.5rem 16px 4rem;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.5rem;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--rule);
+      }
+      /* every link is at least 44 px in both directions, big enough for a finger */
+      nav a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0 0.25rem;
+      }
+      .brand {
+        font: 2rem "Bangers", cursive;
+        letter-spacing: 0.04em;
+        color: var(--heading);
+        text-decoration: none;
+      }
+      h1,
+      h2 {
+        font-family: "Bangers", cursive;
+        font-weight: 400;
+        letter-spacing: 0.04em;
+        color: var(--heading);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin: 2.5rem 0 1rem;
+      }
+      h2 {
+        font-size: 1.5rem;
+        margin: 0 0 0.5rem;
+        /* a link from the game (/guide/#costs-de) shows the box's top edge above the heading */
+        scroll-margin-top: 1.5rem;
+      }
+      a {
+        color: var(--link);
+      }
+      .summary {
+        padding: 1rem 1.25rem;
+        border-radius: 0.75rem;
+        background: var(--note);
+      }
+      .topic {
+        margin-top: 1.25rem;
+        padding: 1rem 1rem 0.25rem;
+        border: 2px solid var(--rule);
+        border-radius: 14px;
+        background: var(--box);
+      }
+      .topic:has(h2:target) {
+        border-color: var(--gold);
+      }
+      .topic p,
+      .topic ul {
+        margin: 0 0 0.75rem;
+      }
+      .warn {
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--gold);
+        border-radius: 10px;
+        background: var(--warn);
+      }
+      ul {
+        padding-left: 1.25rem;
+      }
+      li {
+        margin: 0.5rem 0;
+      }
+      /* "Am Handy" / "Am Computer": the store links grouped by where the app runs */
+      .topic .device {
+        margin-bottom: 0.25rem;
+        font-weight: 700;
+      }
+      ul.apps {
+        padding: 0;
+        list-style: none;
+      }
+      /* each app: its name, then its stores, wrapping beside the name */
+      ul.apps li {
+        display: grid;
+        grid-template-columns: 4.5rem 1fr;
+        align-items: start;
+        gap: 0.5rem;
+      }
+      .app {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        font-weight: 700;
+      }
+      .stores {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .button {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0 1rem;
+        border: 2px solid var(--link);
+        border-radius: 22px;
+        background: var(--box);
+        font-weight: 700;
+        text-decoration: none;
+        overflow-wrap: anywhere;
+      }
+      section + section {
+        margin-top: 4rem;
+        padding-top: 1rem;
+        border-top: 2px solid var(--rule);
+      }
+      .end {
+        margin-top: 2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <nav>
+        <a class="brand" href="/">battlechoc</a>
+        <span><a href="#de" hreflang="de">Deutsch</a> · <a href="#en" hreflang="en">English</a></span>
+      </nav>
+
+      <section id="de" lang="de">
+        <h1>Items prägen: so geht's</h1>
+        <p>
+          Prägen heißt: Dein Item bekommt einen Prägestempel und zieht in deine Wallet um. Dann
+          gehört es dir auch außerhalb von battlechoc, und du kannst es verkaufen oder verschenken.
+          Du brauchst dafür zwei Dinge: eine Wallet und ein paar ADA. Kein Vorwissen nötig.
+        </p>
+        <p>
+          Prägen geht ab 10 Online-Partien, und du kannst 3 Items am Tag prägen. battlechoc prüft
+          für dich, ob alles bereit ist, bevor sich deine Wallet öffnet.
+        </p>
+        <p class="summary">
+          <strong>Geprägt bleibt geprägt:</strong> Ein geprägtes Item wird nie wieder ein normales.
+          Zerlegen kannst du es weiterhin (Abschnitt 6).
+        </p>
+
+        <div class="topic">
+          <h2 id="wallet-de">1 · Was ist eine Wallet?</h2>
+          <p>
+            Eine Wallet ist eine App, in der deine geprägten Items und dein ADA liegen. Nur du hast
+            den Schlüssel dazu, auch battlechoc kommt nicht heran.
+          </p>
+          <p>
+            Beim Einrichten legst du ein Passwort fest (am Handy oft eine PIN). Damit bestätigst du
+            später jede Zahlung, auch beim Prägen.
+          </p>
+          <p class="warn">
+            <strong>Das Wichtigste:</strong> Beim Einrichten zeigt dir die App eine Reihe von
+            Wörtern, oft 24. Schreib sie auf Papier und heb sie gut auf: Sie sind dein
+            Ersatzschlüssel. Mit ihnen holst du deine Wallet auf ein neues Gerät. Verlierst du die
+            Wörter und dein Gerät, ist die Wallet weg, mit allem, was darin liegt. battlechoc kann
+            eine Wallet nie wiederherstellen.
+          </p>
+          <p>
+            Zeig die Wörter niemandem. Tipp sie nirgends ein außer in eine Wallet-App, die du selbst
+            einrichtest: nicht in battlechoc und auf keiner Website. Wer sie kennt, kann alles aus
+            deiner Wallet nehmen. Sie sind nicht die Sicherungswörter deines battlechoc-Kontos.
+          </p>
+        </div>
+
+        <div class="topic">
+          <h2 id="apps-de">2 · Wallet-App holen</h2>
+          <p>
+            Am Handy: Eternl oder Vespr. Am Computer: Eternl oder Lace als Erweiterung für deinen
+            Browser, zum Beispiel Chrome. Hol sie dir über diese Links, denn es gibt gefälschte
+            Wallet-Apps.
+          </p>
+          <p class="device">Am Handy</p>
+          <ul class="apps">
+            <li>
+              <span class="app">Eternl</span>
+              <span class="stores">
+                <a class="button" href="https://apps.apple.com/app/eternl-by-tastenkunst/id1603854385" target="_blank" rel="noopener noreferrer">App Store</a>
+                <a class="button" href="https://play.google.com/store/apps/details?id=io.ccvault.v1.main" target="_blank" rel="noopener noreferrer">Google Play</a>
+              </span>
+            </li>
+            <li>
+              <span class="app">Vespr</span>
+              <span class="stores">
+                <a class="button" href="https://apps.apple.com/app/vespr-cardano-wallet/id1565749376" target="_blank" rel="noopener noreferrer">App Store</a>
+                <a class="button" href="https://play.google.com/store/apps/details?id=art.nft_craze.gallery.main" target="_blank" rel="noopener noreferrer">Google Play</a>
+              </span>
+            </li>
+          </ul>
+          <p class="device">Am Computer</p>
+          <ul class="apps">
+            <li>
+              <span class="app">Eternl</span>
+              <span class="stores">
+                <a class="button" href="https://chrome.google.com/webstore/detail/eternl/kmhcihpebfmpgmihbkipmjlmmioameka" target="_blank" rel="noopener noreferrer">Chrome Web Store</a>
+              </span>
+            </li>
+            <li>
+              <span class="app">Lace</span>
+              <span class="stores">
+                <a class="button" href="https://chrome.google.com/webstore/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk" target="_blank" rel="noopener noreferrer">Chrome Web Store</a>
+              </span>
+            </li>
+          </ul>
+          <p>
+            Dann verbindest du die Wallet mit battlechoc. Stell sie dafür zuerst auf „Preprod“, das
+            Testnetz von Cardano (Abschnitt 3). In Eternl und Lace findest du es in den
+            Einstellungen; ob deine Wallet-App es kann, steht in ihrer Hilfe.
+          </p>
+          <p>
+            Beim Prägen zeigt dir battlechoc eine Liste: Tipp dort bei „Wallet verbinden“ auf
+            „Verbinden“. Das geht auch vorher: in deinem Profil auf „Verwalten“, dann bei
+            „Cardano-Wallet“ auf „Verbinden“. Deine Wallet bittet dich, einen kurzen Text von
+            battlechoc zu signieren, also zu bestätigen. Das kostet nichts und bewegt kein Guthaben.
+          </p>
+          <p>
+            Auf einem neuen Gerät kommst du mit deiner Wallet auch zurück in dein Konto: in deinem
+            Profil unter „Ich habe schon ein Konto“ mit „Cardano-Wallet verwenden“.
+          </p>
+        </div>
+
+        <div class="topic">
+          <h2 id="ada-de">3 · So kommst du zu ADA</h2>
+          <p>
+            ADA ist das Geld des Cardano-Netzwerks. Damit zahlst du beim Prägen die Gebühren und das
+            Pfand (Abschnitt 4).
+          </p>
+          <p>
+            Gerade läuft das Prägen in battlechoc im Testnetz von Cardano, „Preprod“. Es funktioniert
+            wie das echte Netz, aber sein ADA ist gratis und hat keinen Wert: Hier geht es um kein
+            echtes Geld.
+          </p>
+          <p>
+            So kommst du zu Test-ADA: Stell deine Wallet auf „Preprod“ (Abschnitt 2). Kopiere deine
+            Adresse aus der App, meist unter „Empfangen“. Die Adresse ist eine lange Zeichenkette, an
+            die andere dir ADA und Items schicken können. Öffne den Faucet von Cardano, eine Seite,
+            die Test-ADA verschenkt. Wähl dort „Preprod“ und füge deine Adresse ein. Kurz danach ist
+            das Test-ADA in deiner Wallet.
+          </p>
+          <p>
+            <a class="button" href="https://docs.cardano.org/cardano-testnets/tools/faucet" target="_blank" rel="noopener noreferrer">Zum Cardano-Faucet</a>
+          </p>
+          <!-- Mainnet: before minting moves to the Cardano mainnet, the way to get real ADA goes
+               here, step by step (and the two paragraphs about Preprod and test ADA change). -->
+          <p>battlechoc selbst verkauft kein ADA.</p>
+        </div>
+
+        <div class="topic">
+          <h2 id="costs-de">4 · Was es kostet</h2>
+          <p>Du zahlst aus deiner Wallet, in ADA. Jeder Betrag geht woanders hin:</p>
+          <ul>
+            <li>
+              <strong>Netzwerkgebühr</strong>, etwa 0,5&nbsp;ADA<br />
+              Jede Zahlung auf Cardano kostet eine kleine Gebühr. Sie geht an das Cardano-Netzwerk
+              und ist weg.
+            </li>
+            <li>
+              <strong>battlechoc-Gebühr</strong>, 1, 2 oder 4&nbsp;ADA, je nach Stufe des Items
+              (gewöhnlich, selten, episch)<br />
+              Geht in die battlechoc-Treasury (geplant: für den Preistopf der Turniere und das
+              Team).
+            </li>
+            <li>
+              <strong>Pfand</strong>, etwa 3,7&nbsp;ADA<br />
+              Auf Cardano muss jedes Item etwas ADA bei sich tragen. Das Pfand bleibt im Item: Etwa
+              1,3&nbsp;ADA liegen mit ihm in deiner Wallet, etwa 2,4&nbsp;ADA sind fest beim Item
+              hinterlegt. Wer es zerlegt, bekommt das Pfand zurück.
+            </li>
+          </ul>
+          <p>
+            Halte etwa 6,5&nbsp;ADA bereit für ein gewöhnliches Item, 7,5&nbsp;ADA für ein seltenes
+            und 9,5&nbsp;ADA für ein episches. Darin steckt etwas Reserve: Was du nicht brauchst,
+            bleibt in deiner Wallet.
+          </p>
+          <p>
+            Bevor du bestätigst, zeigt dir battlechoc die Beträge, und deine Wallet zeigt sie dir
+            genau. Lehnst du ab, passiert nichts.
+          </p>
+          <p>
+            Zerlegen kostet nur eine Netzwerkgebühr von etwa 0,4&nbsp;ADA, und das Pfand ist danach
+            wieder ganz deins (Abschnitt 6).
+          </p>
+        </div>
+
+        <div class="topic">
+          <h2 id="selling-de">5 · Verkaufen und verschenken</h2>
+          <p>
+            Verschenken: Schick das Item in deiner Wallet-App an die Adresse der anderen Person.
+            Prüf die Adresse genau: Was du verschickst, kannst du nicht zurückholen.
+          </p>
+          <p>
+            Verkaufen: Stell es auf einem Marktplatz für Cardano-Sammlerstücke ein, also auf einer
+            Website, auf der Leute solche Items kaufen und verkaufen. Im Testnetz ist das nur zum
+            Ausprobieren.
+          </p>
+          <p>
+            Solange das Item nicht in deiner Wallet liegt, weil du es verschickt oder zum Verkauf
+            eingestellt hast, kannst du es im Spiel nicht nutzen. Kommt es zurück in deine Wallet,
+            sitzt es wieder an seinem Platz.
+          </p>
+          <p>
+            Hast du ein Item gekauft oder geschenkt bekommen? Verbinde die Wallet, in der es liegt,
+            mit deinem battlechoc-Konto. Dann findest du es im Choclab und kannst es ausrüsten.
+            Gehörte diese Wallet vorher zu einem anderen battlechoc-Konto, zählen ihre Items erst
+            24 Stunden, nachdem du sie verbunden hast.
+          </p>
+        </div>
+
+        <div class="topic">
+          <h2 id="salvage-de">6 · Ein geprägtes Item zerlegen</h2>
+          <p>
+            Ein geprägtes Item zerlegst du im Choclab wie jedes andere, mit „Zerlegen“. Du bestätigst
+            es in deiner Wallet; dafür muss etwas ADA in ihr liegen.
+          </p>
+          <p>
+            Die etwa 2,4&nbsp;ADA, die fest beim Item hinterlegt waren, kommen mit der Transaktion
+            des Zerlegens in deine Wallet zurück, abzüglich einer Netzwerkgebühr von etwa
+            0,4&nbsp;ADA: unterm Strich etwa 2&nbsp;ADA mehr. battlechoc verlangt fürs Zerlegen
+            nichts. Die etwa 1,3&nbsp;ADA, die mit dem Item in deiner Wallet lagen, sind danach
+            wieder frei.
+          </p>
+          <p>
+            Die Zutaten kommen ein paar Minuten später frisch in dein Regal, nach dem heutigen Rezept
+            des Items: seltene und legendäre ganz, alle anderen zur Hälfte (abgerundet). Der Kakao
+            fürs Herstellen kommt nicht zurück.
+          </p>
+          <p>
+            Auch wenn das Item ohne battlechoc zerlegt wird (auf Cardano heißt das „verbrennen“;
+            dafür braucht es Entwickler-Werkzeuge), kommen die Zutaten: an das battlechoc-Konto, mit
+            dem seine Wallet verbunden ist.
+          </p>
+        </div>
+
+        <p class="end">
+          Fragen? Schreib uns:
+          <a class="button" href="mailto:hello@battlechoc.com">hello@battlechoc.com</a>
+        </p>
+        <p>
+          Wie battlechoc mit deinen Daten umgeht:
+          <a class="button" href="/privacy-policy/#de">Datenschutzerklärung</a>
+        </p>
+      </section>
+
+      <section id="en" lang="en">
+        <h1>Minting items: how it works</h1>
+        <p>
+          Minting means: your item gets a stamp and moves into your wallet. Then it is yours outside
+          battlechoc too, and you can sell it or give it away. You need two things for it: a wallet
+          and a little ADA. No prior knowledge needed.
+        </p>
+        <p>
+          Minting opens after 10 online matches, and you can mint 3 items a day. battlechoc checks
+          for you that everything is ready before your wallet opens.
+        </p>
+        <p class="summary">
+          <strong>Minted stays minted:</strong> a minted item never becomes a plain one again.
+          You can still salvage it (section 6).
+        </p>
+
+        <div class="topic">
+          <h2 id="wallet-en">1 · What is a wallet?</h2>
+          <p>
+            A wallet is an app that holds your minted items and your ADA. Only you hold its key: not
+            even battlechoc can get at it.
+          </p>
+          <p>
+            When you set it up, you choose a password (on a phone often a PIN). Later you confirm
+            every payment with it, minting included.
+          </p>
+          <p class="warn">
+            <strong>The most important thing:</strong> when you set it up, the app shows you a list
+            of words, often 24. Write them down on paper and keep them safe: they are your spare
+            key. With them you get your wallet onto a new device. If you lose the words and your
+            device, the wallet is gone, with everything in it. battlechoc can never restore a
+            wallet.
+          </p>
+          <p>
+            Never show the words to anyone. Only ever type them into a wallet app you set up
+            yourself, never into battlechoc or a website. Whoever knows them can take everything
+            from your wallet. They are not the recovery words of your battlechoc account.
+          </p>
+        </div>
+
+        <div class="topic">
+          <h2 id="apps-en">2 · Get a wallet app</h2>
+          <p>
+            On a phone: Eternl or Vespr. On a computer: Eternl or Lace as an extension for your
+            browser, Chrome for example. Get them through these links, because there are fake wallet
+            apps.
+          </p>
+          <p class="device">On a phone</p>
+          <ul class="apps">
+            <li>
+              <span class="app">Eternl</span>
+              <span class="stores">
+                <a class="button" href="https://apps.apple.com/app/eternl-by-tastenkunst/id1603854385" target="_blank" rel="noopener noreferrer">App Store</a>
+                <a class="button" href="https://play.google.com/store/apps/details?id=io.ccvault.v1.main" target="_blank" rel="noopener noreferrer">Google Play</a>
+              </span>
+            </li>
+            <li>
+              <span class="app">Vespr</span>
+              <span class="stores">
+                <a class="button" href="https://apps.apple.com/app/vespr-cardano-wallet/id1565749376" target="_blank" rel="noopener noreferrer">App Store</a>
+                <a class="button" href="https://play.google.com/store/apps/details?id=art.nft_craze.gallery.main" target="_blank" rel="noopener noreferrer">Google Play</a>
+              </span>
+            </li>
+          </ul>
+          <p class="device">On a computer</p>
+          <ul class="apps">
+            <li>
+              <span class="app">Eternl</span>
+              <span class="stores">
+                <a class="button" href="https://chrome.google.com/webstore/detail/eternl/kmhcihpebfmpgmihbkipmjlmmioameka" target="_blank" rel="noopener noreferrer">Chrome Web Store</a>
+              </span>
+            </li>
+            <li>
+              <span class="app">Lace</span>
+              <span class="stores">
+                <a class="button" href="https://chrome.google.com/webstore/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk" target="_blank" rel="noopener noreferrer">Chrome Web Store</a>
+              </span>
+            </li>
+          </ul>
+          <p>
+            Then you connect the wallet to battlechoc. First set it to “Preprod”, Cardano's test
+            network (section 3). In Eternl and Lace you find it in the settings. For other wallet
+            apps, their help pages say whether they can.
+          </p>
+          <p>
+            When you mint, tap “Connect” on the line “Connect a wallet”. You can also do it
+            beforehand: in your profile, under “Manage”, tap “Connect” next to “Cardano wallet”.
+            Your wallet asks you to sign a short text from battlechoc, that is, to confirm it. That
+            costs nothing and moves no funds.
+          </p>
+          <p>
+            On a new device your wallet also gets you back into your account: in your profile under
+            “I already have an account”, with “Use a Cardano wallet”.
+          </p>
+        </div>
+
+        <div class="topic">
+          <h2 id="ada-en">3 · How to get ADA</h2>
+          <p>
+            ADA is the money of the Cardano network. With it you pay the fees and the deposit when
+            you mint (section 4).
+          </p>
+          <p>
+            Right now, minting in battlechoc runs on Cardano's test network, “Preprod”. It works
+            like the real network, but its ADA is free and has no value: no real money is involved.
+          </p>
+          <p>
+            How to get test ADA: set your wallet to “Preprod” (section 2). Copy your address from
+            the app, usually under “Receive”. Your address is a long string of characters that
+            others can send ADA and items to. Open Cardano's faucet, a page that gives away test
+            ADA. Choose “Preprod” there and paste your address. Shortly after, the test ADA is in
+            your wallet.
+          </p>
+          <p>
+            <a class="button" href="https://docs.cardano.org/cardano-testnets/tools/faucet" target="_blank" rel="noopener noreferrer">Go to the Cardano faucet</a>
+          </p>
+          <!-- Mainnet: before minting moves to the Cardano mainnet, the way to get real ADA goes
+               here, step by step (and the two paragraphs about Preprod and test ADA change). -->
+          <p>battlechoc does not sell ADA.</p>
+        </div>
+
+        <div class="topic">
+          <h2 id="costs-en">4 · What it costs</h2>
+          <p>You pay from your wallet, in ADA. Each amount goes somewhere else:</p>
+          <ul>
+            <li>
+              <strong>Network fee</strong>, about 0.5&nbsp;ADA<br />
+              Every payment on Cardano costs a small fee. It goes to the Cardano network and is
+              gone.
+            </li>
+            <li>
+              <strong>battlechoc fee</strong>, 1, 2 or 4&nbsp;ADA, by the item's tier (common,
+              rare, epic)<br />
+              Goes into the battlechoc treasury (planned: for the tournaments' prize pool and the
+              team).
+            </li>
+            <li>
+              <strong>Deposit</strong>, about 3.7&nbsp;ADA<br />
+              On Cardano, every item has to carry some ADA with it. The deposit stays in the item:
+              about 1.3&nbsp;ADA sit with it in your wallet, about 2.4&nbsp;ADA are locked with the
+              item. Whoever salvages it gets the deposit back.
+            </li>
+          </ul>
+          <p>
+            Keep about 6.5&nbsp;ADA ready for a common item, 7.5&nbsp;ADA for a rare one and
+            9.5&nbsp;ADA for an epic one. That includes a little to spare: what you don't need stays
+            in your wallet.
+          </p>
+          <p>
+            Before you confirm, battlechoc shows you the amounts, and your wallet shows you the
+            exact ones. If you say no, nothing happens.
+          </p>
+          <p>
+            Salvaging costs only a network fee of about 0.4&nbsp;ADA, and the deposit is all yours
+            again afterwards (section 6).
+          </p>
+        </div>
+
+        <div class="topic">
+          <h2 id="selling-en">5 · Selling and giving away</h2>
+          <p>
+            Give it away: in your wallet app, send the item to the other person's address. Check the
+            address carefully: what you send cannot be taken back.
+          </p>
+          <p>
+            Sell it: list it on a marketplace for Cardano collectibles, that is, a website where
+            people buy and sell such items. On the test network this is only for trying out.
+          </p>
+          <p>
+            While the item is not in your wallet, because you sent it or listed it for sale, you
+            cannot use it in the game. If it comes back to your wallet, it sits in its place again.
+          </p>
+          <p>
+            Bought an item or got one as a gift? Connect the wallet it is in to your battlechoc
+            account. Then you find it in the Choclab and can equip it. If that wallet belonged to
+            another battlechoc account before, its items only count from 24 hours after you connect
+            it.
+          </p>
+        </div>
+
+        <div class="topic">
+          <h2 id="salvage-en">6 · Salvaging a minted item</h2>
+          <p>
+            You salvage a minted item in the Choclab like any other, with “Salvage”. You confirm it
+            in your wallet, which needs some ADA for it.
+          </p>
+          <p>
+            About 2.4&nbsp;ADA were locked with the item: the salvage's transaction returns them to
+            your wallet, minus a network fee of about 0.4&nbsp;ADA, so you have about 2&nbsp;ADA
+            more. battlechoc charges nothing for salvaging. About 1.3&nbsp;ADA sat with the item in
+            your wallet: they are free again.
+          </p>
+          <p>
+            The ingredients arrive on your shelf a few minutes later, fresh, by the item's recipe as
+            it is today: rare and legendary ones in full, all others half (rounded down). The cocoa
+            you paid for crafting does not come back.
+          </p>
+          <p>
+            Even if the item is salvaged without battlechoc (on Cardano this is called “burning”; it
+            takes developer tools), the ingredients still come: to the battlechoc account its wallet
+            is connected to.
+          </p>
+        </div>
+
+        <p class="end">
+          Questions? Write to us:
+          <a class="button" href="mailto:hello@battlechoc.com">hello@battlechoc.com</a>
+        </p>
+        <p>
+          How battlechoc handles your data:
+          <a class="button" href="/privacy-policy/#en">Privacy policy</a>
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

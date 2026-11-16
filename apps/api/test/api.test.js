@@ -1,9 +1,12 @@
 const request = require('supertest');
+const { EntityType } = require('@battlechoc/battlechoc-shared-functions');
 const pantry = require('../src/pantry');
 const players = require('../src/players');
 const { createPush } = require('../src/push');
 const { closeTestPools } = require('./helpers/db');
-const { createTestApp, createAccount } = require('./helpers/api');
+const { createTestApp, createAccount, withToken } = require('./helpers/api');
+const { testKeys } = require('./helpers/cardano');
+const { chainApp, annWithMintedItem, linkedPlayer, giveItem, markMinted, userName } = require('./helpers/minting');
 
 afterAll(closeTestPools);
 
@@ -374,5 +377,106 @@ describe('the tutorial and the AI ladder from the device', () => {
         await player.post('/user/trackrecords', { stats: [win(1), win(2)] }).expect(200);
         await player.post('/user/trackrecords', { stats: [loss(1)] }).expect(200);
         expect((await player.get('/user').expect(200)).body.stats.aiLadder).toMatchObject({ step: 2, games: 5 });
+    });
+});
+
+describe('minted items and notices in the stats (plan C)', () => {
+    const statsOf = async client => (await client.get('/user').expect(200)).body.stats;
+
+    // Ann with a minted item at home and a second one that left her wallet for a stranger's (a
+    // departure notice); Ben, another player with a key
+    const annWithDeparture = async () => {
+        const env = await chainApp();
+        const { ann, annKeys, itemId: home, assetName } = await annWithMintedItem(env);
+        const away = await giveItem(env.pool, ann.playerId, 'HEAVY_BARREL');
+        await ann.post('/user/equipment', { entityType: EntityType.RUM_TRUFFLE_CANNON, slot: 1, itemId: away }).expect(200);
+        await markMinted(env.pool, away, userName(2));
+        env.double.mintToken({ assetName: userName(2), to: env.double.addressOf(annKeys) });
+        env.block();
+        await env.sync();
+        env.double.moveToken({ assetName: userName(2), to: env.double.newAddress() });
+        env.block();
+        expect(await env.sync()).toMatchObject({ changed: 1 });
+        const ben = await linkedPlayer(env, 'Ben', testKeys());
+        return { env, ann, ben, home, away, assetName };
+    };
+
+    test('a plain item has minted: null, a minted one its asset name; without chain features notices are empty', async () => {
+        const { app, pool } = await setup();
+        const player = await named(app, 'Carolin');
+        const plain = await giveItem(pool, player.playerId, 'LIGHT_BARREL');
+        const minted = await giveItem(pool, player.playerId, 'HEAVY_BARREL');
+        await markMinted(pool, minted, userName(9));
+        const stats = await statsOf(player);
+        expect(Object.fromEntries(stats.items.map(entry => [entry.id, entry.minted]))).toEqual({
+            [plain]: null,
+            [minted]: { assetName: userName(9), state: 'minted' },
+        });
+        expect(stats.notices).toEqual([]);
+    });
+
+    test('after a departure Ann sees one notice naming the item and its building; once marked seen it is gone; Ben\'s marks change nothing', async () => {
+        const { env, ann, ben, home, away, assetName } = await annWithDeparture();
+        const stats = await statsOf(ann);
+        expect(stats.items.map(entry => [entry.id, entry.minted])).toEqual([[home, { assetName, state: 'minted' }]]);
+        expect(stats.notices).toEqual([{
+            id: expect.any(String),
+            kind: 'departed',
+            item: { id: away, item: 'HEAVY_BARREL', serial: expect.any(Number) },
+            building: EntityType.RUM_TRUFFLE_CANNON,
+            at: new Date(env.now()).toISOString(),
+        }]);
+        const [{ id }] = stats.notices;
+        // Ben cannot mark Ann's notice
+        await ben.post('/user/notices/seen', { ids: [id] }).expect(204);
+        expect((await statsOf(ann)).notices).toHaveLength(1);
+        const seen = await ann.post('/user/notices/seen', { ids: [id, 'unknown'] }).expect(204);
+        expect(seen.text).toBe('');
+        expect((await statsOf(ann)).notices).toEqual([]);
+        // seen already: no error, nothing changes
+        await ann.post('/user/notices/seen', { ids: [id] }).expect(204);
+        const { rows } = await env.pool.query('SELECT seen_at FROM item_notices WHERE id = $1', [id]);
+        expect(rows).toEqual([{ seen_at: new Date(env.now()) }]);
+    });
+
+    test('the ids to mark: an array of 1 to 50 distinct strings of at most 64 characters', async () => {
+        const { app } = await setup();
+        const player = await account(app);
+        const bad = [{}, { ids: [] }, { ids: 'x' }, { ids: [null] }, { ids: [7] }, { ids: [''] }, { ids: ['a', 'a'] }, { ids: ['x'.repeat(65)] },
+            { ids: Array.from({ length: 51 }, (_, i) => `n${i}`) }];
+        for (const body of bad) {
+            expect((await player.post('/user/notices/seen', body).expect(400)).body.error).toBe('INVALID REQUEST PARAMETERS');
+        }
+        await player.post('/user/notices/seen', { ids: Array.from({ length: 50 }, (_, i) => `n${i}`) }).expect(204);
+        await player.post('/user/notices/seen', { ids: ['x'.repeat(64)] }).expect(204);
+        await request(app).post('/user/notices/seen').send({ ids: ['a'] }).expect(401);
+    });
+
+    test('a server without chain features answers the marks and notices from its own tables', async () => {
+        const { env, ann, home, assetName } = await annWithDeparture();
+        // the same database, no chain configured (and no Cardano routes)
+        const { app } = await createTestApp({ pool: env.pool, now: env.now });
+        const stats = await statsOf(withToken(app, ann.accessToken));
+        expect(stats.items.map(entry => [entry.id, entry.minted])).toEqual([[home, { assetName, state: 'minted' }]]);
+        expect(stats.notices).toHaveLength(1);
+    });
+
+    test('public views never show minting: a profile by name, the highscore, the rank, the friends', async () => {
+        const { ann, ben, assetName } = await annWithDeparture();
+        await ben.post('/user/friend', { friend: 'Ann' }).expect(200);
+        const answers = [
+            await ben.get('/user/Ann').expect(200),
+            await ben.get('/highscore').expect(200),
+            await ann.get('/highscore').expect(200),
+            await ann.get('/rank').expect(200),
+            await ben.get('/user/friends').expect(200),
+        ];
+        expect(answers[0].body).toEqual([expect.objectContaining({ name: 'Ann' })]);
+        expect(answers[2].body.own).toMatchObject({ name: 'Ann' });
+        for (const answer of answers) {
+            for (const hidden of ['minted', 'assetName', '000de140', assetName, userName(2), 'serial', 'notice', 'departed', 'LIGHT_BARREL', 'HEAVY_BARREL']) {
+                expect(answer.text).not.toContain(hidden);
+            }
+        }
     });
 });

@@ -16,7 +16,7 @@ const CODE_TTL_MS = 10 * 60 * 1000;
 const setup = async () => {
     let clock = Date.now();
     const env = await createTestApp({ cardanoNetwork: cardano.Networks.preprod, now: () => clock });
-    return { ...env, advance: ms => { clock += ms; } };
+    return { ...env, advance: ms => { clock += ms; }, time: () => clock };
 };
 
 const newCode = async (account, purpose = 'connect', confirmToken) => {
@@ -28,12 +28,12 @@ const newCode = async (account, purpose = 'connect', confirmToken) => {
 };
 
 // what the link page does in the wallet's browser: no token, only the code
-const signOnLinkPage = async (app, code, wallet) => {
+const signOnLinkPage = async (app, code, wallet, extra = {}) => {
     const challenge = await request(app).post('/auth/cardano/challenge').send({ purpose: 'connect', code, address: wallet.rewardAddressHex });
     if (challenge.status !== 200) {
         return challenge;
     }
-    return request(app).post('/auth/cardano/verify').send({ nonce: challenge.body.nonce, ...signMessage(wallet, challenge.body.message) });
+    return request(app).post('/auth/cardano/verify').send({ nonce: challenge.body.nonce, ...signMessage(wallet, challenge.body.message), ...extra });
 };
 
 const poll = (account, code) => account.get(`/user/link-codes/${code}`);
@@ -222,5 +222,19 @@ describe('link codes for the phone wallet\'s browser (plan 3)', () => {
             address: 'a', purpose: 'connect', network: cardano.Networks.preprod, nonce: 'n', issuedAt: new Date(0), expiresAt: new Date(0), onAnotherDevice: true,
         }).split('\n')[3]);
         expect(message).toContain('Only go on if that device is yours.');
+    });
+
+    test('identity history (plan C): a wallet linked on the link page writes an open row at the app\'s clock, with its name', async () => {
+        const { app, pool, advance, time } = await setup();
+        const device = await accountOn(app);
+        const { code } = await newCode(device);
+        advance(1000);
+        const linkedAt = time();
+        const wallet = testKeys();
+        expect((await signOnLinkPage(app, code, wallet, { wallet: 'vespr' })).body).toEqual({ outcome: 'linked' });
+        const subject = `stake:${wallet.stakeKeyHashHex}`;
+        const { rows } = await pool.query('SELECT player_id, linked_at, unlinked_at FROM identity_history WHERE subject = $1', [subject]);
+        expect(rows.map(row => [row.player_id, new Date(row.linked_at).getTime(), row.unlinked_at])).toEqual([[device.playerId, linkedAt, null]]);
+        expect((await pool.query('SELECT wallet FROM identities WHERE subject = $1', [subject])).rows).toEqual([{ wallet: 'vespr' }]);
     });
 });

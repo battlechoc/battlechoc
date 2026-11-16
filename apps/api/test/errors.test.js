@@ -1,10 +1,13 @@
 // Every error the REST API answers with: status and the exact body. Installed game clients (also
 // old cached versions) match on these, so they must not change.
 
+const express = require('express');
 const request = require('supertest');
 const { EntityType } = require('@battlechoc/battlechoc-shared-functions');
-const { HttpError, ErrorCode } = require('../src/errors');
+const { HttpError, ErrorCode, CHAIN_STATUS, chainError } = require('../src/errors');
+const { errorHandler } = require('../src/middleware');
 const { NotEnoughIngredientsError } = require('../src/pantry');
+const { createRecipeBook } = require('../src/lab/recipes');
 const { closeTestPools, failingOn } = require('./helpers/db');
 const { createTestApp, createAccount, withToken } = require('./helpers/api');
 const { testKeys, signedChallenge, confirmWith, removeKey } = require('./helpers/cardano');
@@ -116,6 +119,28 @@ describe('errors', () => {
         await answers(player.post('/user/equipment', { entityType: EntityType.RUM_TRUFFLE_CANNON, slot: 0, itemId: 'nope' }), 400, 'NOT YOUR ITEM');
     });
 
+    test('salvaging: not an item id, not the player\'s item, an item without a recipe', async () => {
+        // an empty recipe table: no item has a recipe any more
+        const { pool, account } = await setup({ recipes: createRecipeBook([]) });
+        const player = await account();
+        await answers(player.post('/lab/salvage', {}), 400, 'INVALID REQUEST PARAMETERS');
+        await answers(player.post('/lab/salvage', { itemId: 'nope' }), 400, 'NOT YOUR ITEM');
+        await pool.query("INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ('orphan', $1, 'LIGHT_BARREL', 1, $1)",
+            [player.playerId]);
+        await answers(player.post('/lab/salvage', { itemId: 'orphan' }), 400, 'NO RECIPE');
+        await pool.query("UPDATE items SET asset_name = '000de140aa', minted_at = NOW() WHERE id = 'orphan'");
+        await answers(player.post('/lab/salvage', { itemId: 'orphan' }), 409, 'ITEM MINTED');
+    });
+
+    test('marking notices seen: a list of 1 to 50 distinct ids', async () => {
+        const { account } = await setup();
+        const player = await account();
+        await answers(player.post('/user/notices/seen', { ids: [] }), 400, 'INVALID REQUEST PARAMETERS');
+        await answers(player.post('/user/notices/seen', { ids: ['a', 'a'] }), 400, 'INVALID REQUEST PARAMETERS');
+        const seen = await player.post('/user/notices/seen', { ids: ['unknown'] });
+        expect({ status: seen.status, text: seen.text }).toEqual({ status: 204, text: '' });
+    });
+
     test('signing in with a Cardano key: never a 401 but for a missing token', async () => {
         const { app, account } = await setup({ cardanoNetwork: { name: 'preprod', networkId: 0 } });
         const player = await account();
@@ -149,6 +174,90 @@ describe('errors', () => {
         const loggedOut = await request(app).post('/accounts/logout').send({ refreshToken: other.refreshToken });
         expect(loggedOut.status).toBe(204);
         expect(loggedOut.text).toBe('');
+    });
+
+    test('the chain routes (minting plan D): each code with its status', async () => {
+        const codes = {
+            CHAIN_OFF: ['CHAIN OFF', 404],
+            CHAIN_UNAVAILABLE: ['CHAIN UNAVAILABLE', 503],
+            CHAIN_PAUSED: ['CHAIN PAUSED', 503],
+            NOT_ENOUGH_MATCHES: ['NOT ENOUGH MATCHES', 403],
+            MINT_LIMIT: ['MINT LIMIT', 409],
+            OPERATION_RUNNING: ['OPERATION RUNNING', 409],
+            ITEM_BUSY: ['ITEM BUSY', 409],
+            ALREADY_MINTED: ['ALREADY MINTED', 409],
+            NOT_YOUR_WALLET: ['NOT YOUR WALLET', 400],
+            WALLET_WAITING: ['WALLET WAITING', 409],
+            NOT_ENOUGH_ADA: ['NOT ENOUGH ADA', 400],
+            NO_COLLATERAL: ['NO COLLATERAL', 400],
+            WALLET_TOO_FULL: ['WALLET TOO FULL', 400],
+            UNKNOWN_FEE: ['UNKNOWN FEE', 400],
+            UNKNOWN_SIGN_CODE: ['UNKNOWN SIGN CODE', 404],
+            INVALID_WITNESS: ['INVALID WITNESS', 400],
+            OPERATION_NOT_OPEN: ['OPERATION NOT OPEN', 409],
+            ADDRESSES_NEEDED: ['ADDRESSES NEEDED', 409],
+            NOT_MINTED: ['NOT MINTED', 409],
+            ITEM_LEFT_WALLET: ['ITEM LEFT WALLET', 409],
+            ITEM_MOVED: ['ITEM MOVED', 409],
+        };
+        expect(Object.isFrozen(CHAIN_STATUS)).toBe(true);
+        expect(CHAIN_STATUS).toEqual(Object.fromEntries(Object.values(codes)));
+        // each answered through the error middleware, as a route throws it
+        const app = express();
+        app.get('/:name', req => {
+            throw chainError(ErrorCode[req.params.name]);
+        });
+        app.use(errorHandler());
+        for (const [name, [code, status]] of Object.entries(codes)) {
+            expect(ErrorCode[name]).toBe(code);
+            await answers(request(app).get(`/${name}`), status, code);
+        }
+        // only the chain's codes have a chain status
+        expect(() => chainError(ErrorCode.NOT_FOUND)).toThrow(TypeError);
+        expect(() => chainError('MINT  LIMIT')).toThrow(TypeError);
+        // CHAIN OFF of a server without chain features, for every method and path under /chain/
+        const { app: off } = await createTestApp();
+        await answers(request(off).post('/chain/mint'), 404, 'CHAIN OFF');
+        await answers(request(off).post('/chain/burn'), 404, 'CHAIN OFF');
+        await answers(request(off).delete('/chain/operations/x'), 404, 'CHAIN OFF');
+    });
+
+    test('the public item page (minting plan F): UNKNOWN ITEM, 404, not a chain code', async () => {
+        expect(ErrorCode.UNKNOWN_ITEM).toBe('UNKNOWN ITEM');
+        // the item page answers with the chain features off too: none of CHAIN_STATUS's codes
+        expect(CHAIN_STATUS).not.toHaveProperty(ErrorCode.UNKNOWN_ITEM);
+        expect(() => chainError(ErrorCode.UNKNOWN_ITEM)).toThrow(TypeError);
+        const { app } = await createTestApp();
+        await answers(request(app).get(`/items/000de140${'0'.repeat(56)}`), 404, 'UNKNOWN ITEM');
+        await answers(request(app).get('/items/nope'), 404, 'UNKNOWN ITEM');
+    });
+
+    test('an HttpError with details: the body carries them after the code (NOT ENOUGH ADA\'s missing and needed)', async () => {
+        const error = chainError(ErrorCode.NOT_ENOUGH_ADA, { missing: '1234567', needed: '9210000' });
+        expect(error).toMatchObject({ status: 400, code: 'NOT ENOUGH ADA', details: { missing: '1234567', needed: '9210000' } });
+        const app = express();
+        app.get('/ada', () => {
+            throw error;
+        });
+        app.get('/plain', () => {
+            throw new HttpError(409, ErrorCode.MINT_LIMIT);
+        });
+        app.use(errorHandler());
+        const response = await request(app).get('/ada');
+        expect({ status: response.status, text: response.text }).toEqual({ status: 400, text: '{"error":"NOT ENOUGH ADA","missing":"1234567","needed":"9210000"}' });
+        await answers(request(app).get('/plain'), 409, 'MINT LIMIT');
+        // the code is the body's `error`, nothing else may be
+        expect(() => new HttpError(400, ErrorCode.NOT_ENOUGH_ADA, { error: 'other' })).toThrow(TypeError);
+        expect(() => new HttpError(400, ErrorCode.NOT_ENOUGH_ADA, null)).toThrow(TypeError);
+        expect(() => new HttpError(400, ErrorCode.NOT_ENOUGH_ADA, 'text')).toThrow(TypeError);
+        expect(new HttpError(400, ErrorCode.NOT_ENOUGH_ADA)).not.toHaveProperty('details');
+        // the existing errors keep their bodies: NOT ENOUGH INGREDIENTS names its ingredient only in the error object
+        const ingredients = express();
+        ingredients.get('/', () => {
+            throw new NotEnoughIngredientsError('RUM');
+        });
+        ingredients.use(errorHandler());
+        await answers(request(ingredients).get('/'), 400, 'NOT ENOUGH INGREDIENTS');
     });
 
     test('transport: unknown paths, broken JSON, too many requests', async () => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { createUseStyles } from "react-jss";
 import Fab from "../controls/Fab";
@@ -11,6 +11,8 @@ import {
 import { version, commit, builtAt } from "../../build";
 import { checkForUpdate } from "../../updateCheck";
 import Dialog from "./Dialog";
+import { loadChunk } from "../../helper/loadChunk";
+import { guideLink } from "../../cardano/guide";
 
 // the small round buttons in the subtitle: the version and "Check for updates"
 const chip = (theme) => ({
@@ -88,6 +90,47 @@ const useStyles = createUseStyles((theme) => ({
     strokeLinejoin: "round",
   },
 }));
+
+// "How minting works": the guide on the website, only where the game shows minting
+// (useMintingSwitch: a build with a network, not the Android app, the server's minting on). That
+// hook brings the chain client, which the first load does without: the link is a chunk of its
+// own (helper/loadChunk.js), asked for when the dialog opens, and nothing shows until it is in.
+// A hidden mark says when the switch is decided (useMintingDecided), for the tests of "no link".
+const MintingGuideLink = lazy(
+  loadChunk(() =>
+    import("../mint/useChainEnabled").then(
+      ({ useMintingSwitch, useMintingDecided }) => ({
+        default: function GuideLink({ className }) {
+          const minting = useMintingSwitch();
+          const decided = useMintingDecided();
+          return (
+            <>
+              {minting ? (
+                <p className={className}>
+                  <a
+                    href={guideLink(null)}
+                    target="_blank"
+                    rel="noopener"
+                    data-testid="info-guide"
+                  >
+                    {t(tr.ITEM_GUIDE_LINK)}
+                  </a>
+                </p>
+              ) : null}
+              {decided ? (
+                <span
+                  hidden
+                  data-testid="info-guide-decided"
+                  data-minting={String(minting)}
+                />
+              ) : null}
+            </>
+          );
+        },
+      })
+    )
+  )
+);
 
 // release-please tags every release vX.Y.Z and writes its notes there
 const releaseUrl = (number) =>
@@ -214,6 +257,13 @@ const Info = (props) => {
     setOpen(false);
   };
   const closeForUpdate = useCallback(() => setOpen(false), []);
+  // the title screen holds a notice back while the info is open
+  const { onOpenChange } = props;
+  useEffect(() => {
+    if (onOpenChange) {
+      onOpenChange(open);
+    }
+  }, [open, onOpenChange]);
 
   return (
     <>
@@ -300,6 +350,11 @@ const Info = (props) => {
               {t(tr.INFO_PRIVACY_POLICY_FULL)}
             </a>
           </p>
+          {open ? (
+            <Suspense fallback={null}>
+              <MintingGuideLink className={classes.header} />
+            </Suspense>
+          ) : null}
         </div>
       </Dialog>
     </>

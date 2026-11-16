@@ -10,3 +10,4 @@ export { default as Matchmaking } from "./Matchmaking";
 export { default as Unlocked } from "./Unlocked";
 export { default as NameConflict } from "./NameConflict";
 export { default as UpdateAvailable } from "./UpdateAvailable";
+export { default as ItemNotice } from "../mint/ItemNotice";

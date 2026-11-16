@@ -1,4 +1,5 @@
 import { openDB } from "idb";
+import { keptWithoutNotices } from "./storedStats.js";
 
 const dbVersion = 6;
 const dbName = "battlechoc";
@@ -38,10 +39,9 @@ class OfflineStore {
       dbPromise,
       erased
     );
-    this.playerStore = OfflineStore.wrapObjectStore(
-      playerStoreName,
-      dbPromise,
-      erased
+    // the stats in it never keep the notices about minted items (storedStats.js)
+    this.playerStore = keptWithoutNotices(
+      OfflineStore.wrapObjectStore(playerStoreName, dbPromise, erased)
     );
   }
 

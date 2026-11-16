@@ -1,5 +1,5 @@
 // The lab: trying ingredients on the lab table, crafting items from discovered recipes, the
-// recipe book and the equipment slots (a player's items are part of their stats).
+// recipe book, salvaging items and the equipment slots (a player's items are part of their stats).
 
 const crypto = require('crypto');
 const {
@@ -8,6 +8,7 @@ const {
 const players = require('../players');
 const pantry = require('../pantry');
 const { withTransaction } = require('../db');
+const { salvagePlain } = require('./salvage');
 const { slidingWindowLimit } = require('../limits');
 const { HttpError, ErrorCode } = require('../errors');
 
@@ -122,6 +123,24 @@ const registerLabRoutes = (app, { pool, user, recipes, oneAtATime, triesPerHour 
         });
     });
 
+    app.post('/lab/salvage', ...user, async (req, res) => {
+        const { itemId } = req.body || {};
+        if (typeof itemId !== 'string' || itemId.length === 0) {
+            throw new HttpError(400, ErrorCode.INVALID_REQUEST_PARAMETERS);
+        }
+        const { returned, equipment } = await oneAtATime(req.playerId, () => withTransaction(pool, client =>
+            salvagePlain(client, { playerId: req.playerId, itemId, recipes, now: now() })));
+        const contents = await pantry.contents(pool, req.playerId, now());
+        const items = await players.itemsOf(pool, req.playerId);
+        res.json({
+            returned,
+            pantry: contents.totals,
+            spoiling: contents.spoiling,
+            equipment,
+            loadout: players.loadoutOf({ equipment }, items),
+        });
+    });
+
     app.post('/user/equipment', ...user, async (req, res) => {
         const { entityType, slot, itemId } = req.body || {};
         if (!SpecialIngredient[entityType] || !EntityType.isInstanceOf(entityType) || !Number.isInteger(slot) ||
@@ -130,12 +149,18 @@ const registerLabRoutes = (app, { pool, user, recipes, oneAtATime, triesPerHour 
         }
         res.json(await oneAtATime(req.playerId, () => withTransaction(pool, async client => {
             const player = await players.findPlayer(client, req.playerId);
-            const items = await players.itemsOf(client, req.playerId);
+            // a burning item (plan E) is not usable: it cannot be equipped (NOT YOUR ITEM), and in a
+            // slot it counts for nothing, as an item the player does not have
+            const items = (await players.itemsOf(client, req.playerId)).filter(players.isUsable);
             const equipment = JSON.parse(JSON.stringify(players.equipmentOf(player)));
-            // points of all equipped items (stored equipment may be over the budget after a balance change)
+            // points of all equipped items (stored equipment may be over the budget after a balance
+            // change); a slot may hold an item the player does not have now (a minted item whose
+            // token is in no wallet of theirs: plan C keeps its slot; a burning one), which counts
+            // for nothing, as in loadoutOf
             const pointsOf = stored => Object.values(stored).flat()
-                .filter(id => id !== null)
-                .reduce((sum, id) => sum + Items[items.find(entry => entry.id === id).item].points, 0);
+                .map(id => items.find(entry => entry.id === id))
+                .filter(entry => entry !== undefined && Items[entry.item])
+                .reduce((sum, entry) => sum + Items[entry.item].points, 0);
             const pointsBefore = pointsOf(equipment);
             const slots = Array.from({ length: SLOTS_PER_BUILDING }, (_, i) => (equipment[entityType] || [])[i] || null);
             if (itemId !== null) {

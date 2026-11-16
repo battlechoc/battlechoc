@@ -8,7 +8,9 @@ import {
   MAX_PASSKEYS,
   shortAddress,
   networkLabel,
+  walletLabel,
 } from "../../src/ui/account/safetyState.js";
+import { GUIDE_ONLINE, guideLink } from "../../src/cardano/guide.js";
 
 const WORDS = Array.from({ length: 24 }, () => "cocoa");
 const own = { subject: "stake:own", address: "stake_test1own" };
@@ -103,13 +105,17 @@ test("the passkey row: only with own words, a device that can and readable passk
 });
 
 test("the wallet row: connect, disconnect the one beside the words, connect another beside two", () => {
+  // the row's one action (what it shows about the wallets' items: the tests below)
+  const actionOf = ({ count, action, subject }) => ({ count, action, subject });
   const row = (identities) =>
-    accountSafety({
-      identities,
-      local: device(["words"]),
-      passkeys: [],
-      walletDoor: true,
-    }).wallet;
+    actionOf(
+      accountSafety({
+        identities,
+        local: device(["words"]),
+        passkeys: [],
+        walletDoor: true,
+      }).wallet
+    );
   assert.deepEqual(row([own]), {
     count: 0,
     action: "connect",
@@ -127,18 +133,144 @@ test("the wallet row: connect, disconnect the one beside the words, connect anot
   });
   // the only key cannot go
   assert.deepEqual(
-    accountSafety({
-      identities: [walletKey],
-      local: noWords,
-      passkeys: [],
-      walletDoor: true,
-    }).wallet,
+    actionOf(
+      accountSafety({
+        identities: [walletKey],
+        local: noWords,
+        passkeys: [],
+        walletDoor: true,
+      }).wallet
+    ),
     { count: 1, action: "connect", subject: null }
   );
   assert.equal(
     accountSafety({ identities: [own], local: device(), passkeys: [] }).wallet,
     null
   );
+});
+
+test("the wallet row lists each wallet with its name, its minted items and its wait", () => {
+  const state = accountSafety({
+    identities: [
+      { ...own, wallet: null, items: 2, waitUntil: null },
+      { ...walletKey, wallet: "eternl", items: 3, waitUntil: null },
+      {
+        ...otherWallet,
+        wallet: "typhoncip30",
+        items: 0,
+        waitUntil: "2026-11-16T13:00:20.000Z",
+      },
+    ],
+    local: device(["words"]),
+    passkeys: [],
+    walletDoor: true,
+  });
+  // the words key is no wallet: it is not in the list, but its items count in the game
+  assert.deepEqual(state.wallet.list, [
+    {
+      subject: walletKey.subject,
+      address: walletKey.address,
+      name: "Eternl",
+      items: 3,
+      waitUntil: null,
+    },
+    {
+      subject: otherWallet.subject,
+      address: otherWallet.address,
+      name: "Typhon",
+      items: 0,
+      waitUntil: "2026-11-16T13:00:20.000Z",
+    },
+  ]);
+  assert.equal(state.wallet.items, 5);
+  assert.equal(state.wallet.count, 2);
+  assert.equal(state.wallet.describesItems, true);
+});
+
+test("the wallet row says the minted items live there only once a key holds one or its items wait", () => {
+  const row = (identities) =>
+    accountSafety({
+      identities,
+      local: device(["words"]),
+      passkeys: [],
+      walletDoor: true,
+    }).wallet.describesItems;
+  // nothing minted yet (nothing can be minted before the mint ships): the row as it was
+  assert.equal(row([own, walletKey]), false);
+  assert.equal(
+    row([
+      { ...own, items: 0, waitUntil: null },
+      { ...walletKey, items: 0, waitUntil: null },
+    ]),
+    false
+  );
+  // a minted item in a wallet, or on the words key
+  assert.equal(row([own, { ...walletKey, items: 1 }]), true);
+  assert.equal(row([{ ...own, items: 2 }, walletKey]), true);
+  // a wallet that moved from another player: its items wait
+  assert.equal(
+    row([
+      own,
+      { ...walletKey, items: 0, waitUntil: "2026-11-16T13:00:20.000Z" },
+    ]),
+    true
+  );
+});
+
+test("the wallet row without the new fields (an older API): no names, no items, no wait", () => {
+  const state = accountSafety({
+    identities: [own, walletKey],
+    local: device(["words"]),
+    passkeys: [],
+    walletDoor: true,
+  });
+  assert.deepEqual(state.wallet.list, [
+    {
+      subject: walletKey.subject,
+      address: walletKey.address,
+      name: null,
+      items: 0,
+      waitUntil: null,
+    },
+  ]);
+  assert.equal(state.wallet.items, 0);
+  // a count that is no number counts nothing
+  const odd = accountSafety({
+    identities: [{ ...walletKey, items: "3", wallet: 7 }],
+    local: noWords,
+    passkeys: [],
+    walletDoor: true,
+  });
+  assert.equal(odd.wallet.items, 0);
+  assert.equal(odd.wallet.list[0].items, 0);
+  assert.equal(odd.wallet.list[0].name, null);
+});
+
+test("a wallet's name as players know it", () => {
+  assert.equal(walletLabel("eternl"), "Eternl");
+  assert.equal(walletLabel("vespr"), "Vespr");
+  assert.equal(walletLabel("lace"), "Lace");
+  assert.equal(walletLabel("typhoncip30"), "Typhon");
+  assert.equal(walletLabel("gerowallet"), "Gero");
+  assert.equal(walletLabel("nufi"), "NuFi");
+  assert.equal(walletLabel("begin"), "Begin");
+  assert.equal(walletLabel(null), null);
+  assert.equal(walletLabel(""), null);
+  assert.equal(walletLabel(undefined), null);
+});
+
+test("the guide is on the website: the wallet row links it", () => {
+  assert.equal(GUIDE_ONLINE, true);
+  assert.equal(guideLink("wallet", "de"), "/guide/#wallet-de");
+  // the current language (English here)
+  assert.equal(guideLink("ada"), "/guide/#ada-en");
+});
+
+test("the guide's section in German or English, once it is online", () => {
+  assert.equal(guideLink("wallet", "de", true), "/guide/#wallet-de");
+  assert.equal(guideLink("ada", "en", true), "/guide/#ada-en");
+  assert.equal(guideLink("costs", "ja", true), "/guide/#costs-en");
+  assert.equal(guideLink("selling", "fr", true), "/guide/#selling-en");
 });
 
 test("technical details: labelled keys, Remove only with more than one key", () => {

@@ -1,6 +1,9 @@
 // Equipment: items crafted in the lab change the values of one building type, always with a
 // trade-off. Every player has two slots per building type and the same loadout budget.
 // A loadout is { [entityType]: [itemKey, itemKey] }; the engine reads it through applyStat.
+// An item key is never renamed or removed once it may have been minted: a minted token's datum
+// names the key and its picture's URL for good (chain.js). Retire an item by its recipe, never
+// its key; tests/chain.test.js holds the list of keys, which may only grow.
 
 const { EntityType } = require('./constants');
 

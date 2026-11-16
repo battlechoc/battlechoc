@@ -64,8 +64,11 @@ export const walletApiOf = async (
   }
 };
 
-// the address that signs: the reward address (the stake key), else a payment address
-const signingAddress = async (walletApi) => {
+/**
+ * The address that signs for the wallet: the reward address (the stake key), else its first used
+ * address, else its change address (a payment key); WalletWithoutAddressError when it has none.
+ */
+export const signingAddress = async (walletApi) => {
   const [reward] = (await walletApi.getRewardAddresses()) || [];
   if (reward) {
     return reward;
@@ -82,11 +85,13 @@ const signingAddress = async (walletApi) => {
  * Signs a `purpose` challenge ("connect", "link", "confirm") with the wallet's CIP-30 api and
  * sends it; resolves with the server's answer. `code`: the link page signs for a link code, without
  * a token (the code says what it is for; `purpose` is not used then). `confirmToken` goes with a change to a player who has keys.
+ * `walletName`: the wallet's CIP-30 key (window.cardano.<key>), sent in lower case so the wallet
+ * row can name the wallet (the API keeps only names it knows).
  */
 export const signWithWallet = async (
   walletApi,
   purpose,
-  { api, network, confirmToken, code }
+  { api, network, confirmToken, code, walletName }
 ) => {
   const walletNetwork = await walletApi.getNetworkId();
   if (walletNetwork !== network.networkId) {
@@ -129,6 +134,9 @@ export const signWithWallet = async (
     signature: signed.signature,
     key: signed.key,
   };
+  if (typeof walletName === "string" && walletName !== "") {
+    body.wallet = walletName.toLowerCase();
+  }
   return typeof code === "string"
     ? api.verifyForCode(body)
     : api.verify(body, purpose, { confirmToken });
@@ -144,14 +152,15 @@ const passing = (failure) => {
 };
 
 /**
- * Polls a link code (`poll()`: its state) every `every` ms, and at once when the page becomes
- * visible again (the player comes back from the wallet), until it has an outcome; a poll without
- * an answer or with a server error is tried again; rejects at any other failure, and with an
- * AbortError when `signal` aborts (the door closed).
+ * Polls (`poll()`: the state of something the server finishes, e.g. a link code or an operation)
+ * every `every` ms, and at once when the page becomes visible again (the player comes back from
+ * the wallet), until `done(answer)` says the answer is the last one, and resolves with it; a poll
+ * without an answer or with a server error (5xx, 429) is tried again; rejects at any other
+ * failure (and when `done` throws), and with an AbortError when `signal` aborts (the door closed).
  */
-export const waitForLinkCode = (
+export const pollUntil = (
   poll,
-  { signal, every = 2000, page = globalThis.document } = {}
+  { done, signal, every = 3000, page = globalThis.document } = {}
 ) =>
   new Promise((resolve, reject) => {
     let timer;
@@ -165,34 +174,46 @@ export const waitForLinkCode = (
         signal.removeEventListener("abort", aborted);
       }
     };
-    const aborted = () => {
+    const fail = (failure) => {
       stop();
-      reject(new DOMException("the door was closed", "AbortError"));
+      reject(failure);
     };
+    const aborted = () =>
+      fail(new DOMException("the door was closed", "AbortError"));
     const check = async () => {
       if (polling || (signal && signal.aborted)) {
         return;
       }
       polling = true;
       clearTimeout(timer);
+      let answer;
       try {
-        const answer = await poll();
-        if (signal && signal.aborted) {
+        answer = await poll();
+      } catch (failure) {
+        if (!passing(failure)) {
+          fail(failure);
           return;
         }
-        if (FINAL.includes(answer.state)) {
+        answer = undefined;
+      } finally {
+        polling = false;
+      }
+      if (signal && signal.aborted) {
+        return;
+      }
+      if (typeof answer !== "undefined") {
+        let last;
+        try {
+          last = done(answer);
+        } catch (failure) {
+          fail(failure);
+          return;
+        }
+        if (last) {
           stop();
           resolve(answer);
           return;
         }
-      } catch (failure) {
-        if (!passing(failure)) {
-          stop();
-          reject(failure);
-          return;
-        }
-      } finally {
-        polling = false;
       }
       timer = setTimeout(check, every);
     };
@@ -212,6 +233,22 @@ export const waitForLinkCode = (
       page.addEventListener("visibilitychange", now);
     }
     check();
+  });
+
+/**
+ * Polls a link code (`poll()`: its state) every `every` ms until it has an outcome (pollUntil:
+ * tried again without an answer or with a server error, at once when the page is visible again,
+ * an AbortError when `signal` aborts).
+ */
+export const waitForLinkCode = (
+  poll,
+  { signal, every = 2000, page = globalThis.document } = {}
+) =>
+  pollUntil(poll, {
+    done: (answer) => FINAL.includes(answer && answer.state),
+    signal,
+    every,
+    page,
   });
 
 /** The link page a phone wallet's own browser opens for a link code (CIP-158). */

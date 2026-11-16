@@ -6,14 +6,21 @@
 // SDK is an ES module: Node 22 loads it with require(), Jest through babel-jest (package.json).
 
 const crypto = require('crypto');
-const { KeyHash, RewardAccount, Address, COSE } = require('@evolution-sdk/evolution');
+const { CBOR, KeyHash, RewardAccount, Address, COSE } = require('@evolution-sdk/evolution');
 const { cardano } = require('@battlechoc/battlechoc-shared-functions');
 const { HttpError, ErrorCode } = require('./errors');
-const { count } = require('./db');
+const { count, withTransaction } = require('./db');
 
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const IDENTITY_PROVIDER = 'cardano';
 const HEX = /^(?:[0-9a-f]{2})+$/i;
+// the CIP-30 name of a wallet (window.cardano.<name>), as the game sends it
+const WALLET_NAME = /^[a-z0-9]{1,24}$/;
+
+// The first lines of the texts a wallet signs to vouch for its addresses for a mint and for a burn
+// (shared cardano.addressProofMessage): unlike every challenge's, and refused by the sign-in's
+// verifier, so a signature for the one is never taken for the other.
+const { ADDRESS_PROOF_HEADLINE, ADDRESS_PROOF_HEADLINES } = cardano;
 
 const invalidRequest = () => new HttpError(400, ErrorCode.INVALID_REQUEST_PARAMETERS);
 const invalidSignature = () => new HttpError(400, ErrorCode.INVALID_SIGNATURE);
@@ -72,9 +79,11 @@ const addressOfSubject = (subject, network) => {
 
 /**
  * Checks a CIP-30 DataSignature ({ signature, key }, hex) of `message` by the key of `address`
- * (keyOfAddress); returns the identity subject, throws INVALID SIGNATURE otherwise.
+ * (keyOfAddress), whatever the text is; returns the identity subject, throws INVALID SIGNATURE
+ * otherwise. The sign-in uses verifySignature; the address proof of a mint uses this with the
+ * text it built itself.
  */
-const verifySignature = ({ signature, key, message, address, network }) => {
+const verifySignedData = ({ signature, key, message, address, network }) => {
     const signer = keyOfAddress(address, network);
     if (typeof signature !== 'string' || typeof key !== 'string' || !HEX.test(signature) || !HEX.test(key)) {
         throw invalidSignature();
@@ -94,6 +103,37 @@ const verifySignature = ({ signature, key, message, address, network }) => {
         throw invalidSignature();
     }
     return signer.subject;
+};
+
+/**
+ * The address a CIP-30 DataSignature (`signature`: its COSE_Sign1, hex) names in its protected
+ * header (CIP-8 'address'), as hex: the address the wallet signed with. Undefined when it names
+ * none or is no COSE_Sign1. Nothing is verified here (verifySignedData does).
+ */
+const signedAddressOf = signature => {
+    if (typeof signature !== 'string' || !HEX.test(signature)) {
+        return undefined;
+    }
+    try {
+        const sign1 = CBOR.fromCBORHex(signature);
+        const fields = Array.isArray(sign1) ? sign1 : sign1?.value;
+        const headers = Array.isArray(fields) && fields[0] instanceof Uint8Array ? CBOR.fromCBORBytes(fields[0]) : undefined;
+        const address = headers instanceof Map ? headers.get('address') : undefined;
+        return address instanceof Uint8Array && address.length > 0 ? Buffer.from(address).toString('hex') : undefined;
+    } catch {
+        return undefined;
+    }
+};
+
+/**
+ * verifySignedData for the sign-in and the link (a challenge's text): a text that begins with an
+ * address proof's first line (a mint's or a burn's) is INVALID SIGNATURE, however it is signed.
+ */
+const verifySignature = ({ message, ...signed }) => {
+    if (typeof message !== 'string' || ADDRESS_PROOF_HEADLINES.includes(message.split('\n')[0])) {
+        throw invalidSignature();
+    }
+    return verifySignedData({ ...signed, message });
 };
 
 /**
@@ -136,20 +176,31 @@ const playerOfSubject = async (pool, subject) => {
     return rows.length > 0 ? rows[0].player_id : undefined;
 };
 
-/** Links a key to a player; again for the same player is fine, for another one IDENTITY TAKEN. */
-const linkIdentity = async (pool, { playerId, subject, address }) => {
+/**
+ * Links a key to a player; again for the same player is fine (and writes nothing), for another
+ * one IDENTITY TAKEN. A new link opens the key's identity_history row at `linkedAt` (the app's
+ * clock: the wallet hop wait runs from it). `wallet`: the CIP-30 name of the wallet that signed,
+ * kept only when it looks like one.
+ */
+const linkIdentity = async (pool, { playerId, subject, address, linkedAt = new Date(), wallet = null }) => {
     const owner = await playerOfSubject(pool, subject);
     if (typeof owner === 'undefined') {
         try {
-            await pool.query('INSERT INTO identities (provider, subject, player_id) VALUES ($1, $2, $3)',
-                [IDENTITY_PROVIDER, subject, playerId]);
+            await withTransaction(pool, async client => {
+                await client.query('INSERT INTO identities (provider, subject, player_id, wallet) VALUES ($1, $2, $3, $4)',
+                    [IDENTITY_PROVIDER, subject, playerId, typeof wallet === 'string' && WALLET_NAME.test(wallet) ? wallet : null]);
+                // the key was linked to nobody: a row still open is closed, a key has at most one
+                await client.query('UPDATE identity_history SET unlinked_at = $2 WHERE subject = $1 AND unlinked_at IS NULL', [subject, linkedAt]);
+                await client.query('INSERT INTO identity_history (id, subject, player_id, linked_at) VALUES ($1, $2, $3, $4)',
+                    [crypto.randomUUID(), subject, playerId, linkedAt]);
+            });
             return { provider: IDENTITY_PROVIDER, subject, address };
         } catch (error) {
             // linked at the same moment by another request: decided below by who has it now
             if (typeof (await playerOfSubject(pool, subject)) === 'undefined') {
                 throw error;
             }
-            return linkIdentity(pool, { playerId, subject, address });
+            return linkIdentity(pool, { playerId, subject, address, linkedAt, wallet });
         }
     }
     if (owner !== playerId) {
@@ -228,6 +279,9 @@ module.exports = {
     addressOfSubject,
     keyOfAddress,
     verifySignature,
+    verifySignedData,
+    signedAddressOf,
+    ADDRESS_PROOF_HEADLINE,
     createChallenge,
     consumeChallenge,
     playerOfSubject,

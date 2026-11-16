@@ -14,3 +14,17 @@ id = "generic-api-key"
   regexTarget = "line"
   regexes = ['''module\.exports\.translationKeys = i18n\.translationKeys;''']
   paths = ['''^packages/shared/index\.js$''']
+
+  [[rules.allowlists]]
+  description = "a deployment record (deploy.js, public data only) names the admin's and the server's key hashes: hashes of public keys, no secret"
+  condition = "AND"
+  regexTarget = "line"
+  regexes = ['''"adminKeyHash": "[0-9a-f]{56}"''', '''^\s*"[0-9a-f]{56}"''']
+  paths = ['''^contracts/deployments/[^/]+\.json$''']
+
+  [[rules.allowlists]]
+  description = "a Byron address in the test of holderOf (an old address format, public like every address): no key, no secret"
+  condition = "AND"
+  regexTarget = "line"
+  regexes = ['''keys\.rewardAddress, 'Ae2tdPwUPEZFRbyhz3cpfC2CumGzNkFBN2L42rcUc2yjQpEkxDbkPodpMAi', 'addr_test1nope''']
+  paths = ['''^apps/api/test/chainAddresses\.test\.js$''']

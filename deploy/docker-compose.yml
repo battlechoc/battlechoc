@@ -4,7 +4,8 @@
 #   docker compose pull && docker compose up -d
 # The API listens on the loopback port 8080 for the host's reverse proxy (nginx, see README.md);
 # docker-compose.caddy.yml adds Caddy in Docker instead, docker-compose.local.yml builds the
-# API from a checkout and adds the game.
+# API from a checkout and adds the game. The chain index (profile `chain`, off unless .env says
+# COMPOSE_PROFILES=chain) also needs the folder chain/ next to this file.
 services:
   postgres:
     image: postgres:17-alpine
@@ -52,11 +53,93 @@ services:
       DB_STATEMENT_TIMEOUT_MS: ${DB_STATEMENT_TIMEOUT_MS:-}
       # the secret recipe table, mounted read-only (never in the repository or the image)
       RECIPES_FILE: /run/secrets/recipes.json
+      # optional: the chain features (minting items on CARDANO_NETWORK, see README.md "Chain
+      # features"). They are off until CHAIN_POLICY_ID, CHAIN_CONFIG_REF, the server key file,
+      # CHAIN_PROVIDER_URL and CHAIN_K_FINAL are set, and CHAIN_PROVIDER_KEY as well with
+      # CHAIN_PROVIDER_KIND=blockfrost (Koios, the default, runs without one, but a free token
+      # is recommended: README.md); empty = off.
+      CHAIN_POLICY_ID: ${CHAIN_POLICY_ID:-}
+      CHAIN_CONFIG_REF: ${CHAIN_CONFIG_REF:-}
+      CHAIN_SERVER_KEY_FILE: /run/secrets/chain-server.key
+      CHAIN_PROVIDER_KIND: ${CHAIN_PROVIDER_KIND:-koios}
+      CHAIN_PROVIDER_URL: ${CHAIN_PROVIDER_URL:-}
+      CHAIN_PROVIDER_KEY: ${CHAIN_PROVIDER_KEY:-}
+      CHAIN_K_FINAL: ${CHAIN_K_FINAL:-}
+      CHAIN_WATCH_INTERVAL_MS: ${CHAIN_WATCH_INTERVAL_MS:-}
+      CHAIN_INDEX_MAX_LAG_MS: ${CHAIN_INDEX_MAX_LAG_MS:-}
+      # optional: the config NFT's policy; with it an admin update of the config needs no new
+      # CHAIN_CONFIG_REF
+      CHAIN_CONFIG_POLICY_ID: ${CHAIN_CONFIG_POLICY_ID:-}
     volumes:
       - ${RECIPES_PATH:?set RECIPES_PATH in .env}:/run/secrets/recipes.json:ro
+      # the server's chain key, read-only: one ed25519_sk1… line, owned by the container's user
+      # (uid 1000) and mode 600 (README.md "Turning it on"). Without CHAIN_SERVER_KEY_PATH it is
+      # /dev/null, which is no key file: with the chain variables set, the API then refuses to
+      # start (CHAIN_SERVER_KEY_FILE: … is not a file), so set both together.
+      - ${CHAIN_SERVER_KEY_PATH:-/dev/null}:/run/secrets/chain-server.key:ro
     depends_on:
       postgres:
         condition: service_healthy
+    logging: *logging
+
+  # The chain index (profile `chain`: only with COMPOSE_PROFILES=chain in .env, see README.md).
+  # chain-setup checks the profile's settings, makes the database roles and Yaci Store's schema
+  # (chain/setup.sh, chain/roles.sql) and exits; yaci-store follows the Cardano network and keeps
+  # the game's policy's outputs, mints and burns in schema yaci_store of the same database, where
+  # the API reads them through its views. These variables are checked by chain-setup and not
+  # here with ${NAME:?...}: Compose would demand them also on a server without the profile.
+  chain-setup:
+    profiles: ["chain"]
+    image: postgres:17-alpine
+    restart: "no"
+    # psql reads both passwords from the environment, never from the command line
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      YACI_STORE_DB_PASSWORD: ${YACI_STORE_DB_PASSWORD:-}
+      CHAIN_POLICY_ID: ${CHAIN_POLICY_ID:-}
+      YACI_SYNC_START_SLOT: ${YACI_SYNC_START_SLOT:-}
+      YACI_SYNC_START_BLOCKHASH: ${YACI_SYNC_START_BLOCKHASH:-}
+    command: ["sh", "/chain/setup.sh"]
+    volumes:
+      - ./chain:/chain:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *logging
+
+  yaci-store:
+    profiles: ["chain"]
+    image: bloxbean/yaci-store:${YACI_STORE_TAG:-2.0.7}
+    restart: unless-stopped
+    # no ports: nothing outside this stack talks to Yaci Store
+    mem_limit: 1536m
+    environment:
+      JDK_JAVA_OPTIONS: -Xms256m -Xmx1g
+      # the JavaScript plugin runtime (chain/plugins) is in the image's /app/plugins and
+      # /app/plugins/lib; Spring Boot's launcher puts it on the class path only when asked
+      LOADER_PATH: plugins,plugins/lib
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/battlechoc?currentSchema=yaci_store
+      SPRING_DATASOURCE_USERNAME: yaci_store
+      SPRING_DATASOURCE_PASSWORD: ${YACI_STORE_DB_PASSWORD:-}
+      # the network: a relay of preprod by default (mainnet: backbone.cardano.iog.io, 3001, 764824073)
+      STORE_CARDANO_HOST: ${YACI_CARDANO_HOST:-preprod-node.play.dev.cardano.org}
+      STORE_CARDANO_PORT: ${YACI_CARDANO_PORT:-3001}
+      STORE_CARDANO_PROTOCOL_MAGIC: ${YACI_PROTOCOL_MAGIC:-1}
+      # where the sync starts: the block deploy.js recorded, before the deployment's (20 below the
+      # tip before the first attempt's submit; for an adopted earlier attempt, the earliest recorded)
+      STORE_CARDANO_SYNC_START_SLOT: ${YACI_SYNC_START_SLOT:-}
+      STORE_CARDANO_SYNC_START_BLOCKHASH: ${YACI_SYNC_START_BLOCKHASH:-}
+      # the one policy whose user tokens' outputs, mints and burns it keeps
+      # (chain/application-plugins.yml)
+      CHAIN_POLICY_ID: ${CHAIN_POLICY_ID:-}
+    volumes:
+      - ./chain/application.properties:/app/config/application.properties:ro
+      - ./chain/application-plugins.yml:/app/config/application-plugins.yml:ro
+      # only the scripts' folder: /app/plugins itself holds the image's plugin runtime
+      - ./chain/plugins:/app/plugins/scripts:ro
+    depends_on:
+      chain-setup:
+        condition: service_completed_successfully
     logging: *logging
 
 volumes:

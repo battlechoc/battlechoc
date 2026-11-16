@@ -1,0 +1,103 @@
+const { chain, Items, Tier } = require('../index');
+
+describe('the minting constants', () => {
+    test('the rules of who may mint and how often', () => {
+        expect(chain.MINT_MIN_ONLINE_MATCHES).toBe(10);
+        expect(chain.MINTS_PER_DAY).toBe(3);
+        expect(chain.WALLET_HOP_WAIT_MS).toBe(24 * 60 * 60 * 1000);
+    });
+
+    test('the windows of a transaction: 10 minutes to sign, valid for 20', () => {
+        expect(chain.SIGN_WINDOW_MS).toBe(10 * 60 * 1000);
+        expect(chain.TX_VALIDITY_MS).toBe(20 * 60 * 1000);
+    });
+
+    test('the lovelace a wallet keeps aside, as numbers (they go to JSON and the browser)', () => {
+        expect(chain.COLLATERAL_LOVELACE).toBe(2_000_000);
+        expect(chain.CHANGE_RESERVE_LOVELACE).toBe(1_000_000);
+        expect(typeof chain.COLLATERAL_LOVELACE).toBe('number');
+        expect(typeof chain.CHANGE_RESERVE_LOVELACE).toBe('number');
+    });
+
+    test('the measured estimates: numbers, whole multiples of 10_000 lovelace', () => {
+        for (const name of ['MINT_NETWORK_FEE_ESTIMATE_LOVELACE', 'MINT_DEPOSIT_ESTIMATE_LOVELACE', 'BURN_NETWORK_FEE_ESTIMATE_LOVELACE', 'BURN_DEPOSIT_BACK_ESTIMATE_LOVELACE']) {
+            expect(typeof chain[name]).toBe('number');
+            expect(chain[name]).toBeGreaterThan(0);
+            expect(chain[name] % 10_000).toBe(0);
+        }
+    });
+
+    test('what the funds check adds for a larger wallet: whole lovelace per input, key and change byte, beyond whole counts', () => {
+        for (const name of [
+            'MINT_FEE_PER_INPUT_LOVELACE',
+            'MINT_FEE_PER_WALLET_KEY_LOVELACE',
+            'MINT_FEE_PER_CHANGE_BYTE_LOVELACE',
+            'MINT_NETWORK_FEE_ESTIMATE_INPUTS',
+            'MINT_NETWORK_FEE_ESTIMATE_WALLET_KEYS',
+        ]) {
+            expect(Number.isSafeInteger(chain[name])).toBe(true);
+            expect(chain[name]).toBeGreaterThan(0);
+        }
+    });
+
+    test('what a burn gives back: the reference part of the deposit (2_448_080 measured), rounded up, less than the whole deposit', () => {
+        expect(chain.BURN_DEPOSIT_BACK_ESTIMATE_LOVELACE).toBe(2_450_000);
+        expect(chain.BURN_DEPOSIT_BACK_ESTIMATE_LOVELACE).toBeGreaterThanOrEqual(2_448_080);
+        expect(chain.BURN_DEPOSIT_BACK_ESTIMATE_LOVELACE).toBeLessThan(chain.MINT_DEPOSIT_ESTIMATE_LOVELACE);
+    });
+
+    test('what a mint needs: the network fee, the deposits and the change, at least the collateral', () => {
+        expect(chain.MINT_NEEDED_ESTIMATE_LOVELACE).toBe(
+            Math.max(chain.COLLATERAL_LOVELACE, chain.MINT_NETWORK_FEE_ESTIMATE_LOVELACE + chain.MINT_DEPOSIT_ESTIMATE_LOVELACE + chain.CHANGE_RESERVE_LOVELACE)
+        );
+    });
+
+    test('the tiers index a fee option amounts in the order of Tier', () => {
+        expect(chain.TIER_ORDER).toEqual(['COMMON', 'RARE', 'EPIC']);
+        expect(chain.TIER_ORDER).toEqual(Object.keys(Tier));
+        expect(Object.isFrozen(chain.TIER_ORDER)).toBe(true);
+    });
+
+    test('the CIP-67 labels of the reference token (100) and the user token (222)', () => {
+        expect(chain.REFERENCE_LABEL).toBe('000643b0');
+        expect(chain.USER_LABEL).toBe('000de140');
+    });
+});
+
+// Every item key that may have been minted: a token's datum names its key and its picture's URL
+// (the key in kebab case) for good, so a key is never renamed or removed and `kebab` never
+// changes (equipment.js). This list may only grow: add a new item's key, never take one out.
+const MINTABLE_KEYS = [
+    'DARK_WALLS', 'TURBO_CONVEYOR', 'NUT_BRICKS', 'SECOND_SHIFT', 'SUGAR_FERTILIZER', 'DEEP_ROOTS',
+    'HEAVY_BARREL', 'LIGHT_BARREL', 'CHERRY_BOMB', 'JUICY_RELOAD', 'MARZIPAN_CARROTS', 'LONG_EARS',
+    'CINNAMON_LURE', 'HOT_BOILER', 'THICK_SHIELD', 'WIDE_SPRAY', 'SPRINKLE_SORTER', 'GLAZED_OVEN',
+];
+
+describe('item keys are permanent', () => {
+    test('every key that may have been minted is still an item', () => {
+        const missing = MINTABLE_KEYS.filter(key => !Object.prototype.hasOwnProperty.call(Items, key));
+        expect(missing).toEqual([]);
+    });
+
+    test('a new item key is added to the list of keys that may have been minted', () => {
+        const unlisted = Object.keys(Items).filter(key => !MINTABLE_KEYS.includes(key));
+        expect(unlisted).toEqual([]);
+    });
+});
+
+describe('the URLs a minted item names', () => {
+    test('the image is the item key in kebab case', () => {
+        expect(chain.itemImageUrl('DARK_WALLS')).toBe('https://battlechoc.com/items/dark-walls.png');
+    });
+
+    test('every item has an image URL of that shape', () => {
+        for (const key of Object.keys(Items)) {
+            expect(chain.itemImageUrl(key)).toMatch(/^https:\/\/battlechoc\.com\/items\/[a-z-]+\.png$/);
+        }
+    });
+
+    test('the item page names the user token', () => {
+        const userAssetName = '000de140' + 'ab'.repeat(28);
+        expect(chain.itemPageUrl(userAssetName)).toBe('https://battlechoc.com/item/?a=000de140' + 'ab'.repeat(28));
+    });
+});

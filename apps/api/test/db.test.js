@@ -2,7 +2,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { Pool } = require('pg');
-const { createPool, migrate } = require('../src/db');
+const { createPool, migrate, isPostgres } = require('../src/db');
+const { createPlayer } = require('../src/players');
 const { createTestPool, siblingPool, closeTestPools, postgresOnly, failingOn } = require('./helpers/db');
 const { until } = require('./helpers/wait');
 
@@ -170,6 +171,71 @@ describe('migrations', () => {
             "SELECT indexdef FROM pg_indexes WHERE schemaname = current_schema() AND indexname = 'track_records_player_result'");
         expect(rows).toHaveLength(1);
         expect(rows[0].indexdef).toMatch(/\(player_id, result\)$/);
+    });
+
+    test('chain ownership (plan C): one open history row per linked key, items that belong to nobody, asset names unique', async () => {
+        const pool = await createTestPool({ migrated: false });
+        await migrate(pool, { upTo: '012_link_codes.sql' });
+        const [first, second] = [await createPlayer(pool), await createPlayer(pool)];
+        const keys = [
+            [`stake:${'aa'.repeat(28)}`, first, '2026-11-08T10:00:00.000Z'],
+            [`pay:${'bb'.repeat(28)}`, first, '2026-11-09T11:00:00.000Z'],
+            [`stake:${'cc'.repeat(28)}`, second, '2026-11-10T12:00:00.000Z'],
+        ];
+        for (const [subject, playerId, createdAt] of keys) {
+            await pool.query("INSERT INTO identities (provider, subject, player_id, created_at) VALUES ('cardano', $1, $2, $3)", [subject, playerId, new Date(createdAt)]);
+        }
+        await migrate(pool);
+
+        const { rows } = await pool.query('SELECT id, subject, player_id, linked_at, unlinked_at FROM identity_history ORDER BY subject');
+        // the device identities of the two players are no Cardano keys
+        expect(rows.map(({ subject, player_id: playerId, linked_at: linkedAt, unlinked_at: unlinkedAt }) =>
+            [subject, playerId, new Date(linkedAt).toISOString(), unlinkedAt])).toEqual(
+            [...keys].sort(([a], [b]) => (a < b ? -1 : 1)).map(key => [...key, null]));
+        expect(new Set(rows.map(row => row.id)).size).toBe(3);
+        expect((await pool.query("SELECT wallet FROM identities WHERE provider = 'cardano'")).rows).toEqual([{ wallet: null }, { wallet: null }, { wallet: null }]);
+
+        // an item whose token is in no linked wallet belongs to nobody; asset names are unique, NULL many times
+        const item = (id, playerId, assetName) => pool.query(
+            "INSERT INTO items (id, player_id, item_key, serial, crafted_by, asset_name) VALUES ($1, $2, 'LIGHT_BARREL', 1, $3, $4)",
+            [id, playerId, first, assetName]);
+        await item('away', null, 'a1');
+        await item('plain-1', first, null);
+        await item('plain-2', first, null);
+        await expect(item('twin', first, 'a1')).rejects.toThrow();
+        const away = (await pool.query("SELECT player_id, minted_at, burned_at, holder_subject, holder_pay, holder_since FROM items WHERE id = 'away'")).rows[0];
+        expect(away).toEqual({ player_id: null, minted_at: null, burned_at: null, holder_subject: null, holder_pay: null, holder_since: null });
+        // an asset name is never empty, and a minted item always has one (the ownership sync pages
+        // from '', the wallet's count reads minted items by asset name)
+        await expect(item('empty', first, '')).rejects.toThrow(/check constraint/);
+        await expect(pool.query("UPDATE items SET asset_name = '' WHERE id = 'away'")).rejects.toThrow(/check constraint/);
+        await expect(pool.query("UPDATE items SET minted_at = $1 WHERE id = 'plain-1'", [new Date()])).rejects.toThrow(/check constraint/);
+        await pool.query("UPDATE items SET minted_at = $1 WHERE id = 'away'", [new Date()]);
+        await expect(pool.query("UPDATE items SET asset_name = NULL WHERE id = 'away'")).rejects.toThrow(/check constraint/);
+
+        // the notices of items that arrived in or departed from a player's wallet
+        await pool.query("INSERT INTO item_notices (id, player_id, item_id, kind, building, created_at) VALUES ('n1', $1, 'away', 'departed', 'FACTORY', $2)",
+            [first, new Date()]);
+        expect((await pool.query("SELECT kind, building, seen_at FROM item_notices WHERE player_id = $1 AND seen_at IS NULL", [first])).rows)
+            .toEqual([{ kind: 'departed', building: 'FACTORY', seen_at: null }]);
+    });
+
+    test('chain operations (plan D): open operations are unique per player and per item on Postgres only, by partial indexes', async () => {
+        const pool = await createTestPool();
+        const client = await pool.connect();
+        try {
+            // a connection taken from the pool is told apart as well: a migration only gets that
+            expect(isPostgres(client)).toBe(isPostgres(pool));
+        } finally {
+            client.release();
+        }
+        expect(isPostgres(pool)).toBe(Boolean(process.env.TEST_DATABASE_URL));
+        if (isPostgres(pool)) {
+            const { rows } = await pool.query(
+                "SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = current_schema() AND tablename = 'chain_ops' AND indexname LIKE 'chain_ops_one_open_%' ORDER BY indexname");
+            expect(rows.map(row => row.indexname)).toEqual(['chain_ops_one_open_item', 'chain_ops_one_open_player']);
+            rows.forEach(row => expect(row.indexdef).toMatch(/^CREATE UNIQUE INDEX .* WHERE \(state = ANY \(ARRAY\['prepared'::text, 'submitted'::text, 'included'::text\]\)\)$/));
+        }
     });
 
     postgresOnly('two processes that start together apply each migration once', async () => {

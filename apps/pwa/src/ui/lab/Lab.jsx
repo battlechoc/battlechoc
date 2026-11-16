@@ -23,7 +23,6 @@ import {
   craftItem,
   equipItem,
 } from "../../api/lab";
-import { fetchOwnProfile } from "../../api/profile";
 import logger from "../../helper/logger";
 import OfflineStore from "../../OfflineStore";
 import Jukebox from "../misc/Jukebox";
@@ -34,21 +33,51 @@ import BudgetBar from "./BudgetBar";
 import LabTable from "./LabTable";
 import InventoryPicker from "./InventoryPicker";
 import RecipeBook from "./RecipeBook";
+import ItemShelf from "./ItemShelf";
+import ItemCard from "./ItemCard";
 import LabIntro, {
   LAB_INTRO_SEEN,
   LAB_INTRO_STEPS,
   Spotlight,
 } from "./LabIntro";
 import { effectLines, labColors } from "./itemText";
+import MintStatus, { MintAction } from "../mint/MintStatus";
+import ChunkWaiting from "../mint/ChunkWaiting";
+import useChainEnabled, { useMintingSwitch } from "../mint/useChainEnabled";
+import { reloadItems } from "../mint/reloadItems";
+import { takePantryRequest } from "./labIntent";
+import { mintedWalletName } from "../mint/mintedWallet";
+import { cardanoApi } from "../../api/cardano";
+import { loadChunk } from "../../helper/loadChunk";
+import { labEquipment, shelfGroups, slotOf } from "./itemActions";
 import { bangers, outlined, rise } from "../styles";
 
 // loaded with the lab, like the game's scene: Babylon stays out of the first bundle
 const MeshPreview = React.lazy(() => import("../../3d/MeshPreview"));
+// the minting dialog, with the flow and the wallet code: loaded when it opens, and asked for again
+// until it arrives (a lost request never throws into the Hud: helper/loadChunk.js)
+const MintDialog = React.lazy(loadChunk(() => import("../mint/MintDialog")));
+// the salvage of a minted item (its token burned), with its flow: loaded when it opens
+const SalvageMinted = React.lazy(
+  loadChunk(() => import("../mint/SalvageMinted"))
+);
 
 // the buildings that can be equipped, in the order of the carousel
 const BUILDINGS = Object.keys(SpecialIngredient).filter((type) =>
   Object.values(Items).some((item) => item.entityType === type)
 );
+
+// the least height of the building's preview on a portrait phone, about what a 360 × 640 phone
+// gives it beside the lab table (landscape: the building's own minimum, 6em, holds it)
+const PREVIEW_LEAST = "4em";
+
+const portrait = () => {
+  try {
+    return window.matchMedia("(orientation: portrait)").matches;
+  } catch {
+    return true;
+  }
+};
 
 const useStyles = createUseStyles((theme) => ({
   page: {
@@ -63,8 +92,10 @@ const useStyles = createUseStyles((theme) => ({
     background: rise(theme.color.sky, "80%"),
     // the lab's parts size themselves in em of this
     fontSize: theme.font.size.md,
-    // phones held sideways: too little height for everything, the page scrolls
+    // phones held sideways: too little height for everything, the page scrolls; so does a short
+    // portrait phone where even one row of the item shelf leaves the building too little room
     [theme.breakpoints.shortLandscape]: { overflowY: "auto" },
+    [theme.breakpoints.orientation.portrait]: { overflowY: "auto" },
   },
   decorationLeft: {
     position: "absolute",
@@ -122,6 +153,10 @@ const useStyles = createUseStyles((theme) => ({
     gap: "0.35em",
     padding: "0 1em 0.6em",
     [theme.breakpoints.shortLandscape]: { flex: "0 0 auto" },
+    // portrait: never smaller than its parts with the preview at its least (PREVIEW_LEAST): the
+    // lab table or the item shelf below gives way instead (ItemShelf's `room`), else the page
+    // scrolls; the building is never covered
+    [theme.breakpoints.orientation.portrait]: { minHeight: "auto" },
   },
   building: {
     flex: "1 1 0",
@@ -136,11 +171,13 @@ const useStyles = createUseStyles((theme) => ({
       width: "auto",
       padding: "0 0.5em",
     },
-    // portrait: the building across the full width, the two slots side by side below it
+    // portrait: the building across the full width, the two slots side by side below it; never
+    // lower than the preview's least height and the slots (they would cover the palette)
     [theme.breakpoints.orientation.portrait]: {
+      minHeight: "auto",
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
-      gridTemplateRows: "minmax(0, 1fr) auto",
+      gridTemplateRows: `minmax(${PREVIEW_LEAST}, 1fr) auto`,
       justifyItems: "center",
       gap: "0.3em 1em",
     },
@@ -162,6 +199,7 @@ const useStyles = createUseStyles((theme) => ({
       gridColumn: "1 / -1",
       gridRow: 1,
       width: "100%",
+      minHeight: PREVIEW_LEAST,
     },
   },
   palette: {
@@ -192,6 +230,31 @@ const useStyles = createUseStyles((theme) => ({
     margin: `0 max(1em, ${theme.edge.right}) max(0.8em, ${theme.edge.bottom}) max(1em, ${theme.edge.left})`,
     borderRadius: 20,
   },
+  // the lab table and the item shelf: tabs on the panel's top edge
+  tabs: {
+    display: "flex",
+    gap: "0.4em",
+    padding: "0 1.2em",
+  },
+  tab: {
+    minHeight: 44,
+    padding: "0.2em 1em",
+    border: "none",
+    borderRadius: "0.8em 0.8em 0 0",
+    background: theme.color.secondary.dark,
+    cursor: "pointer",
+    ...bangers(theme),
+    fontSize: theme.font.size.lg,
+    "&:focus-visible": {
+      outline: `3px solid ${theme.color.gold.light}`,
+      outlineOffset: -3,
+    },
+  },
+  // the open tab has the colour of the panel's top
+  activeTab: {
+    background: theme.color.secondary.light,
+    color: theme.color.gold.light,
+  },
 }));
 
 const persist = (changes) =>
@@ -221,10 +284,36 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const [result, setResult] = useState(undefined);
   const [book, setBook] = useState(undefined);
   const [pickerSlot, setPickerSlot] = useState(undefined);
+  // the copy the item card chose to equip (its id), while the picker is open for it
+  const [pickerChoice, setPickerChoice] = useState(undefined);
   const [bookOpen, setBookOpen] = useState(false);
   const [pantryOpen, setPantryOpen] = useState(false);
+  // sent here for the pantry (the notice of a salvaged item's ingredients): it opens at once
+  useEffect(() => {
+    if (takePantryRequest()) {
+      setPantryOpen(true);
+    }
+  }, []);
   const [busy, setBusy] = useState(false);
   const [crafted, setCrafted] = useState(undefined);
+  // the bottom panel: "table" (the lab table) or "items" (the item shelf)
+  const [tab, setTab] = useState("table");
+  // the item card: { item, instanceId } while it is open
+  const [card, setCard] = useState(undefined);
+  // the minting dialog: the item it mints (as the card had it) while it is open
+  const [mintFor, setMintFor] = useState(undefined);
+  // minting shows: a network, not the Android app, online, the server's minting on
+  const minting = useChainEnabled();
+  // the server's minting switch alone (a connection that blips does not turn it off)
+  const mintSwitch = useMintingSwitch();
+  // what the minting dialog says of itself: { running, signing } (null before it says)
+  const [mintPhase, setMintPhase] = useState(null);
+  // the salvage of a minted item: the item (as the card had it) while its dialog is open, and
+  // what that dialog says of itself ({ running, signing })
+  const [salvageFor, setSalvageFor] = useState(undefined);
+  const [salvagePhase, setSalvagePhase] = useState(null);
+  // the name of the linked wallet holding the player's minted items, for the card's mark
+  const [mintedWallet, setMintedWallet] = useState(null);
   // the step of the first-visit intro, undefined when it is not shown
   const [introStep, setIntroStep] = useState(undefined);
 
@@ -234,7 +323,9 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       : false;
   const pantry = stats.pantry || {};
   const items = stats.items || [];
-  const equipment = stats.equipment || {};
+  // a slot that points to an item the player does not have (a minted item away from the wallet)
+  // or one being salvaged is free here, as it is in matches
+  const equipment = labEquipment(stats.equipment, items);
   const loadout = stats.loadout || {};
   const special = SpecialIngredient[entityType];
   const bowls = [special, ...picked];
@@ -285,6 +376,18 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const part = (name) => (element) => {
     parts.current[name] = element;
   };
+  // how much higher (or, when negative, lower) the item shelf may be: on a portrait phone, what
+  // the preview has above its least height, less what the page lacks (it scrolls then)
+  const preview = useRef();
+  const shelfRoom = useCallback(() => {
+    const view = page.current;
+    const box = preview.current;
+    if (!view || !box || !portrait()) {
+      return Infinity;
+    }
+    const least = parseFloat(getComputedStyle(box).minHeight) || 0;
+    return box.offsetHeight - least - (view.scrollHeight - view.clientHeight);
+  }, []);
 
   // the recipe the bowls hold, once it is known (discovered by anyone)
   const recipe = useMemo(() => {
@@ -365,28 +468,101 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   };
 
   // reloads what the server knows about the player's pantry and items
-  const refreshStats = () =>
-    fetchOwnProfile()
-      .then(({ stats }) => {
-        const {
-          pantry: fresh,
-          spoiling,
-          items: owned,
-          equipment: equipped,
-          loadout: active,
-        } = stats;
-        const changes = {
-          pantry: fresh,
-          spoiling,
-          coins: (fresh && fresh.COCOA) || 0,
-          items: owned,
-          equipment: equipped,
-          loadout: active,
-        };
-        updateStats(changes);
-        persist(changes);
-      })
-      .catch((error) => logger.info("could not reload the stats", error));
+  const refreshStats = () => reloadItems(updateStats);
+
+  // A minting that runs (after Mint now) keeps its dialog through a connection that blips (the
+  // phone path comes back from the wallet app to a page that checks its connection anew), and
+  // through anything while a signature attempt is out; only the server's switch closes it.
+  const keepMintDialog =
+    Boolean(mintPhase) &&
+    (mintPhase.signing || (mintPhase.running && mintSwitch));
+  const mintDialogShown = Boolean(mintFor) && (minting || keepMintDialog);
+  // minting stopped showing (offline, the server's switch) and nothing keeps the dialog: it
+  // closes, nothing is cancelled (the watcher follows a minting that runs)
+  useEffect(() => {
+    if (mintFor && !mintDialogShown) {
+      setMintFor(undefined);
+    }
+  }, [mintFor, mintDialogShown]);
+  // a closed dialog says nothing any more
+  useEffect(() => {
+    if (!mintFor) {
+      setMintPhase(null);
+    }
+  }, [mintFor]);
+
+  // a salvage that runs keeps its dialog as a minting does (through a blip; only the server's
+  // switch closes it, and nothing is cancelled then)
+  const keepSalvageDialog =
+    Boolean(salvagePhase) &&
+    (salvagePhase.signing || (salvagePhase.running && mintSwitch));
+  const salvageDialogShown =
+    Boolean(salvageFor) && (minting || keepSalvageDialog);
+  useEffect(() => {
+    if (salvageFor && !salvageDialogShown) {
+      setSalvageFor(undefined);
+    }
+  }, [salvageFor, salvageDialogShown]);
+  useEffect(() => {
+    if (!salvageFor) {
+      setSalvagePhase(null);
+    }
+  }, [salvageFor]);
+
+  // a minted item's card names the linked wallet that holds it (the account's identities)
+  const cardMinted =
+    minting &&
+    card &&
+    items.some(
+      (entry) =>
+        entry.item === card.item &&
+        entry.minted &&
+        entry.minted.state === "minted"
+    );
+  useEffect(() => {
+    if (!cardMinted) {
+      return undefined;
+    }
+    let gone = false;
+    cardanoApi
+      .identities()
+      .then(
+        (identities) => !gone && setMintedWallet(mintedWalletName(identities))
+      )
+      .catch((error) => logger.info("could not read the linked keys", error));
+    return () => {
+      gone = true;
+    };
+  }, [cardMinted]);
+
+  // the minting dialog for `entry` (the card's chosen item) instead of the card, and back
+  const openMint = (entry) => {
+    setCard(undefined);
+    setMintFor(entry);
+  };
+  // closed: the stats are read again, so the card shows the item as the server has it (a Mint now
+  // that was still out when the dialog closed may have locked it meanwhile; MintWatch then starts)
+  const closeMint = () => {
+    setMintFor(undefined);
+    refreshStats();
+  };
+  // the salvage of a minted item (`entry`, the card's chosen one) instead of the card, and back
+  const openSalvage = (entry) => {
+    setCard(undefined);
+    setSalvageFor(entry);
+  };
+  const closeSalvage = () => {
+    setSalvageFor(undefined);
+    refreshStats();
+  };
+  const openCardOf = (itemId) => {
+    const entry = items.find((candidate) => candidate.id === itemId);
+    setMintFor(undefined);
+    setSalvageFor(undefined);
+    if (entry) {
+      setCard({ item: entry.item, instanceId: entry.id });
+    }
+  };
 
   const craft = () => {
     setBusy(true);
@@ -410,10 +586,11 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       .finally(() => setBusy(false));
   };
 
-  const equip = (itemId) => {
-    const slot = pickerSlot;
+  // puts an item into a building's slot (itemId null empties it); resolves whether it worked,
+  // and the caller says why it did not (the lab table for the picker, the item card for Remove)
+  const putItem = (type, slot, itemId) => {
     setBusy(true);
-    equipItem(entityType, slot, itemId)
+    return equipItem(type, slot, itemId)
       .then((equipped) => {
         const changes = {
           equipment: equipped.equipment,
@@ -421,21 +598,61 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
         };
         updateStats(changes);
         persist(changes);
-        setPickerSlot(undefined);
+        return true;
       })
       .catch((error) => {
         logger.warn("equipping failed", error);
-        setResult({ status: "error", seq: Date.now() });
+        return false;
       })
       .finally(() => setBusy(false));
   };
 
-  // after crafting, offer the free slot of the item's building (or the first one)
-  const equipCrafted = () => {
-    const slots = equipment[entityType] || [];
+  const equip = (itemId) =>
+    putItem(entityType, pickerSlot, itemId).then((done) => {
+      if (done) {
+        setPickerSlot(undefined);
+        setPickerChoice(undefined);
+      } else {
+        setResult({ status: "error", seq: Date.now() });
+      }
+    });
+
+  // the free slot of a building (or the first one)
+  const freeSlot = (type) => {
+    const slots = equipment[type] || [];
     const free = [0, 1].find((i) => !slots[i]);
+    return typeof free === "number" ? free : 0;
+  };
+
+  // after crafting, offer the free slot of the item's building
+  const equipCrafted = () => {
     setCrafted(undefined);
-    setPickerSlot(typeof free === "number" ? free : 0);
+    setPickerChoice(crafted ? crafted.id : undefined);
+    setPickerSlot(freeSlot(entityType));
+  };
+
+  // from the item card: the item's building, and the picker on its free slot with the copy
+  // the card chose (`entry`, an item of stats.items)
+  const equipFromCard = (entry) => {
+    const type = Items[entry.item].entityType;
+    setCard(undefined);
+    selectBuilding(type);
+    setPickerChoice(entry.id);
+    setPickerSlot(freeSlot(type));
+  };
+
+  // the server answered a salvage: the item is gone, its ingredients are back
+  const salvaged = (answer, itemId) => {
+    const changes = {
+      pantry: answer.pantry,
+      spoiling: answer.spoiling,
+      coins: answer.pantry.COCOA || 0,
+      items: items.filter((entry) => entry.id !== itemId),
+      equipment: answer.equipment,
+      loadout: answer.loadout,
+    };
+    updateStats(changes);
+    persist(changes);
   };
 
   const useRecipe = (entry) => {
@@ -451,11 +668,13 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
     setPantryOpen(true);
   };
 
-  const slotItem = (index) => {
+  // the player's item in a slot of the building on show
+  const slotEntry = (index) => {
     const id = (equipment[entityType] || [])[index];
-    const entry = id
-      ? items.find((candidate) => candidate.id === id)
-      : undefined;
+    return id ? items.find((candidate) => candidate.id === id) : undefined;
+  };
+  const slotItem = (index) => {
+    const entry = slotEntry(index);
     return entry ? entry.item : undefined;
   };
   const equippedKeys = loadout[entityType] || [];
@@ -468,6 +687,20 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       const entry = items.find((candidate) => candidate.id === id);
       return sum + (entry && Items[entry.item] ? Items[entry.item].points : 0);
     }, 0);
+  // the item the minting dialog mints: as the stats have it now, else as the card had it
+  const mintingEntry = mintFor
+    ? items.find((candidate) => candidate.id === mintFor.id) || mintFor
+    : undefined;
+  // the item being salvaged: as the stats have it now, else as the card had it (once its
+  // ingredients arrived it is gone from the stats)
+  const salvageEntry = salvageFor
+    ? items.find((candidate) => candidate.id === salvageFor.id) || salvageFor
+    : undefined;
+  const salvageSlot = salvageEntry ? slotOf(salvageEntry.id, equipment) : null;
+  // the player's items of the type the item card shows
+  const cardGroup = card
+    ? shelfGroups(items).find((group) => group.item === card.item)
+    : undefined;
   const inactive = (index) => {
     const key = slotItem(index);
     return Boolean(key) && !equippedKeys.includes(key);
@@ -512,11 +745,13 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
           <EquipmentSlot
             index={0}
             item={slotItem(0)}
+            minted={(slotEntry(0) || {}).minted}
+            serial={(slotEntry(0) || {}).serial}
             inactive={inactive(0)}
             onClick={() => setPickerSlot(0)}
             disabled={!online}
           />
-          <div className={classes.preview}>
+          <div className={classes.preview} ref={preview}>
             <Suspense fallback={null}>
               <MeshPreview selectedEntity={selected} />
             </Suspense>
@@ -524,6 +759,8 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
           <EquipmentSlot
             index={1}
             item={slotItem(1)}
+            minted={(slotEntry(1) || {}).minted}
+            serial={(slotEntry(1) || {}).serial}
             inactive={inactive(1)}
             onClick={() => setPickerSlot(1)}
             disabled={!online}
@@ -554,21 +791,50 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       </div>
 
       <div className={classes.table} ref={part("table")}>
-        <LabTable
-          buildingName={buildingName(entityType)}
-          bowls={bowls}
-          pantry={pantry}
-          onAdd={addIngredient}
-          onClear={clearBowl}
-          onTry={tryBowls}
-          result={result}
-          recipe={recipe}
-          onCraft={craft}
-          crafted={crafted}
-          onEquipCrafted={equipCrafted}
-          online={online}
-          busy={busy}
-        />
+        <div className={classes.tabs} role="tablist">
+          {[
+            ["table", tr.ITEM_TAB_TABLE, "item-table-tab"],
+            ["items", tr.ITEM_SHELF, "item-shelf-tab"],
+          ].map(([id, label, testId]) => (
+            <button
+              type="button"
+              key={id}
+              role="tab"
+              aria-selected={tab === id}
+              className={`${classes.tab} ${
+                tab === id ? classes.activeTab : ""
+              }`}
+              onClick={() => setTab(id)}
+              data-testid={testId}
+            >
+              {t(label)}
+            </button>
+          ))}
+        </div>
+        {tab === "items" ? (
+          <ItemShelf
+            items={items}
+            room={shelfRoom}
+            layout={`${entityType} ${equippedKeys.join(" ")}`}
+            onOpen={(item, instanceId) => setCard({ item, instanceId })}
+          />
+        ) : (
+          <LabTable
+            buildingName={buildingName(entityType)}
+            bowls={bowls}
+            pantry={pantry}
+            onAdd={addIngredient}
+            onClear={clearBowl}
+            onTry={tryBowls}
+            result={result}
+            recipe={recipe}
+            onCraft={craft}
+            crafted={crafted}
+            onEquipCrafted={equipCrafted}
+            online={online}
+            busy={busy}
+          />
+        )}
       </div>
 
       {typeof introStep === "number" ? (
@@ -582,7 +848,10 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       ) : null}
       <InventoryPicker
         open={typeof pickerSlot === "number"}
-        close={() => setPickerSlot(undefined)}
+        close={() => {
+          setPickerSlot(undefined);
+          setPickerChoice(undefined);
+        }}
         buildingName={buildingName(entityType)}
         entityType={entityType}
         slot={pickerSlot || 0}
@@ -591,7 +860,81 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
         budgetUsed={equippedPoints}
         onEquip={equip}
         busy={busy}
+        chosenId={pickerChoice}
       />
+      {card ? (
+        <ItemCard
+          open
+          close={() => setCard(undefined)}
+          item={card.item}
+          instanceId={card.instanceId}
+          instances={cardGroup ? cardGroup.instances : []}
+          equipment={equipment}
+          book={book}
+          online={online}
+          busy={busy}
+          buildingName={buildingName}
+          onEquip={equipFromCard}
+          onTakeOff={({ entityType: type, slot }) => putItem(type, slot, null)}
+          onSalvaged={salvaged}
+          onGone={refreshStats}
+          minting={minting}
+          onSalvageMinted={openSalvage}
+          mintAction={(entry) =>
+            minting && entry && !entry.minted ? (
+              <MintAction onMint={() => openMint(entry)} disabled={busy} />
+            ) : null
+          }
+          mintStatus={(entry) =>
+            minting && entry ? (
+              <MintStatus
+                // one per copy: a cancel's problem stays with the copy it was for
+                key={entry.id}
+                item={entry}
+                wallet={mintedWallet}
+                onMint={() => openMint(entry)}
+                onSalvage={() => openSalvage(entry)}
+                onChanged={refreshStats}
+              />
+            ) : null
+          }
+        />
+      ) : null}
+      {mintDialogShown ? (
+        <Suspense
+          fallback={
+            <ChunkWaiting title={t(tr.MINT_CHECK_TITLE)} onClose={closeMint} />
+          }
+        >
+          <MintDialog
+            open
+            item={mintingEntry}
+            onClose={closeMint}
+            onToItem={() => openCardOf(mintFor.id)}
+            onChanged={refreshStats}
+            onGoTo={openCardOf}
+            onPhase={setMintPhase}
+          />
+        </Suspense>
+      ) : null}
+      {salvageDialogShown ? (
+        <Suspense
+          fallback={
+            <ChunkWaiting title={t(tr.ITEM_SALVAGE)} onClose={closeSalvage} />
+          }
+        >
+          <SalvageMinted
+            open
+            item={salvageEntry}
+            book={book}
+            slotName={salvageSlot ? buildingName(salvageSlot.entityType) : null}
+            onClose={closeSalvage}
+            onToItem={() => openCardOf(salvageFor.id)}
+            onChanged={refreshStats}
+            onPhase={setSalvagePhase}
+          />
+        </Suspense>
+      ) : null}
       <RecipeBook
         open={bookOpen}
         close={() => setBookOpen(false)}

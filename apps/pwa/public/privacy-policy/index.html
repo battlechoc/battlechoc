@@ -121,7 +121,7 @@
 
       <section id="de" lang="de">
         <h1>Datenschutzerklärung</h1>
-        <p class="date">Stand: 8. November 2026</p>
+        <p class="date">Stand: 16. November 2026</p>
 
         <p class="summary">
           <strong>Kurz gesagt:</strong> battlechoc ist kostenlos, ohne Werbung, ohne Tracking, ohne
@@ -149,6 +149,10 @@
           („cf-wallet-connected“, „cf-last-connected-wallet“, „cf-requested-extensions“; das Spiel
           trennt die Wallet nach jeder Nutzung wieder), und der QR-Weg eine zufällige Kennung seiner
           Verbindung („peer-connect-dapp-id“, gelöscht, wenn du die Wallet-Auswahl schließt).
+          Während du ein Item prägst oder ein geprägtes Item zerlegst, merkt sich der Browser-Tab
+          den Signier-Code des Vorgangs
+          (Abschnitt 11) im Sitzungsspeicher (sessionStorage), bis der Vorgang endet oder du den Tab
+          schließt.
           Das ist nötig, damit das Spiel funktioniert (§ 25 Abs. 2 Nr. 2 TDDDG). Was davon an unseren
           Server geht, steht in den folgenden Abschnitten. Du löschst diese Daten, indem du die
           Website-Daten von battlechoc.com in deinem Browser löschst oder die App deinstallierst.
@@ -196,8 +200,9 @@
         <p>
           <strong>IP-Adressen:</strong> Unser Server schreibt keine Zugriffsprotokolle und speichert
           keine IP-Adressen. Er hält deine IP-Adresse nur kurz im Arbeitsspeicher, um zu begrenzen,
-          wie viele Konten pro Minute angelegt werden (Schutz vor Missbrauch, Art. 6 Abs. 1 lit. f
-          DSGVO).
+          wie viele Anfragen pro Minute von einer Adresse kommen, etwa wie viele Konten angelegt
+          werden (Schutz vor Missbrauch, Art. 6 Abs. 1 lit. f DSGVO); auf die Festplatte schreibt er
+          sie nicht.
         </p>
 
         <h2>5. Benachrichtigungen</h2>
@@ -239,7 +244,8 @@
         <ul>
           <li>Spielerkonto und Spieldaten: solange das Konto besteht. Auf Wunsch löschen wir es (Abschnitt 10).</li>
           <li>Problemberichte: 60 Tage.</li>
-          <li>Fingerabdrücke verknüpfter Schlüssel und mit Passkeys gesicherte Wörter (verschlüsselt): bis du den Schlüssel entfernst oder dein Konto gelöscht wird. Anmelde-Zufallszahlen: bis zur Anmeldung, nicht genutzte höchstens etwa eine Stunde. Verbindungscodes für Wallets (als Hash): 10 Minuten gültig, gelöscht spätestens nach etwa einer Stunde.</li>
+          <li>Fingerabdrücke verknüpfter Schlüssel, der Name der Wallet-App und mit Passkeys gesicherte Wörter (verschlüsselt): bis du den Schlüssel entfernst oder dein Konto gelöscht wird. Wann welcher Schlüssel mit welchem Konto verknüpft und wieder entfernt wurde: solange das Konto besteht. Anmelde-Zufallszahlen: bis zur Anmeldung, nicht genutzte höchstens etwa eine Stunde. Verbindungscodes für Wallets (als Hash): 10 Minuten gültig, gelöscht spätestens nach etwa einer Stunde.</li>
+          <li>Prägen und Zerlegen (Abschnitt 11): Vorgänge bis 90 Tage, nachdem sie abgeschlossen, abgebrochen oder abgelaufen sind. Signier-Codes (als Hash): 10 Minuten gültig, gelöscht, sobald signiert ist, sonst mit ihrem Vorgang. Hinweise zu geprägten Items: 30 Tage, nachdem du sie gesehen hast, höchstens 180 Tage. Welcher Wallet-Schlüssel ein geprägtes Item hält: solange es geprägt und nicht zerlegt ist. Gutschriften für zerlegte geprägte Items: solange das Konto besteht, dem sie gutgeschrieben wurden. Eine Gutschrift, die an kein Spielerkonto ging, enthält nichts Persönliches außer der öffentlichen Kennung der Transaktion; sie bleibt ohne Frist, damit kein Item je zweimal gutgeschrieben wird. Das Verzeichnis der battlechoc-Items enthält nur öffentliche Daten der Blockchain und bleibt, solange wir es betreiben.</li>
           <li>Push-Adressen: bis du die Erlaubnis widerrufst, der Push-Dienst sie für ungültig erklärt oder dein Konto gelöscht wird.</li>
         </ul>
 
@@ -263,15 +269,17 @@
 
         <h2 id="cardano-de">11. Dein Fortschritt, dein Schlüssel und Cardano (preprod)</h2>
         <p>
-          battlechoc findet: Ausrüstung, die du im Spiel herstellst, sollte dir gehören und nicht nur
-          ein Eintrag in unserer Datenbank sein. Deshalb soll jedes Ausrüstungsteil ein Token auf einer
-          Blockchain werden (einem öffentlichen Verzeichnis, das keine einzelne Firma kontrolliert),
-          das in deiner eigenen Wallet liegt. Nur die Ausrüstung: Zutaten, Kakao, Partien und
-          Statistiken bleiben in der Datenbank des Spiels. Künftig kann Ausrüstung vielleicht auch mit
-          einer Münze bezahlt werden, die man nur in Turnieren gewinnen kann; sie wird nicht verkauft,
-          es gibt keinen Vorverkauf, keine private Verteilung und keinen ICO. Für all das nutzt
-          battlechoc im Moment das Netz „preprod“ von Cardano: ein Testnetz, in dem nichts einen
-          Geldwert hat. Derzeit schreibt battlechoc nichts auf eine Blockchain.
+          Ausrüstung, die du im Spiel herstellst, ist ein Eintrag in der Datenbank des Spiels. Wenn du
+          willst, kannst du ein Item prägen, eins nach dem anderen: Dann wird es ein Token auf der
+          Blockchain Cardano (einem öffentlichen Verzeichnis, das keine einzelne Firma kontrolliert)
+          und liegt in deiner eigenen Wallet. Geprägt bleibt geprägt: Ein geprägtes Item kannst du
+          nur noch zerlegen. Prägen lassen sich nur Items: Zutaten, Kakao, Partien und Statistiken
+          bleiben in der Datenbank des Spiels. Künftig lässt sich die battlechoc-Gebühr fürs Prägen
+          vielleicht auch mit einer Münze bezahlen, die es nur als Preis in Turnieren gibt; sie wird
+          nicht verkauft, es gibt keinen Vorverkauf, keine private Verteilung und keinen ICO. Für all
+          das nutzt battlechoc im Moment das Netz „preprod“ von Cardano: ein Testnetz, dessen ADA
+          nichts kostet und kein echtes Geld ist. Was Prägen kostet und wie es geht, erklärt die
+          <a href="/guide/#de">Anleitung zum Prägen</a>.
         </p>
         <p>
           Wenn du „Fortschritt sichern“ wählst, erzeugt das Spiel auf deinem Gerät einen Schlüssel aus
@@ -299,8 +307,14 @@
           Verbindest du deine eigene Cardano-Wallet, signiert sie einen kurzen Text von battlechoc; dabei
           wird nichts bezahlt und kein Guthaben bewegt. Unser Server speichert wie beim Schlüssel des
           Spiels nur einen Fingerabdruck (Hash) des Wallet-Schlüssels, verknüpft mit deinem Spielerkonto;
-          eine Wallet ohne Stake-Schlüssel mit dem Fingerabdruck ihres Zahlungsschlüssels. Sonst speichern
-          wir nichts aus deiner Wallet. Auf dem Handy erzeugt das Spiel dafür einen Verbindungscode, der
+          eine Wallet ohne Stake-Schlüssel mit dem Fingerabdruck ihres Zahlungsschlüssels. Dazu
+          speichern wir den Namen der Wallet-App, mit der du den Schlüssel verknüpft hast (etwa
+          „Eternl“), bis du ihn entfernst. Für jeden verknüpften Schlüssel, ob aus einer Wallet oder
+          aus deinen Sicherungswörtern, merkt sich unser Server außerdem, wann er mit welchem
+          Spielerkonto verknüpft und wann er wieder entfernt wurde: Die Items einer Wallet, die vorher
+          zu einem anderen Spielerkonto gehörte, zählen erst 24 Stunden nach der neuen Verknüpfung.
+          Mehr liest oder speichert unser Server über deine Wallet nur für geprägte Items, fürs Prägen
+          und fürs Zerlegen (unten). Auf dem Handy erzeugt das Spiel dafür einen Verbindungscode, der
           eine Seite von battlechoc im eigenen Browser deiner Wallet öffnet; unser Server bewahrt den Code
           nur als Hash und verknüpft mit deinem Spielerkonto auf: er gilt 10 Minuten und wird spätestens
           nach etwa einer Stunde gelöscht. Verbindest du eine
@@ -311,6 +325,80 @@
           schickt ihnen nichts weiter. Das geschieht nur, wenn du „Handy-Wallet (QR-Code)“ wählst; die
           Verbindung besteht dann, bis das Spiel neu geladen wird. Rechtsgrundlage
           ist die Bereitstellung des Spiels und seiner Funktionen (Art. 6 Abs. 1 lit. b DSGVO).
+        </p>
+        <p>
+          <strong>Prägen ist öffentlich und dauerhaft.</strong> Auf der Blockchain kann jeder sehen,
+          welche Wallet welches battlechoc-Item hält, welche Art von Item es ist und welche Nummer es
+          hat, und an welche Wallets es weitergegeben wurde. Das lässt sich nicht löschen, auch nicht
+          von battlechoc. Beim Prägen schreibt battlechoc in den Token nur die Art des Items, seinen
+          Namen, einen Link zu seinem Bild, seine Nummer und einen Satz mit dem Link zu seiner Seite
+          auf battlechoc.com: keinen Spielernamen, keine Spieler-ID und nichts sonst über dich.
+          Öffentlich sind auf der Blockchain auch die Zahlungen beim Prägen und Zerlegen, wie jede
+          Zahlung einer Wallet. Welche Wallet zu welchem Spielerkonto gehört, zeigt battlechoc
+          nirgends: Öffentliche Profile zeigen nicht, welche Items geprägt sind, und die Seite eines
+          Items (battlechoc.com/item/) zeigt seine Art, seine Nummer, seine Wirkung im Spiel, wann es
+          geprägt wurde und ob es zerlegt ist, aber nicht, wer es hält.
+        </p>
+        <p>
+          Damit im Spiel gilt, was auf der Blockchain steht, und damit vor dem Prägen klar ist, ob
+          dein ADA reicht, liest unser Server öffentliche Daten der Blockchain über deine verknüpften
+          Wallets: welche battlechoc-Items sie halten und, wenn du Prägen oder Zerlegen öffnest, was
+          in ihnen liegt (ihr ADA und die anderen Tokens darin). Das speichert er nicht, er hält es
+          höchstens 20 Sekunden im Arbeitsspeicher; nur die Transaktion, die er für einen Vorgang
+          baut und speichert (unten), zeigt einen Teil davon: die Beträge, die sie ausgibt, und das
+          Wechselgeld. Dafür fragt er den Dienst Koios (koios.rest), der Daten der
+          Cardano-Blockchain bereitstellt, mit den öffentlichen Adressen deiner Wallets und den Namen
+          der Items, und über Koios reicht er die signierten Transaktionen beim Cardano-Netz ein. Koios
+          sieht dabei, nach welchen öffentlichen Wallet-Adressen battlechoc fragt, und zwar von unserem
+          Server aus: Dein Gerät spricht nie mit Koios, und Koios bekommt weder deine IP-Adresse noch
+          dein Spielerkonto. Welche Wallet welches battlechoc-Item hält, liest unser Server aus einem
+          eigenen Verzeichnis der battlechoc-Items (Yaci Store), das auf unserem Server läuft und die
+          Blöcke der Blockchain von einem öffentlichen Cardano-Knoten bezieht; dieser Knoten sieht nur
+          unseren Server. Das Verzeichnis enthält nur, was ohnehin öffentlich auf der Blockchain steht:
+          welche Adressen battlechoc-Items halten oder gehalten haben und wann Items geprägt,
+          weitergegeben und zerlegt wurden.
+        </p>
+        <p>
+          Für jedes Prägen und jedes Zerlegen eines geprägten Items im Spiel speichert unser Server
+          einen Vorgang: dein Spielerkonto, das Item, die Wallet (als Fingerabdruck ihres
+          Schlüssels), die Adresse deiner Wallet, an die das Item geht (beim Zerlegen: das Pfand),
+          die Transaktion selbst (auch mit den Signaturen) und ihre Kennung, die Gebühren und das
+          Pfand, den Stand des Vorgangs und wann er sich geändert hat. Von den Adressen, die deine
+          Wallet dafür nennt, speichert er nur diese eine. 90 Tage, nachdem ein Vorgang
+          abgeschlossen, abgebrochen oder abgelaufen ist, löscht er ihn. Zu jedem geprägten Item
+          speichert er, wann es geprägt wurde, und, solange es geprägt und nicht zerlegt ist,
+          welcher Wallet-Schlüssel (als Fingerabdruck) es gerade hält und seit wann, auch wenn diese
+          Wallet zu keinem Spielerkonto gehört; das leitet er laufend aus der Blockchain ab.
+          Hinweise im Spiel, dass ein Item in deiner Wallet angekommen ist, sie verlassen hat oder
+          zerlegt wurde, löscht er 30 Tage, nachdem du sie gesehen hast, spätestens nach 180 Tagen.
+          Wird ein geprägtes Item zerlegt, im Spiel oder außerhalb, speichert er eine Gutschrift:
+          das Spielerkonto, dem er die Zutaten gutgeschrieben hat, wenn es eins gibt, das Item, die
+          Transaktion, mit der es zerlegt wurde, und welche Zutaten zurückkamen. Einen
+          Wallet-Schlüssel speichert er darin nicht; die Kennung der Transaktion ist aber öffentlich
+          und führt auf der Blockchain zu der Wallet, die das Item hielt. Daran erkennt er, dass ein
+          Item schon gutgeschrieben ist, damit das nie zweimal geschieht.
+        </p>
+        <p>
+          Signierst du auf dem Handy, öffnet das Spiel in deiner Wallet eine Seite von battlechoc
+          (battlechoc.com/sign/), die wie das Spiel von GitHub Pages kommt (Abschnitt 3); in ihrer
+          Adresse steht ein Code. Mit diesem Code holt die Seite den Vorgang von unserem Server, damit
+          deine Wallet ihn signieren kann. Der Code gilt 10 Minuten, und unser Server bewahrt ihn nur
+          als Hash auf. Wer ihn kennt, kann damit den Vorgang ansehen, aber ohne die Signatur deiner
+          Wallet nichts ändern und nichts bezahlen.
+        </p>
+        <p>
+          Bezahlt wird beim Prägen und Zerlegen aus deiner Wallet, und nur mit ihrer Signatur: die
+          Netzwerkgebühr an das Cardano-Netz und beim Prägen die battlechoc-Gebühr an die
+          battlechoc-Treasury; das Pfand bleibt beim Item und kommt beim Zerlegen zurück. battlechoc
+          bekommt davon nur die battlechoc-Gebühr. battlechoc hält nie deine Schlüssel und nie dein
+          Geld.
+        </p>
+        <p>
+          Rechtsgrundlage für das Prägen und Zerlegen und alles, was unser Server dafür liest und
+          speichert, ist die Bereitstellung des Spiels und seiner Funktionen (Art. 6 Abs. 1 lit. b
+          DSGVO). Für Wallets, die ein battlechoc-Item halten, aber zu keinem Spielerkonto gehören,
+          ist es unser berechtigtes Interesse, zu bemerken, wenn das Item in die Wallet eines
+          Spielers kommt (Art. 6 Abs. 1 lit. f DSGVO).
         </p>
         <p>
           Du willst verstehen, was eine Blockchain ist?
@@ -324,7 +412,7 @@
 
       <section id="en" lang="en">
         <h1>Privacy policy</h1>
-        <p class="date">Last updated: 8 November 2026</p>
+        <p class="date">Last updated: 16 November 2026</p>
 
         <p class="summary">
           <strong>In short:</strong> battlechoc is free, with no ads, no tracking, no analytics and
@@ -349,7 +437,9 @@
           wallet component remembers in local storage (localStorage) which wallet was connected last
           ("cf-wallet-connected", "cf-last-connected-wallet", "cf-requested-extensions"; the game
           disconnects the wallet after each use), and the QR path a random identifier of its
-          connection ("peer-connect-dapp-id", deleted when you close the wallet choice). This is necessary for the game to work (Section 25 (2)
+          connection ("peer-connect-dapp-id", deleted when you close the wallet choice). While you
+          mint an item or salvage a minted item, the browser tab keeps the sign code of the operation (section 11) in session
+          storage (sessionStorage) until the operation ends or you close the tab. This is necessary for the game to work (Section 25 (2)
           no. 2 TDDDG). What of this reaches our server is described below. You delete this data by
           clearing the site data of battlechoc.com in your browser or by uninstalling the app.
         </p>
@@ -392,8 +482,9 @@
         </p>
         <p>
           <strong>IP addresses:</strong> our server writes no access logs and stores no IP addresses.
-          It keeps your IP address briefly in memory to limit how many accounts are created per
-          minute (abuse prevention, Art. 6 (1) (f) GDPR).
+          It keeps your IP address briefly in memory to limit how many requests per minute come from
+          one address, such as how many accounts are created (abuse prevention, Art. 6 (1) (f)
+          GDPR); it never writes it to disk.
         </p>
 
         <h2>5. Notifications</h2>
@@ -434,7 +525,8 @@
         <ul>
           <li>Player account and game data: as long as the account exists. We delete it on request (section 10).</li>
           <li>Problem reports: 60 days.</li>
-          <li>Fingerprints of linked keys and words backed up with passkeys (encrypted): until you remove the key or your account is deleted. Sign-in random numbers: until you sign in; unused ones at most about one hour. Link codes for wallets (as a hash): valid for 10 minutes, deleted after about an hour at the latest.</li>
+          <li>Fingerprints of linked keys, the name of the wallet app and words backed up with passkeys (encrypted): until you remove the key or your account is deleted. When which key was linked to and removed from which account: as long as the account exists. Sign-in random numbers: until you sign in; unused ones at most about one hour. Link codes for wallets (as a hash): valid for 10 minutes, deleted after about an hour at the latest.</li>
+          <li>Minting and salvaging (section 11): operations until 90 days after they were completed, cancelled or expired. Sign codes (as a hash): valid for 10 minutes, deleted once signed, otherwise with their operation. Notices about minted items: 30 days after you saw them, 180 days at most. Which wallet key holds a minted item: while it is minted and not salvaged. Credits for salvaged minted items: as long as the account they went to exists. A credit that went to no player account holds nothing personal beyond the public identifier of the transaction; it stays without a time limit, so that no item is ever credited twice. The index of battlechoc items holds only public data of the blockchain and stays as long as we run it.</li>
           <li>Push addresses: until you withdraw the permission, the push service declares them invalid or your account is deleted.</li>
         </ul>
 
@@ -457,14 +549,16 @@
 
         <h2 id="cardano-en">11. Your progress, your key and Cardano (preprod)</h2>
         <p>
-          battlechoc believes that the equipment you craft in the game should belong to you, not just
-          be an entry in our database. That is why each piece of equipment is meant to become a token
-          on a blockchain (a public record that no single company controls), held in your own wallet.
-          Only equipment: your ingredients, cocoa, matches and statistics stay in the game's database.
-          In the future, equipment may also be paid for with a coin that can only be won in
-          tournaments; it is not sold, and there is no presale, no private distribution and no ICO. For
-          all this battlechoc currently uses Cardano's "preprod" network, a test network where nothing
-          has a value in money. At the moment, battlechoc writes nothing to a blockchain.
+          Equipment you craft in the game is an entry in the game's database. If you want, you can
+          mint an item, one at a time: it then becomes a token on the Cardano blockchain (a public
+          record that no single company controls), held in your own wallet. Minted stays minted: a
+          minted item can only be salvaged. Only items can be minted: your ingredients, cocoa, matches
+          and statistics stay in the game's database. In the future, the battlechoc fee for minting
+          may also be payable with a coin that exists only as a prize in tournaments; it is not sold,
+          and there is no presale, no private distribution and no ICO. For all this battlechoc
+          currently uses Cardano's "preprod" network, a test network whose ADA costs nothing and is
+          not real money. What minting costs and how it works is explained in the
+          <a href="/guide/#en">guide to minting</a>.
         </p>
         <p>
           When you choose "Save your progress", the game makes a key on your device from 24 recovery
@@ -490,7 +584,12 @@
           If you connect your own Cardano wallet, it signs a short text from battlechoc; nothing is paid
           and no funds move. As with the game's own key, our server stores only a fingerprint (hash) of
           the wallet's key, linked to your player account; for a wallet without a stake key, the
-          fingerprint of its payment key. We store nothing else from your wallet. On a phone, the game
+          fingerprint of its payment key. We also store the name of the wallet app you linked the key
+          with (such as "Eternl"), until you remove it. For every linked key, from a wallet or from
+          your recovery words, our server also remembers when it was linked to which player account
+          and when it was removed: the items of a wallet that belonged to another player account
+          before count only 24 hours after the new link. Our server reads or stores more about your
+          wallet only for minted items, minting and salvaging (below). On a phone, the game
           makes a link code for this that opens a page of battlechoc in your wallet's own browser; our
           server keeps the code only as a hash, linked to your player account: it is valid for 10 minutes and
           deleted after about an hour at the latest. If
@@ -501,6 +600,74 @@
           else. This only happens when you choose "Phone wallet (QR code)"; the connection then stays until
           the game is reloaded. The legal basis is providing the game and
           its features (Art. 6 (1) (b) GDPR).
+        </p>
+        <p>
+          <strong>Minting is public and permanent.</strong> On the blockchain anyone can see which
+          wallet holds which battlechoc item, what type of item it is and its number, and to which
+          wallets it was passed on. Nobody can delete that, not even battlechoc. When minting,
+          battlechoc writes into the token only the item's type, its name, a link to its picture, its
+          number and a sentence with the link to its page on battlechoc.com: no player name, no player
+          ID and nothing else about you. The payments of minting and salvaging are public on the
+          blockchain too, like every payment of a wallet. battlechoc shows nowhere which wallet belongs
+          to which player account: public profiles do not show which items are minted, and an item's
+          page (battlechoc.com/item/) shows its type, its number, its effect in the game, when it was
+          minted and whether it was salvaged, but not who holds it.
+        </p>
+        <p>
+          So that what the blockchain says holds in the game, and so that it is clear before minting
+          whether your ADA is enough, our server reads public data of the blockchain about your linked
+          wallets: which battlechoc items they hold and, when you open minting or salvaging, what they
+          hold (their ADA and the other tokens in them). It does not store that; it keeps it in
+          memory for at most 20 seconds. Only the transaction it builds and stores for an operation
+          (below) shows part of it: the amounts it spends and the change. For this it asks the service Koios (koios.rest), which provides data of the Cardano
+          blockchain, with the public addresses of your wallets and the names of the items, and it
+          submits the signed transactions to the Cardano network through Koios. Koios sees which
+          public wallet addresses battlechoc asks about, from our server: your device never talks to
+          Koios, and Koios gets neither your IP address nor your player account. Which wallet holds
+          which battlechoc item our server reads from its own index of battlechoc items (Yaci Store),
+          which runs on our server and gets the blockchain's blocks from a public Cardano node; that
+          node sees only our server. The index holds only what is public on the blockchain anyway:
+          which addresses hold or held battlechoc items, and when items were minted, passed on and
+          salvaged.
+        </p>
+        <p>
+          For every minting and every salvaging of a minted item in the game our server stores an
+          operation: your player account, the item, the wallet (as the fingerprint of its key), the
+          address of your wallet the item goes to (when salvaging: the deposit), the transaction
+          itself (with the signatures too) and its identifier, the fees and the deposit, the state
+          of the operation and when it changed. Of the addresses your wallet names for this, it
+          stores only that one. It deletes an operation 90 days after it was completed, cancelled or
+          expired. For every minted item it stores when it was minted and, while it is minted and
+          not salvaged, which wallet key (as a fingerprint) holds it now and since when, also when
+          that wallet belongs to no player account; it derives this from the blockchain all the
+          time. Notices in the game that an item arrived in your wallet, left it or was salvaged are
+          deleted 30 days after you saw them, after 180 days at the latest. When a minted item is
+          salvaged, in the game or outside it, it stores a credit: the player account it credited
+          with the ingredients, if there is one, the item, the transaction that salvaged it and
+          which ingredients came back. It stores no wallet key in it; but the transaction's
+          identifier is public and leads, on the blockchain, to the wallet that held the item. That
+          is how it knows an item was credited already, so that it is never credited twice.
+        </p>
+        <p>
+          If you sign on a phone, the game opens a page of battlechoc in your wallet
+          (battlechoc.com/sign/), which comes from GitHub Pages like the game (section 3); its address
+          contains a code. With this code the page fetches the operation from our server so that your
+          wallet can sign it. The code is valid for 10 minutes, and our server keeps it only as a hash.
+          Whoever knows it can view the operation with it, but cannot change anything or pay anything
+          without your wallet's signature.
+        </p>
+        <p>
+          When minting and salvaging, payments go from your wallet, and only with its signature: the
+          network fee to the Cardano network and, when minting, the battlechoc fee to the battlechoc
+          treasury; the deposit stays with the item and comes back when it is salvaged. Of this,
+          battlechoc receives only the battlechoc fee. battlechoc never holds your keys or your
+          money.
+        </p>
+        <p>
+          The legal basis for minting and salvaging, and for everything our server reads and stores
+          for it, is providing the game and its features (Art. 6 (1) (b) GDPR). For wallets that hold
+          a battlechoc item but belong to no player account, it is our legitimate interest in
+          noticing when the item reaches a player's wallet (Art. 6 (1) (f) GDPR).
         </p>
         <p>
           Want to understand what a blockchain is?

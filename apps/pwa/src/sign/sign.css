@@ -1,0 +1,124 @@
+/* the sign page (plan D, the owner's mockup "Die Unterschrift-Seite"): the link page's card
+   (link.css) on the dialogs' dark blue, with the item, its costs and one button per wallet.
+   Every colour and size of the page is here. */
+body {
+  overflow: auto;
+  background: linear-gradient(180deg, #2878a6 0%, #1b4e69 100%);
+}
+
+.sign {
+  gap: 16px;
+}
+
+.sign .brand {
+  font-size: var(--fs-xl);
+}
+
+.sign h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: #fad25a;
+}
+
+/* the item: its size and shape; its look is the game's (main.js, ICON_LOOK) */
+.sign .item {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  box-shadow: 0 0.1em 0.25em rgba(0, 0, 0, 0.35);
+}
+
+.sign .name {
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.sign .costs {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #163f55;
+  border: 2px solid #3190c3;
+  text-align: left;
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.sign .cost {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sign .cost span:last-child {
+  white-space: nowrap;
+}
+
+.sign p.soft {
+  font-size: var(--fs-sm);
+  color: #cfe9f7;
+}
+
+.sign button {
+  align-self: stretch;
+  min-height: 52px;
+}
+
+/* a wallet button that cannot be tapped (the wallet is being asked) is grey, as the game's
+   disabled buttons are: the link page's faded green still reads as tappable */
+.sign button:disabled {
+  filter: grayscale(1);
+}
+
+/* what the wallet will show, as the game's wallet step has it: You give, You get (the item, and
+   under it the ADA that stays with it in the wallet) */
+.sign .change {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #0f2e3f;
+  border: 2px solid #5db3e0;
+  text-align: left;
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+/* the label keeps its line; the amount or the item beside it wraps instead */
+.sign .change .cost > span:first-child {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.sign .change .cost > span:last-child,
+.sign .change .cost .stays {
+  min-width: 0;
+  white-space: normal;
+}
+
+.sign .change .give {
+  color: #ffc2d6;
+  text-align: right;
+}
+
+.sign .change .get {
+  color: #c9f27a;
+  text-align: right;
+}
+
+.sign .change .cost .stays {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: #cfe9f7;
+}

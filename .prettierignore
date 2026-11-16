@@ -20,6 +20,9 @@ packages/
 # The server stack keeps its own layout.
 deploy/
 
+# The blueprint (plutus.json) is written by Aiken, which also formats the .ak files (aiken fmt).
+contracts/
+
 # Markdown keeps its compact tables.
 *.md
 

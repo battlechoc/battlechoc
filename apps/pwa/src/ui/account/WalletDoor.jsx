@@ -42,8 +42,12 @@ import { networkLabel } from "./safetyState";
 // the injected wallets (extensions, or the wallet of a phone wallet's own browser), the QR code
 // for a phone wallet (CIP-45) and, on phones, the wallets a deep link opens (CIP-158). The
 // signing is ours (cardano/wallet.js). `purpose`: "connect" (unknown wallet → linked, known →
-// a session), "link" (link only), "confirm" (a proof for a key change). `onDone(answer)` gets the
-// server's answer ({ outcome, … }, or { confirmToken }); every failure leaves the account as it was.
+// a session), "link" (link only), "confirm" (a proof for a key change), "sign" (a mint's
+// signature: the door only chooses the wallet). `onDone(answer)` gets the server's answer
+// ({ outcome, … }, or { confirmToken }); every failure leaves the account as it was.
+// With "sign" there is no link code and no QR code: a tap on an extension gives
+// `onWallet(walletName)` (the minting dialog signs with it), a tap on a phone wallet opens
+// `signPageUrl` in that wallet's own browser (CIP-158) and gives `onPhone()`.
 // It is loaded only when it opens (React.lazy): the component, peer-connect and styled-components
 // stay out of the first load.
 
@@ -194,6 +198,9 @@ const WalletDoor = ({
   confirmToken,
   onClose,
   onDone,
+  signPageUrl,
+  onWallet,
+  onPhone,
 }) => {
   const classes = useStyles();
   const network = features.network();
@@ -246,7 +253,12 @@ const WalletDoor = ({
     []
   );
   const injected = injectedKeys();
-  const paths = features.walletPaths({ injected: injected.length > 0 });
+  const signing = purpose === "sign";
+  const offered = features.walletPaths({ injected: injected.length > 0 });
+  // a signature goes through an extension or a phone wallet's own browser, never a QR code
+  const paths = signing
+    ? new Set([...offered].filter((path) => path !== "qr"))
+    : offered;
   const deeplink = paths.has("deeplink") && purpose !== "confirm";
 
   // the game does not keep the wallet connected: the core remembers the last one otherwise
@@ -300,6 +312,12 @@ const WalletDoor = ({
   // that comes after the door closed or after a newer tap does nothing (a known wallet's session
   // made for it is ended again)
   const withWallet = async (walletName) => {
+    if (signing) {
+      // the minting dialog asks the wallet itself
+      forget();
+      onWallet(walletName);
+      return;
+    }
     const attempt = attempts.current.start();
     if (!attempts.current.isCurrent(attempt)) {
       return;
@@ -310,7 +328,11 @@ const WalletDoor = ({
       const answer =
         purpose === "confirm"
           ? { confirmToken: await confirmWithWallet(walletApi) }
-          : await connectWallet(walletApi, { purpose, confirmToken });
+          : await connectWallet(walletApi, {
+              purpose,
+              confirmToken,
+              walletName,
+            });
       if (attempts.current.isCurrent(attempt)) {
         finish(answer);
       } else if (answer.outcome === "known") {
@@ -342,7 +364,7 @@ const WalletDoor = ({
 
   // on a phone: a link code for the link page that the wallet's own browser opens
   useEffect(() => {
-    if (!open || !deeplink) {
+    if (!open || !deeplink || signing) {
       return undefined;
     }
     let gone = false;
@@ -393,7 +415,7 @@ const WalletDoor = ({
   // wallet (the phone picks the app), so the door opens it itself: the component's own link would
   // carry the game's address. Other wallets are left to the component (their store pages).
   const tapDeepLink = (event) => {
-    if (!deeplink || code === null) {
+    if (!deeplink || (signing ? !signPageUrl : code === null)) {
       return;
     }
     for (
@@ -409,6 +431,11 @@ const WalletDoor = ({
           event.preventDefault();
           event.stopPropagation();
           setError(null);
+          if (signing) {
+            openDeepLink(generateCip158DeepLink(signPageUrl));
+            onPhone();
+            return;
+          }
           openDeepLink(generateCip158DeepLink(linkPageUrl(code)));
           waitForPhone();
         }
@@ -421,7 +448,8 @@ const WalletDoor = ({
     return null;
   }
   // on a phone the list waits for the link code (without one a tap would lead nowhere)
-  const nothing = paths.size === 0 || (deeplink && code === null);
+  const nothing =
+    paths.size === 0 || (deeplink && (signing ? !signPageUrl : code === null));
   return createPortal(
     <Dialog
       open={open}
@@ -429,7 +457,7 @@ const WalletDoor = ({
       closable
       mode="stacked"
       icon="user"
-      title={t(tr.WALLET_DOOR_TITLE)}
+      title={t(signing ? tr.MINT_OPEN_WALLET : tr.WALLET_DOOR_TITLE)}
     >
       <div className={classes.body} data-testid="wallet-door">
         {features.showPreprodBadge() ? (
@@ -448,7 +476,9 @@ const WalletDoor = ({
             </div>
           </div>
         ) : null}
-        <p className={classes.text}>{t(tr.WALLET_DOOR_TEXT)}</p>
+        <p className={classes.text}>
+          {t(signing ? tr.MINT_SIGN_DOOR_TEXT : tr.WALLET_DOOR_TEXT)}
+        </p>
         {paths.size === 0 ? (
           <p className={classes.text}>{t(tr.WALLET_NONE)}</p>
         ) : null}

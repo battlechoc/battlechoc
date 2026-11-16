@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { api, createPlayer } from "./helpers/players.js";
+import {
+  ANDROID_PHONE,
+  api,
+  authHeaders,
+  createPlayer,
+} from "./helpers/players.js";
 import { accountOf, readEntry, writeEntry } from "./helpers/profile.js";
 import { linkSecondKey, nodeKeys, signAs } from "./helpers/cardano.js";
 import { fakeWallet } from "./helpers/wallet.js";
@@ -13,15 +18,8 @@ import fs from "node:fs";
 
 // the player's linked keys, asked from the API with the device account
 const identitiesOf = async (page, request) => {
-  const { refreshToken } = await accountOf(page);
-  const { accessToken } = await (
-    await request.post(`${api}/accounts/token`, { data: { refreshToken } })
-  ).json();
-  return (
-    await request.get(`${api}/user/identities`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-  ).json();
+  const { headers } = await authHeaders(page, request);
+  return (await request.get(`${api}/user/identities`, { headers })).json();
 };
 
 const openProfile = (page) =>
@@ -101,15 +99,6 @@ const phoneShot = async (page, name, scrollTo) => {
   await page.waitForTimeout(300);
   await page.screenshot({ path: `test/output/${name}.png` });
   await page.setViewportSize({ width: 1280, height: 720 });
-};
-
-// an Android phone (Chromium with its user agent and screen): features.isMobile() holds
-const ANDROID_PHONE = {
-  userAgent:
-    "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
-  viewport: { width: 390, height: 844 },
-  hasTouch: true,
-  isMobile: true,
 };
 
 test.describe("saving progress", () => {
@@ -743,10 +732,7 @@ test.describe("signing in again with the words", () => {
     await enterWords(page, saved.words.join(" "));
     await switchedTo(page, saved.playerId);
     await titleScreenAfterReload(page);
-    const { refreshToken } = await accountOf(page);
-    const { accessToken } = await (
-      await request.post(`${api}/accounts/token`, { data: { refreshToken } })
-    ).json();
+    const { accessToken } = await authHeaders(page, request);
     const profileOf = async () =>
       (
         await (
@@ -910,14 +896,8 @@ const addAuthenticator = async (page, { prf = true } = {}) => {
   return used;
 };
 
-const accessTokenOf = async (page, request) => {
-  const { refreshToken } = await accountOf(page);
-  return (
-    await (
-      await request.post(`${api}/accounts/token`, { data: { refreshToken } })
-    ).json()
-  ).accessToken;
-};
+const accessTokenOf = async (page, request) =>
+  (await authHeaders(page, request)).accessToken;
 
 const passkeysOf = async (page, request) =>
   (

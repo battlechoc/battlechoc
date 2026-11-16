@@ -8,47 +8,19 @@ import { multiplayer } from "../Multiplayer.js";
 import logger from "../helper/logger.js";
 import { cardanoApi } from "../api/cardano.js";
 import { createKeyStore } from "./keyStore.js";
-import { createFeatures } from "./features.js";
+import { features } from "./appFeatures.js";
 import { signChallenge as signWith } from "./signIn.js";
 import {
   confirmWithWords as confirmWords,
   confirmWithPasskey as confirmPasskey,
 } from "./confirm.js";
 import { unlockWithPasskey } from "./passkey.js";
-import { isAndroidApp } from "./androidApp.js";
 import { keysFromWords } from "./keys.js";
 import { signWithWallet, waitForLinkCode } from "./wallet.js";
 
-// an Android phone or tablet
-const onAndroid = () => {
-  try {
-    return /Android/.test(navigator.userAgent || "");
-  } catch {
-    return false;
-  }
-};
-
-// iPhone, iPad, and an iPad that says it is a Mac (it has touch points)
-const onIos = () => {
-  try {
-    const agent = navigator.userAgent || "";
-    return (
-      /iPhone|iPad|iPod/.test(agent) ||
-      (/Macintosh/.test(agent) && navigator.maxTouchPoints > 1)
-    );
-  } catch {
-    return false;
-  }
-};
-
-export const features = createFeatures({
-  network: import.meta.env.VITE_CARDANO_NETWORK,
-  ios: onIos,
-  android: onAndroid,
-  confirmed: import.meta.env.VITE_CARDANO_CONFIRMED,
-  // remembered at launch (boot.js), before the address is cleaned up
-  androidApp: () => isAndroidApp(() => window.sessionStorage),
-});
+// the switches of this build and device (a module of its own: the title screen and the item
+// icons ask it without loading the rest of this one)
+export { features };
 
 export const keyStore = createKeyStore(OfflineStore.playerStore);
 
@@ -160,12 +132,14 @@ export const switchToSession = (session) =>
 /**
  * Connects a wallet (its CIP-30 api) as this device's player: { outcome: "linked", identity } or
  * { outcome: "known", playerId, refreshToken, … } (another player's wallet; nothing changed yet).
- * `purpose` "link" links only (IDENTITY TAKEN for another player's wallet).
+ * `purpose` "link" links only (IDENTITY TAKEN for another player's wallet); `walletName` is the
+ * wallet's CIP-30 key, so the wallet row can name it.
  */
 export const connectWallet = (
   walletApi,
-  { purpose = "connect", confirmToken } = {}
-) => signWithWallet(walletApi, purpose, { ...deps(), confirmToken });
+  { purpose = "connect", confirmToken, walletName } = {}
+) =>
+  signWithWallet(walletApi, purpose, { ...deps(), confirmToken, walletName });
 
 /** A confirm token for a key change, signed by a wallet linked to the player. */
 export const confirmWithWallet = async (walletApi) =>
@@ -188,7 +162,20 @@ export {
   linkPageUrl,
   WalletCancelledError,
   WalletNetworkError,
+  WalletWithoutAddressError,
 } from "./wallet.js";
+export {
+  signPageUrl,
+  signPrepared,
+  subjectOfWallet,
+  walletAddresses,
+  OwnerNotConfirmedError,
+  UnsupportedAddressError,
+  WalletAccountChangedError,
+  WalletCannotSignError,
+  WalletOtherAccountError,
+  WalletSignError,
+} from "./signTx.js";
 export {
   createPasskeyBackup,
   passkeySupport,

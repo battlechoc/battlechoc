@@ -13,6 +13,7 @@ import {
 import { cardano } from "@battlechoc/battlechoc-shared-functions";
 import {
   createAttempts,
+  pollUntil,
   signWithWallet,
   walletApiOf,
   waitForLinkCode,
@@ -313,6 +314,41 @@ test("the link page signs a code's challenge for its purpose, with the warning f
   );
 });
 
+test("the wallet's name goes with the signature (plan C), in lower case, only when there is one", async () => {
+  const keys = walletKeys();
+  const api = fakeApi();
+  await signWithWallet(fakeWallet(keys), "link", {
+    api,
+    network: preprod,
+    walletName: "eternl",
+  });
+  const [, body] = api.calls.find((call) => call[0] === "verify");
+  assert.equal(body.wallet, "eternl");
+  // the link page sends the CIP-30 key as the wallet's browser reports it
+  const linkPage = fakeApi();
+  await signWithWallet(fakeWallet(keys), "connect", {
+    api: linkPage,
+    network: preprod,
+    code: "c0de",
+    walletName: "Vespr",
+  });
+  const [, codeBody] = linkPage.calls.find(
+    (call) => call[0] === "verifyForCode"
+  );
+  assert.equal(codeBody.wallet, "vespr");
+  // no name: the body has no wallet at all (the API keeps what it had)
+  for (const walletName of [undefined, null, ""]) {
+    const without = fakeApi();
+    await signWithWallet(fakeWallet(keys), "connect", {
+      api: without,
+      network: preprod,
+      walletName,
+    });
+    const [, plain] = without.calls.find((call) => call[0] === "verify");
+    assert.equal("wallet" in plain, false);
+  }
+});
+
 test("waitForLinkCode polls until the code has an outcome", async () => {
   const answers = [{ state: "open" }, { state: "open" }, { state: "linked" }];
   let polls = 0;
@@ -422,6 +458,25 @@ test("the wallet door: hidden in the Android app; which ways in a device offers"
   assert.equal(createFeatures({ network: undefined }).showWalletDoor(), false);
 });
 
+test("the marks of minted items (stamp, notices, the wallet row's items): with a network, not in the Android app", () => {
+  assert.equal(createFeatures({ network: "preprod" }).showMintMarks(), true);
+  assert.equal(createFeatures({ network: "mainnet" }).showMintMarks(), true);
+  assert.equal(createFeatures({ network: undefined }).showMintMarks(), false);
+  assert.equal(
+    createFeatures({ network: "preprod", androidApp: true }).showMintMarks(),
+    false
+  );
+  // asked each time: the Android app is known once boot.js remembered it
+  let app = false;
+  const features = createFeatures({
+    network: "preprod",
+    androidApp: () => app,
+  });
+  assert.equal(features.showMintMarks(), true);
+  app = true;
+  assert.equal(features.showMintMarks(), false);
+});
+
 test("after review: a door's attempts: a closed door or a newer attempt makes a late answer stale", () => {
   const attempts = createAttempts();
   const first = attempts.start();
@@ -433,4 +488,195 @@ test("after review: a door's attempts: a closed door or a newer attempt makes a 
   attempts.close();
   assert.equal(attempts.isCurrent(second), false);
   assert.equal(attempts.isCurrent(attempts.start()), false);
+});
+
+// a page whose visibility the test sets (document.visibilityState and its event)
+const fakePage = (visibilityState = "visible") =>
+  Object.assign(new EventTarget(), { visibilityState });
+const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+test("pollUntil polls until done says the answer is the last", async () => {
+  let polls = 0;
+  const outcome = await pollUntil(async () => ({ n: ++polls }), {
+    done: (answer) => answer.n === 3,
+    every: 5,
+    page: null,
+  });
+  assert.deepEqual(outcome, { n: 3 });
+  assert.equal(polls, 3);
+});
+
+test("pollUntil waits `every` ms between polls", async () => {
+  const times = [];
+  await pollUntil(
+    async () => {
+      times.push(performance.now());
+      return { n: times.length };
+    },
+    { done: (answer) => answer.n === 3, every: 40, page: null }
+  );
+  assert.equal(times.length, 3);
+  for (let index = 1; index < times.length; index += 1) {
+    assert.ok(times[index] - times[index - 1] >= 38, `gap ${index}`);
+  }
+});
+
+test("pollUntil tries again after no answer or a busy server, not after an answer that stays", async () => {
+  const offline = Object.assign(new Error("Network Error"), {
+    code: "ERR_NETWORK",
+  });
+  const busy = Object.assign(new Error("Request failed"), {
+    response: { status: 503, data: { error: "CHAIN UNAVAILABLE" } },
+  });
+  const limited = Object.assign(new Error("Request failed"), {
+    response: { status: 429, data: { error: "TOO MANY REQUESTS" } },
+  });
+  const answers = [offline, busy, limited, { state: "included" }];
+  let polls = 0;
+  const outcome = await pollUntil(
+    async () => {
+      const answer = answers[polls++];
+      if (answer instanceof Error) {
+        throw answer;
+      }
+      return answer;
+    },
+    { done: (answer) => answer.state === "included", every: 5, page: null }
+  );
+  assert.deepEqual(outcome, { state: "included" });
+  assert.equal(polls, 4);
+
+  const gone = Object.assign(new Error("Request failed"), {
+    response: { status: 404, data: { error: "NOT FOUND" } },
+  });
+  let tries = 0;
+  await assert.rejects(
+    pollUntil(
+      async () => {
+        tries += 1;
+        throw gone;
+      },
+      { done: () => true, every: 5, page: null }
+    ),
+    (error) => error === gone
+  );
+  assert.equal(tries, 1);
+});
+
+test("pollUntil: a done that throws ends the wait with its error", async () => {
+  const broken = new Error("cannot judge");
+  let polls = 0;
+  await assert.rejects(
+    pollUntil(
+      async () => {
+        polls += 1;
+        return {};
+      },
+      {
+        done: () => {
+          throw broken;
+        },
+        every: 5,
+        page: null,
+      }
+    ),
+    (error) => error === broken
+  );
+  assert.equal(polls, 1);
+});
+
+test("pollUntil stops when aborted, also before it started, and polls no more", async () => {
+  const controller = new AbortController();
+  let polls = 0;
+  const waiting = pollUntil(
+    async () => {
+      polls += 1;
+      return { state: "submitted" };
+    },
+    { done: () => false, every: 20, signal: controller.signal, page: null }
+  );
+  await pause(5);
+  controller.abort();
+  await assert.rejects(waiting, (error) => error.name === "AbortError");
+  const counted = polls;
+  await pause(50);
+  assert.equal(polls, counted);
+
+  const closed = new AbortController();
+  closed.abort();
+  let never = 0;
+  await assert.rejects(
+    pollUntil(
+      async () => {
+        never += 1;
+        return {};
+      },
+      { done: () => true, signal: closed.signal, page: null }
+    ),
+    (error) => error.name === "AbortError"
+  );
+  assert.equal(never, 0);
+});
+
+test("pollUntil polls at once when the page is visible again, and not when it is hidden", async () => {
+  const controller = new AbortController();
+  const page = fakePage();
+  let polls = 0;
+  const waiting = pollUntil(
+    async () => {
+      polls += 1;
+      return {};
+    },
+    { done: () => false, every: 60000, signal: controller.signal, page }
+  );
+  await pause(10);
+  assert.equal(polls, 1);
+  page.visibilityState = "hidden";
+  page.dispatchEvent(new Event("visibilitychange"));
+  await pause(10);
+  assert.equal(polls, 1);
+  page.visibilityState = "visible";
+  page.dispatchEvent(new Event("visibilitychange"));
+  await pause(10);
+  assert.equal(polls, 2);
+  controller.abort();
+  await assert.rejects(waiting, (error) => error.name === "AbortError");
+});
+
+test("pollUntil waits 3 s between polls unless told otherwise", async () => {
+  const controller = new AbortController();
+  let polls = 0;
+  const waiting = pollUntil(
+    async () => {
+      polls += 1;
+      return {};
+    },
+    { done: () => false, signal: controller.signal, page: null }
+  );
+  await pause(100);
+  assert.equal(polls, 1);
+  controller.abort();
+  await assert.rejects(waiting, (error) => error.name === "AbortError");
+});
+
+test("after review: a hidden page keeps polling on the timer, as waitForLinkCode always did (only the immediate poll waits for visible)", async () => {
+  for (const wait of [
+    (poll, options) => pollUntil(poll, { done: () => false, ...options }),
+    (poll, options) => waitForLinkCode(poll, options),
+  ]) {
+    const controller = new AbortController();
+    const page = fakePage("hidden");
+    let polls = 0;
+    const waiting = wait(
+      async () => {
+        polls += 1;
+        return { state: "open" };
+      },
+      { every: 10, signal: controller.signal, page }
+    );
+    await pause(80);
+    assert.ok(polls >= 3, `polled ${polls} times while hidden`);
+    controller.abort();
+    await assert.rejects(waiting, (error) => error.name === "AbortError");
+  }
 });
