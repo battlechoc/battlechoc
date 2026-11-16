@@ -291,21 +291,33 @@ describe('utxoByUnit', () => {
         expect(Assets.getByUnit(found.assets, unit)).toBe(1n);
     });
 
-    test('not found: an asset the chain never saw (404), one nobody holds (burned), no UTxO at the address; no request for a malformed unit', async () => {
+    test('not found: an asset the chain never saw (404), one nobody holds (burned); no request for a malformed unit', async () => {
         const { provider: never } = providerWith({ [`GET /assets/${unit}/addresses`]: { status: 404, json: { status_code: 404 } } });
         expect(await never.utxoByUnit(unit)).toBeUndefined();
         const { provider: burned } = providerWith({ [`GET /assets/${unit}/addresses`]: { json: [] } });
         expect(await burned.utxoByUnit(unit)).toBeUndefined();
-        const { provider: moved } = providerWith({
-            [`GET /assets/${unit}/addresses`]: { json: [{ address: keys.baseAddress, quantity: '1' }] },
-            [`GET /addresses/${keys.baseAddress}/utxos/${unit}`]: { json: [] },
-        });
-        expect(await moved.utxoByUnit(unit)).toBeUndefined();
         const { provider: strict, requests } = providerWith({});
         for (const bad of ['a7'.repeat(27), `${unit}/../x`, unit.toUpperCase(), null]) {
             expect(await strict.utxoByUnit(bad)).toBeUndefined();
         }
         expect(requests).toHaveLength(0);
+    });
+
+    test('a 404 for the holder\'s UTxOs is no "nobody holds it": the address was just named as the holder, so Blockfrost knows it ([] when the token left); a service without the endpoint is unavailable', async () => {
+        const { provider } = providerWith({
+            [`GET /assets/${unit}/addresses`]: { json: [{ address: keys.baseAddress, quantity: '1' }] },
+            [`GET /addresses/${keys.baseAddress}/utxos/${unit}`]: { status: 404, json: { status_code: 404 } },
+        });
+        expect(await failureOf(provider.utxoByUnit(unit))).toMatchObject({ name: 'ProviderError', code: 'unavailable', status: 404 });
+    });
+
+    test('no UTxO with the unit at the address just named as its holder is a contradiction, not "nobody holds it": ProviderError unavailable', async () => {
+        // the token moved between the two requests, or a replica lags: the answer cannot say the token is gone
+        const { provider } = providerWith({
+            [`GET /assets/${unit}/addresses`]: { json: [{ address: keys.baseAddress, quantity: '1' }] },
+            [`GET /addresses/${keys.baseAddress}/utxos/${unit}`]: { json: [] },
+        });
+        expect(await failureOf(provider.utxoByUnit(unit))).toMatchObject({ name: 'ProviderError', code: 'unavailable' });
     });
 
     test('an answer whose UTxO does not hold the unit is a provider that answers wrongly: ProviderError unavailable', async () => {

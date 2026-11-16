@@ -10,9 +10,9 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { Pool } = require('pg');
-const { Address, Time } = require('@evolution-sdk/evolution');
+const { Address, KeyHash, ScriptHash, Time } = require('@evolution-sdk/evolution');
 const { cardano } = require('@battlechoc/battlechoc-shared-functions');
-const { IndexUnavailableError, MAX_ASSET_NAMES, createChainIndex, readOnly } = require('../src/chain/chainIndex');
+const { IndexUnavailableError, MAX_ASSET_NAMES, createChainIndex, holderKeysOf, readOnly } = require('../src/chain/chainIndex');
 const { closeTestPools, createTestPool } = require('./helpers/db');
 const { fixtureContracts } = require('./helpers/chain');
 const { indexContract } = require('./helpers/indexContract');
@@ -93,7 +93,7 @@ describe('names and limits, before any SQL', () => {
         expect(pool.connect).not.toHaveBeenCalled();
     });
 
-    test(`holdersOf and eventsAmong: more than ${MAX_ASSET_NAMES} names is a RangeError, anything but a list of names a TypeError`, async () => {
+    test(`holdersOf, eventsAmong and burnsOf: more than ${MAX_ASSET_NAMES} names is a RangeError, anything but a list of names a TypeError`, async () => {
         const pool = untouchedPool();
         const index = createChainIndex({ pool, policyId, network });
         await expect(index.holdersOf(Array.from({ length: MAX_ASSET_NAMES + 1 }, (_, n) => userName(n)))).rejects.toThrow(RangeError);
@@ -103,6 +103,9 @@ describe('names and limits, before any SQL', () => {
         await expect(index.eventsAmong(Array.from({ length: MAX_ASSET_NAMES + 1 }, (_, n) => userName(n)))).rejects.toThrow(RangeError);
         await expect(index.eventsAmong(userName(1))).rejects.toThrow(TypeError);
         await expect(index.eventsAmong([userName(1), null])).rejects.toThrow(TypeError);
+        await expect(index.burnsOf(Array.from({ length: MAX_ASSET_NAMES + 1 }, (_, n) => userName(n)))).rejects.toThrow(RangeError);
+        await expect(index.burnsOf(userName(1))).rejects.toThrow(TypeError);
+        await expect(index.burnsOf([userName(1), 7])).rejects.toThrow(TypeError);
         expect(pool.connect).not.toHaveBeenCalled();
     });
 
@@ -115,6 +118,7 @@ describe('names and limits, before any SQL', () => {
         await index.mintOf(sneaky);
         await index.transaction(sneaky);
         await index.eventsAmong([sneaky]);
+        await index.burnsOf([sneaky]);
         const sql = statements.join('\n');
         expect(sql).not.toContain('DROP');
         expect(sql).not.toContain('ab'.repeat(28));
@@ -126,6 +130,31 @@ describe('names and limits, before any SQL', () => {
         expect(await createChainIndex({ pool, policyId, network }).tip()).toBeNull();
         expect(statements).toEqual(['BEGIN READ ONLY', 'SET LOCAL ROLE chain_reader', expect.stringMatching(/FROM chain\.tip\b/), 'COMMIT']);
         expect(client.release).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('holderKeysOf: the keys of the address that held a burned token', () => {
+    const key = 'ab'.repeat(28);
+    const other = 'cd'.repeat(28);
+    const script = '5c'.repeat(28);
+    const bech32 = (paymentCredential, stakingCredential) =>
+        Address.toBech32(new Address.Address({ networkId: 0, paymentCredential, ...(stakingCredential ? { stakingCredential } : {}) }));
+
+    test('a key base address: both keys; an enterprise address: the payment key; a script stake part counts as none', () => {
+        expect(holderKeysOf(bech32(KeyHash.fromHex(key), KeyHash.fromHex(other)))).toEqual({ stake: other, payment: key, script: false });
+        expect(holderKeysOf(bech32(KeyHash.fromHex(key)))).toEqual({ stake: null, payment: key, script: false });
+        expect(holderKeysOf(bech32(KeyHash.fromHex(key), ScriptHash.fromHex(script)))).toEqual({ stake: null, payment: key, script: false });
+    });
+
+    test('a script address: its hash and script true, with the stake key it carries', () => {
+        expect(holderKeysOf(bech32(ScriptHash.fromHex(script), KeyHash.fromHex(other)))).toEqual({ stake: other, payment: script, script: true });
+        expect(holderKeysOf(bech32(ScriptHash.fromHex(script)))).toEqual({ stake: null, payment: script, script: true });
+    });
+
+    test('no payment address: nothing', () => {
+        for (const bad of ['', 'not an address', null, undefined]) {
+            expect(holderKeysOf(bad)).toEqual({ stake: null, payment: null, script: false });
+        }
     });
 });
 

@@ -643,6 +643,12 @@ const buildBurn = async ({ assetName, holder, utxos, reference, params, tip, con
     };
 };
 
+/**
+ * The inputs the transaction `cbor` (CBOR hex, signed or not) spends, as output references
+ * 'txid#index' in the body's order; reference inputs and the collateral are not among them.
+ */
+const inputsOf = cbor => Transaction.fromCBORHex(cbor).body.inputs.map(outRef);
+
 // ---------------------------------------------------------------------------------------------
 // The signatures
 //
@@ -793,4 +799,4 @@ const addServerWitness = ({ cbor, bodyHash, key }) => {
 };
 
 // gameFeesOf and gameFeeOf live in fees.js (pure, no SDK) and are exported here as well
-module.exports = { ChainTxError, spendableOf, feeOutputsLovelace, ownerOf, fundsCheck, readConfig, buildMint, buildBurn, verifyWitness, addServerWitness, minUtxoLovelace, gameFeesOf, gameFeeOf };
+module.exports = { ChainTxError, spendableOf, feeOutputsLovelace, ownerOf, fundsCheck, readConfig, buildMint, buildBurn, inputsOf, verifyWitness, addServerWitness, minUtxoLovelace, gameFeesOf, gameFeeOf };

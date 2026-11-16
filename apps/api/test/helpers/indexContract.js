@@ -7,6 +7,8 @@
 // The scenario: Ann holds A at her base address and D at her enterprise address; B was Ann's and
 // sits at a script address with Ann's stake key (a marketplace listing: nobody holds it); C was
 // Bob's and is burned. E was minted, burned and minted again (to Bob): its mint is the first one.
+// G (at Ann's enterprise address) and H (at a listing under Ann's stake key) are burned together,
+// by one transaction of their holders.
 // Around them: an output with a policy token that is no user token, a foreign
 // policy's token with a user label, and an ada-only payment that the index never sees. The index
 // keeps only what holds or moves a user token of the policy (deploy/chain/application-plugins.yml):
@@ -46,7 +48,7 @@ const scenario = async () => {
     const annBase = chain.addressOf(ann);
     const annEnterprise = chain.addressOf(ann, 'enterprise');
     const listing = Address.toBech32(new Address.Address({ networkId: 0, paymentCredential: ScriptHash.fromHex('5c'.repeat(28)), stakingCredential: KeyHash.fromHex(ann.stakeKeyHashHex) }));
-    const names = { A: userName(1), B: userName(2), C: userName(3), D: userName(4), E: userName(5), F: userName(6) };
+    const names = { A: userName(1), B: userName(2), C: userName(3), D: userName(4), E: userName(5), F: userName(6), G: userName(7), H: userName(8) };
 
     const mint = {
         A: chain.mintToken({ assetName: names.A, to: annBase }),
@@ -54,6 +56,8 @@ const scenario = async () => {
         C: chain.mintToken({ assetName: names.C, to: chain.addressOf(bob) }),
         D: chain.mintToken({ assetName: names.D, to: annEnterprise }),
         E: chain.mintToken({ assetName: names.E, to: annBase }),
+        G: chain.mintToken({ assetName: names.G, to: annEnterprise }),
+        H: chain.mintToken({ assetName: names.H, to: listing }),
     };
     const ada = chain.fund(annBase, 5_000_000);
     const others = chain.fund(annBase, 2_000_000, { [policyId + 'cafe']: 1, ['ab'.repeat(28) + userName(9)]: 1 });
@@ -66,12 +70,16 @@ const scenario = async () => {
     const burnE = chain.burnToken({ assetName: names.E });
     // an ada-only payment that spends an ada-only output
     const payment = await chain.submit(jsonTx({ txHash: 'f0'.repeat(32), ttlSlot: null, inputs: [ada], outputs: [{ address: chain.addressOf(bob), lovelace: '4000000', assets: {} }], mint: {} }));
+    // one transaction burns two user tokens (their reference tokens stay: the index does not see them)
+    const burnGH = await chain.submit(
+        jsonTx({ txHash: 'e1'.repeat(32), ttlSlot: null, inputs: [{ txHash: mint.G, index: 0 }, { txHash: mint.H, index: 0 }], outputs: [], mint: { [policyId + names.G]: '-1', [policyId + names.H]: '-1' } })
+    );
     const second = block();
 
     const remintE = chain.mintToken({ assetName: names.E, to: chain.addressOf(bob) });
     const third = block();
     const last = block();
-    return { chain, policyId, ann, bob, annBase, annEnterprise, listing, strangerAddress, names, mint, ada, others, mixed, moveB, burnC, burnE, remintE, payment, blocks: { first, second, third, last } };
+    return { chain, policyId, ann, bob, annBase, annEnterprise, listing, strangerAddress, names, mint, ada, others, mixed, moveB, burnC, burnE, burnGH, remintE, payment, blocks: { first, second, third, last } };
 };
 
 /**
@@ -182,6 +190,33 @@ const indexContract = (name, makeIndex) => {
             });
             expect(await index.eventsAmong([userName(404), 'cafe'])).toEqual({ minted: new Set(), burned: new Set() });
             expect(await index.eventsAmong([])).toEqual({ minted: new Set(), burned: new Set() });
+        });
+
+        test('burnsOf: one entry per burn and asked user token, with the keys of the address that held it; unburned, unknown and reference names absent', async () => {
+            const { names, ann, bob, burnC, burnE, burnGH, blocks } = s;
+            const asked = [names.A, names.B, names.C, names.D, names.E, names.F, names.G, names.H, referenceName(3), referenceName(7), 'cafe', userName(404)];
+            const burn = (assetName, txHash, holder) => ({ assetName, txHash, block: blocks.second.blockNo, holder });
+            const byKey = rows => [...rows].sort((a, b) => `${a.block}#${a.txHash}#${a.assetName}`.localeCompare(`${b.block}#${b.txHash}#${b.assetName}`));
+            expect(byKey(await index.burnsOf(asked))).toEqual(
+                byKey([
+                    burn(names.C, burnC, { stake: bob.stakeKeyHashHex, payment: bob.paymentKeyHashHex, script: false }),
+                    // burned at Ann's base address, then minted again (to Bob): the burn stays
+                    burn(names.E, burnE, { stake: ann.stakeKeyHashHex, payment: ann.paymentKeyHashHex, script: false }),
+                    // one transaction, two tokens: an entry each; an enterprise address has no stake part
+                    burn(names.G, burnGH, { stake: null, payment: ann.paymentKeyHashHex, script: false }),
+                    // a script held it: its payment credential is the script's hash, its stake part Ann's key
+                    burn(names.H, burnGH, { stake: ann.stakeKeyHashHex, payment: '5c'.repeat(28), script: true }),
+                ])
+            );
+            expect(await index.burnsOf([names.A, names.B, referenceName(3), userName(404)])).toEqual([]);
+            expect(await index.burnsOf([])).toEqual([]);
+        });
+
+        test(`burnsOf: at most ${MAX_ASSET_NAMES} names per call, more is a RangeError`, async () => {
+            const many = Array.from({ length: MAX_ASSET_NAMES }, (_, n) => userName(1000 + n));
+            many[3] = s.names.C;
+            expect((await index.burnsOf(many)).map(found => found.assetName)).toEqual([s.names.C]);
+            await expect(index.burnsOf([...many, userName(1)])).rejects.toThrow(RangeError);
         });
 
         test(`eventsAmong: at most ${MAX_ASSET_NAMES} names per call, more is a RangeError`, async () => {

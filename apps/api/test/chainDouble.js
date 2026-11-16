@@ -6,7 +6,7 @@
 //   pages, 404 for what the chain has never seen). Every test runs the real conversion to the
 //   Evolution SDK's objects, and the double cannot drift from the provider.
 // - index(): the functions of the chain index (Task 4's tip, holdersOf, tokensHeldBy, transaction,
-//   mintOf; eventsAmong) in the shapes of the real one. Like the real one it sees only blocks, and
+//   mintOf; eventsAmong; burnsOf) in the shapes of the real one. Like the real one it sees only blocks, and
 //   of them only what Yaci Store's filters keep (deploy/chain/application-plugins.yml): the
 //   outputs that hold a user token of the policy (whole, with every other token in them), their
 //   spends, and the mints and burns of user tokens. The reference tokens' outputs, mints and burns
@@ -41,7 +41,7 @@ const { ProviderError, createProvider } = require('../src/chain/provider');
 const { holderOf } = require('../src/chain/addresses');
 const { scriptAddress } = require('../src/chain/blueprint');
 const { IndexUnavailableError } = require('../src/chain/indexUnavailable');
-const { MAX_ASSET_NAMES } = require('../src/chain/chainIndex');
+const { MAX_ASSET_NAMES, holderKeysOf } = require('../src/chain/chainIndex');
 const { loadParams } = require('./helpers/chain');
 
 // The items policy the tests and the browser tests' API (e2eServer.js, CHAIN_POLICY_ID in
@@ -791,6 +791,30 @@ const createChainDouble = ({
             const units = sign => new Set(blocks.flatMap(block => block.txs.flatMap(tx => Object.keys(tx.mint).filter(unit => userUnit(unit) && sign(BigInt(tx.mint[unit]))))));
             const [minted, burned] = [units(quantity => quantity > 0n), units(quantity => quantity < 0n)];
             return { minted: new Set(assetNames.filter(name => minted.has(policyId + name))), burned: new Set(assetNames.filter(name => burned.has(policyId + name))) };
+        }),
+        /**
+         * The burns of `assetNames` of the policy in blocks, one per (transaction, name), with the
+         * keys of the spent output's address that held the token (at most MAX_ASSET_NAMES, more is
+         * a RangeError): [{ assetName, txHash, block, holder: { stake, payment, script } }].
+         */
+        burnsOf: indexed(assetNames => {
+            if (assetNames.length > MAX_ASSET_NAMES) {
+                throw new RangeError(`burnsOf: at most ${MAX_ASSET_NAMES} asset names per call`);
+            }
+            const wanted = new Set(assetNames.map(name => policyId + name));
+            const state = ledger();
+            const order = entry => `${String(entry.block).padStart(16, '0')}#${entry.txHash}#${entry.assetName}`;
+            return blocks.flatMap(block =>
+                block.txs.flatMap(tx =>
+                    Object.keys(tx.mint)
+                        .filter(unit => wanted.has(unit) && userUnit(unit) && BigInt(tx.mint[unit]) < 0n)
+                        .sort()
+                        .flatMap(unit => {
+                            const held = tx.inputs.map(input => state.outputs.get(refOf(input))).find(spent => spent && BigInt(spent.output.assets[unit] ?? '0') > 0n);
+                            return held ? [{ assetName: unit.slice(56), txHash: tx.txHash, block: block.blockNo, holder: holderKeysOf(held.output.address) }] : [];
+                        })
+                )
+            ).sort((a, b) => order(a).localeCompare(order(b)));
         }),
     };
 

@@ -2,6 +2,9 @@
 // kind 'arrived' | 'departed'), written by the ownership sync in the transaction that moves the
 // item. A notice the player has not seen yet is withdrawn instead of being followed by its
 // opposite: a transfer seen at depth 0 and then rolled back leaves no "departed, arrived" pair.
+// And the notice of a burned item whose ingredients a player got (kind 'salvaged', plan E), written
+// by the credit (credit.js) in the transaction that closes the item; the ingredients are read from
+// the credit's row (players.noticesOf), so the notice itself holds none.
 
 const crypto = require('crypto');
 const players = require('../players');
@@ -49,6 +52,9 @@ const noticeChange = async (db, { item, from, to, holderMoved, building, now }) 
     }
 };
 
+/** The 'salvaged' notice of `itemId` for `playerId` (`building`: the entity type of the slot it was in, or null), on `db` at `now` (ms). */
+const noticeSalvaged = (db, { playerId, itemId, building, now }) => write(db, { playerId, itemId, kind: 'salvaged', building, now });
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** How long a seen notice is kept, and any notice at most. */
 const SEEN_KEEP_MS = 30 * DAY_MS;
@@ -59,4 +65,4 @@ const cleanupNotices = async (db, now) => {
     await db.query('DELETE FROM item_notices WHERE seen_at < $1 OR created_at < $2', [new Date(now - SEEN_KEEP_MS), new Date(now - KEEP_MS)]);
 };
 
-module.exports = { SEEN_KEEP_MS, KEEP_MS, buildingOf, noticeChange, cleanupNotices };
+module.exports = { SEEN_KEEP_MS, KEEP_MS, buildingOf, noticeChange, noticeSalvaged, cleanupNotices };

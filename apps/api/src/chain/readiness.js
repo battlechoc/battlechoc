@@ -79,14 +79,14 @@ const estimatedFeeOf = (config, options, tier) => {
     return gameFeeOf(config, { tier: tier === -1 ? largest : tier, fee: option.fee });
 };
 
-// The tier of `itemId` when it is the player's item, else -1 (also for another player's: treated
-// as not given, and nothing of it is told)
+// The tier of `itemId` when it is the player's item, else -1 (also for another player's, and for
+// a burned one, credited to them or not: treated as not given, and nothing of it is told)
 const ownTierOf = async (pool, playerId, itemId) => {
     if (itemId === undefined) {
         return -1;
     }
-    const { rows } = await pool.query('SELECT item_key, player_id FROM items WHERE id = $1', [itemId]);
-    return rows.length === 1 && rows[0].player_id === playerId ? tierOf(rows[0].item_key) : -1;
+    const { rows } = await pool.query('SELECT item_key, player_id, burned_at FROM items WHERE id = $1', [itemId]);
+    return rows.length === 1 && rows[0].player_id === playerId && rows[0].burned_at === null ? tierOf(rows[0].item_key) : -1;
 };
 
 // The view of the player's open operation, null without one (a prepared one whose sign window is

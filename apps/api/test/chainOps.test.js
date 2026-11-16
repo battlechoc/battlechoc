@@ -590,6 +590,22 @@ describe('the mint and plan C\'s ownership sync', () => {
         expect(await env.sync()).toEqual({ checked: 0, changed: 0, unknown: 0, failed: 0, skipped: null });
         expect((await itemRow(env.pool, itemId)).player_id).toBe(ann.playerId);
     });
+
+    test('a rollback after the sync gave the item to nobody (the token at a key no player linked): the minter\'s plain item again, her unseen notice withdrawn', async () => {
+        const { env, ann, itemId, assetName, op } = await mintedByAnn();
+        env.double.moveToken({ assetName, to: env.double.addressOf(testKeys()) });
+        env.block();
+        await env.sync();
+        env.block();
+        await env.sync();
+        expect(await itemRow(env.pool, itemId)).toMatchObject({ player_id: null, asset_name: assetName });
+        expect((await env.pool.query('SELECT player_id, kind FROM item_notices WHERE item_id = $1', [itemId])).rows).toEqual([{ player_id: ann.playerId, kind: 'departed' }]);
+
+        expect(await ops.markRolledBack(env.pool, await ops.byId(env.pool, op.id))).toMatchObject({ state: 'submitted' });
+        expect(await itemRow(env.pool, itemId)).toEqual({ player_id: ann.playerId, asset_name: null, minted_at: null, holder_subject: null, holder_pay: null, holder_since: null });
+        expect(Number((await env.pool.query('SELECT COUNT(*) AS n FROM item_notices WHERE item_id = $1', [itemId])).rows[0].n)).toBe(0);
+        expect(await mintedOf(env.pool, ann.playerId, itemId)).toEqual({ assetName, state: 'minting', operationId: op.id, signing: false });
+    });
 });
 
 describe('the view of an operation', () => {

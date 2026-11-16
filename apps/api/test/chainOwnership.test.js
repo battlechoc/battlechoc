@@ -37,6 +37,15 @@ const noticesOf = async (pool, itemId) =>
     }));
 const equipmentOf = async (pool, playerId) => (await pool.query('SELECT equipment FROM players WHERE id = $1', [playerId])).rows[0].equipment;
 const statsOf = async account => (await account.get('/user').expect(200)).body.stats;
+const burnTxOf = async (pool, id) => (await pool.query('SELECT burn_tx FROM items WHERE id = $1', [id])).rows[0].burn_tx;
+// an open burn operation of the item, as plan E's burn route stores one (only what the sync reads matters)
+const insertBurnOp = (env, { playerId, itemId, assetName, txHash, state, subject }) =>
+    env.pool.query(
+        `INSERT INTO chain_ops (id, player_id, item_id, kind, state, subject, owner_key_hash, owner_address, required_keys, asset_name, tx_hash, tx_cbor,
+             ttl_slot, sign_until, network_fee, deposit, deposit_user, created_at, submitted_at)
+         VALUES ($1, $2, $3, 'burn', $4, $5, $6, 'addr_test1', '[]', $7, $8, '00', 1, $9, '0', '0', '0', $9, $9)`,
+        [`op-${itemId}`, playerId, itemId, state, subject, 'ab'.repeat(28), assetName, txHash, new Date(env.now())]
+    );
 
 describe('who holds the token owns the item', () => {
     test('a minted item in its minter\'s wallet stays theirs; a second run changes nothing', async () => {
@@ -158,14 +167,106 @@ describe('who holds the token owns the item', () => {
         expect(await noticesOf(env.pool, itemId)).toEqual([]);
     });
 
-    test('a burned token leaves the inventory at depth 0: the index knows its burn', async () => {
+    test('a burned token is burning, not away: the item stays its player\'s (slot and loadout too), no notice, the burn noted; a second run changes nothing', async () => {
         const env = await setup();
-        const { ann, itemId, assetName } = await annWithMintedItem(env);
-        env.double.burnToken({ assetName });
+        const { ann, annKeys, itemId, assetName } = await annWithMintedItem(env);
+        const synced = await itemRow(env.pool, itemId);
+        const equipment = await equipmentOf(env.pool, ann.playerId);
+        const burn = env.double.burnToken({ assetName });
         env.block();
         expect(await env.sync()).toEqual({ checked: 1, changed: 1, unknown: 0, failed: 0, skipped: null });
-        expect(await itemRow(env.pool, itemId)).toMatchObject({ player_id: null, holder_subject: null, holder_pay: null });
+        expect(await itemRow(env.pool, itemId)).toEqual(synced);
+        expect(synced).toMatchObject({ player_id: ann.playerId, holder_subject: stake(annKeys) });
+        expect(await burnTxOf(env.pool, itemId)).toBe(burn);
+        expect(await noticesOf(env.pool, itemId)).toEqual([]);
+        expect(await equipmentOf(env.pool, ann.playerId)).toEqual(equipment);
+        // still in the stats and the loadout: taking a burning item out of the loadout is Task 4's
+        expect((await statsOf(ann)).items.map(item => item.id)).toEqual([itemId]);
+        // deeper, the same
+        env.block(3);
+        expect(await env.sync()).toEqual({ checked: 1, changed: 0, unknown: 0, failed: 0, skipped: null });
+        expect(await burnTxOf(env.pool, itemId)).toBe(burn);
+        expect(await noticesOf(env.pool, itemId)).toEqual([]);
+    });
+
+    test('the burn rolled back: burn_tx is null again and the item as it was, no notice left behind; burned again and rolled back to a move: the normal rules', async () => {
+        const env = await setup();
+        const { ann, itemId, assetName } = await annWithMintedItem(env);
+        const synced = await itemRow(env.pool, itemId);
+        env.double.burnToken({ assetName });
+        env.block();
+        await env.sync();
+        env.double.rollback(1, { drop: true });
+        env.block();
+        expect(await env.sync()).toMatchObject({ changed: 1 });
+        expect(await itemRow(env.pool, itemId)).toEqual(synced);
+        expect(await burnTxOf(env.pool, itemId)).toBeNull();
+        expect(await noticesOf(env.pool, itemId)).toEqual([]);
+        expect((await statsOf(ann)).loadout).toEqual({ [T.RUM_TRUFFLE_CANNON]: ['LIGHT_BARREL'] });
+        // a burn, rolled back, and the token sold instead: a departure as for any move
+        env.double.burnToken({ assetName });
+        env.block();
+        await env.sync();
+        env.double.rollback(1, { drop: true });
+        env.double.moveToken({ assetName, to: env.double.newAddress() });
+        env.block();
+        await env.sync();
+        expect(await itemRow(env.pool, itemId)).toMatchObject({ player_id: null });
+        expect(await burnTxOf(env.pool, itemId)).toBeNull();
         expect(await noticesOf(env.pool, itemId)).toEqual([{ playerId: ann.playerId, kind: 'departed', building: T.RUM_TRUFFLE_CANNON, seen: false }]);
+    });
+
+    test('a token no output holds with an open burn operation (submitted, included) is burning, also when the index lists no burn of it; once the operation ended: the normal rules', async () => {
+        const noBurnRows = { on: false };
+        const env = await setup({ wrapIndex: index => ({ ...index, burnsOf: async names => (noBurnRows.on ? [] : index.burnsOf(names)) }) });
+        const { ann, annKeys, itemId, assetName } = await annWithMintedItem(env);
+        const opTx = 'd0'.repeat(32);
+        await insertBurnOp(env, { playerId: ann.playerId, itemId, assetName, txHash: opTx, state: 'submitted', subject: stake(annKeys) });
+        // the token still held: judged by its holder, not burning
+        env.block();
+        expect(await env.sync()).toMatchObject({ changed: 0 });
+        expect(await burnTxOf(env.pool, itemId)).toBeNull();
+        // the index knows a burn (eventsAmong) but lists no row of it (its spent output is missing)
+        noBurnRows.on = true;
+        env.double.burnToken({ assetName });
+        env.block();
+        expect(await env.sync()).toMatchObject({ changed: 1, unknown: 0 });
+        expect(await itemRow(env.pool, itemId)).toMatchObject({ player_id: ann.playerId });
+        expect(await burnTxOf(env.pool, itemId)).toBe(opTx);
+        await env.pool.query("UPDATE chain_ops SET state = 'included', included_block = $2 WHERE item_id = $1", [itemId, env.double.tip().blockNo]);
+        env.block();
+        expect(await env.sync()).toMatchObject({ changed: 0 });
+        expect(await burnTxOf(env.pool, itemId)).toBe(opTx);
+        expect(await noticesOf(env.pool, itemId)).toEqual([]);
+        // the operation ended (its expiry): no burn listed, none open: plan C's rule, a known burn and no holder is nobody
+        await env.pool.query("UPDATE chain_ops SET state = 'expired', ended_at = $2 WHERE item_id = $1", [itemId, new Date(env.now())]);
+        env.block();
+        expect(await env.sync()).toMatchObject({ changed: 1 });
+        expect(await itemRow(env.pool, itemId)).toMatchObject({ player_id: null, holder_subject: null });
+        expect(await burnTxOf(env.pool, itemId)).toBeNull();
+        expect(await noticesOf(env.pool, itemId)).toEqual([{ playerId: ann.playerId, kind: 'departed', building: T.RUM_TRUFFLE_CANNON, seen: false }]);
+    });
+
+    test('a burn the index knows (eventsAmong) with no row of the output it spent (burnsOf): one lasting warning naming the token, cleared once the index lists the burn', async () => {
+        const unlisted = { on: true };
+        const env = await setup({ wrapIndex: index => ({ ...index, burnsOf: async names => (unlisted.on ? [] : index.burnsOf(names)) }) });
+        const { assetName } = await annWithMintedItem(env);
+        const burn = env.double.burnToken({ assetName });
+        for (let i = 0; i < 3; i++) {
+            env.block();
+            await env.sync();
+        }
+        expect(env.log.warn).toHaveBeenCalledTimes(1);
+        expect(env.log.warn).toHaveBeenCalledWith(
+            "watcher: ownership: the chain index knows burns of tokens but not the outputs they spent, so they cannot be credited: check the index's filters and that it synced from before the tokens' last outputs",
+            { assetNames: [assetName] }
+        );
+        unlisted.on = false;
+        env.block();
+        await env.sync();
+        expect(env.log.warn).toHaveBeenCalledTimes(1);
+        expect(env.log.info).toHaveBeenCalledWith('watcher: ownership: the chain index lists the spent output of every burn it knows again');
+        expect((await env.pool.query('SELECT burn_tx FROM items WHERE asset_name = $1', [assetName])).rows[0].burn_tx).toBe(burn);
     });
 
     test('a token minted, burned and minted again is judged by its holder', async () => {

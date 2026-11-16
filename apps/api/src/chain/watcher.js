@@ -1,6 +1,6 @@
 // The watcher: an interval job (like cleanup.js) that reads the chain index's tip, decides whether
-// the index is fresh enough to act on, and runs its steps in order: plan D's `operations` and
-// plan E's `salvage` before plan C's `ownership`. A step that throws is logged with its name and
+// the index is fresh enough to act on, and runs its steps in order (server.js): plan D's
+// `operations`, plan C's `ownership`, then plan E's `credit` of burned items. A step that throws is logged with its name and
 // the next one still runs; a run never rejects. Runs never overlap.
 //
 // The views the index reads (views.sql) are made by ensureViews once Yaci Store has made its

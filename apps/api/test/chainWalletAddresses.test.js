@@ -440,13 +440,29 @@ describe('POST /chain/sign/:code/addresses', () => {
         expect(await rowOf(second.operation.id)).toMatchObject({ state: 'expired', error: 'not-signed' });
     });
 
-    test('an operation that is not a mint (plan E\'s burn) is never rebuilt as one: 404 UNKNOWN SIGN CODE, the row as it was', async () => {
+    test('an operation that is not a mint (plan E\'s burn) is never rebuilt as one: its payload is the burn\'s proof text, a mint\'s proof is refused, the row as it was', async () => {
         const { env, ann, annHex, mint, askPayload, prove, rowOf } = await setup();
         const minted = (await mint().expect(201)).body;
+        const mintText = Buffer.from((await askPayload(minted.signCode, [annHex]).expect(200)).body.payload, 'hex').toString('utf8');
         await env.pool.query("UPDATE chain_ops SET kind = 'burn' WHERE id = $1", [minted.operation.id]);
         const before = await rowOf(minted.operation.id);
-        expect((await askPayload(minted.signCode, [annHex]).expect(404)).body).toEqual(UNKNOWN);
-        expect((await prove(minted.signCode, [annHex], signMessage(ann.keys[0], 'any text')).expect(404)).body).toEqual(UNKNOWN);
+        const text = Buffer.from((await askPayload(minted.signCode, [annHex]).expect(200)).body.payload, 'hex').toString('utf8');
+        expect(cardano.readAddressProof(text)).toMatchObject({ purpose: 'burn', operationId: minted.operation.id });
+        expect(cardano.readAddressProof(mintText)).toMatchObject({ purpose: 'mint', operationId: minted.operation.id });
+        // Ann's valid signature over the mint's text of this very operation and list
+        expect(errorOf(await prove(minted.signCode, [annHex], signMessage(ann.keys[0], mintText)))).toEqual([400, 'INVALID SIGNATURE']);
+        expect(errorOf(await prove(minted.signCode, [annHex], signMessage(ann.keys[0], 'any text')))).toEqual([400, 'INVALID SIGNATURE']);
+        expect(await rowOf(minted.operation.id)).toEqual(before);
+    });
+
+    test('a mint\'s payload is the mint\'s proof; a valid signature over the burn\'s text of this operation and list is refused', async () => {
+        const { ann, annHex, mint, askPayload, prove, rowOf } = await setup();
+        const minted = (await mint().expect(201)).body;
+        const before = await rowOf(minted.operation.id);
+        const text = Buffer.from((await askPayload(minted.signCode, [annHex]).expect(200)).body.payload, 'hex').toString('utf8');
+        const burnText = cardano.addressProofMessage({ ...cardano.readAddressProof(text), network: cardano.Networks.preprod, addresses: [annHex], purpose: 'burn' });
+        expect(cardano.readAddressProof(burnText)).toMatchObject({ purpose: 'burn', operationId: minted.operation.id });
+        expect(errorOf(await prove(minted.signCode, [annHex], signMessage(ann.keys[0], burnText)))).toEqual([400, 'INVALID SIGNATURE']);
         expect(await rowOf(minted.operation.id)).toEqual(before);
     });
 

@@ -1,5 +1,7 @@
 // Salvaging a plain item in the lab: the item is gone, half of each amount of its (current)
 // recipe comes back as fresh ingredients, the crafting fee does not. Its serial stays used.
+// Because the current recipe decides, an existing recipe never gets a rare or legendary amount
+// raised and no other amount more than doubled (packages/shared/salvage.js).
 
 const { salvageReturns } = require('@battlechoc/battlechoc-shared-functions');
 const players = require('../players');
@@ -43,14 +45,7 @@ const salvagePlain = async (client, { playerId, itemId, recipes, now }) => {
     await client.query(`DELETE FROM chain_ops WHERE item_id = $1 AND state IN ${ENDED_IN}`, [itemId]);
     await client.query('DELETE FROM items WHERE id = $1', [itemId]);
 
-    const equipment = {};
-    Object.entries(players.equipmentOf(await players.findPlayer(client, playerId))).forEach(([entityType, slots]) => {
-        const kept = (Array.isArray(slots) ? slots : []).map(id => (id === itemId ? null : id));
-        // a building whose slots are all empty is left out, as /user/equipment does
-        if (kept.some(id => id !== null)) {
-            equipment[entityType] = kept;
-        }
-    });
+    const equipment = players.equipmentWithout(players.equipmentOf(await players.findPlayer(client, playerId)), itemId);
     await client.query('UPDATE players SET equipment = $1 WHERE id = $2', [JSON.stringify(equipment), playerId]);
 
     // new batches: spoiling ingredients get their full shelf life from now

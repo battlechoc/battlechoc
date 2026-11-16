@@ -15,9 +15,18 @@
 // does the transaction go to the network. No answer of these routes carries a transaction but the
 // unsigned one, which is what the wallet signs; the co-signed one is stored for the watcher and
 // never answered or logged.
+//
+// A minted item is salvaged by burning its token (plan E, POST /chain/burn): the item the player's
+// by the ownership sync, its token in the player's linked wallet, the unsigned burn built with
+// plan B's buildBurn, stored as a prepared operation of kind burn with its sign code; it is signed
+// through the same sign routes. With the addresses the wallet named (a browser wallet) it is built
+// from those alone; without them (the phone path) from everything the provider lists for the
+// holder's key, not vouched for, and the sign page's rebuild builds it again from the addresses
+// the wallet proves. Nothing of the item changes here: the ingredients are credited once the
+// burn is final (plan E, Task 3).
 
 const express = require('express');
-const { chain: rules } = require('@battlechoc/battlechoc-shared-functions');
+const { chain: rules, salvageReturns } = require('@battlechoc/battlechoc-shared-functions');
 const { HttpError, ErrorCode, chainError } = require('../errors');
 const { fixedWindowLimit } = require('../limits');
 const { lastingLog, messageOf, reasonOf: failureReasonOf } = require('../chain/lastingLog');
@@ -26,6 +35,9 @@ const { linkedPlayers } = require('../chain/hopWait');
 const { ProviderError } = require('../chain/provider');
 const { IndexUnavailableError } = require('../chain/indexUnavailable');
 const { SIGN_CODE, newSignCode } = require('../chain/signCodes');
+const { Address, Assets } = require('@evolution-sdk/evolution');
+const { outRef } = require('../chain/names');
+const { holderOf } = require('../chain/addresses');
 const { WalletAddressError, walletAddressesOf, ownAddressesOf, utxosAtWallet, addressesPayloadOf, checkAddressesProof } = require('../chain/walletAddresses');
 // called through the module, so a test can stand in for one of plan B's functions
 const tx = require('../chain/tx');
@@ -74,6 +86,16 @@ const mintRequestOf = (body, network) => {
         throw badRequest();
     }
     return { itemId, subject, fee, wallet: addresses === undefined ? null : walletOf(addresses, network) };
+};
+
+// POST /chain/burn's body: { itemId, subject (the wallet that holds the item's token), addresses?
+// (the wallet's own, hex, as for a mint; null without them) }
+const burnRequestOf = (body, network) => {
+    const { itemId, subject, addresses } = body || {};
+    if (!isId(itemId) || !isId(subject)) {
+        throw badRequest();
+    }
+    return { itemId, subject, wallet: addresses === undefined ? null : walletOf(addresses, network) };
 };
 
 // POST /chain/sign/:code's body: { witness }
@@ -132,8 +154,10 @@ const reasonOf = error => failureReasonOf(error, MAX_LOGGED_REASON);
  * address in front of the routes with a session, which are then limited per player:
  * `playerPerMinute` requests a minute, one bucket for all of them; `mintsPerMinute`: what one
  * player may send to POST /chain/mint in a minute besides (each mint asks the provider and builds, a
- * refused one two or three times); `cancelsPerMinute`: what one player may send to DELETE
- * /chain/operations/:id in a minute, a bucket of its own instead of the player's;
+ * refused one two or three times); `burnsPerMinute`: the same for POST /chain/burn (plan E);
+ * `recipes`: the lab's recipe book (lab/recipes.js), for what a burn gives back;
+ * `cancelsPerMinute`: what one player may send to DELETE /chain/operations/:id in a minute, a
+ * bucket of its own instead of the player's;
  * `rebuildsPerMinute`: what one address may send to POST /chain/sign/:code/addresses for one
  * operation in a minute (a stranger with the code cannot use up the player's attempts);
  * `readinessFanOut`: how readiness asks the provider (readiness.js READINESS_FAN_OUT, for tests);
@@ -145,8 +169,8 @@ const reasonOf = error => failureReasonOf(error, MAX_LOGGED_REASON);
 const registerChainRoutes = (
     app,
     {
-        pool, user, chain, config, limit, sessionLimit, playerPerMinute = 30, mintsPerMinute = 5, cancelsPerMinute = 10, rebuildsPerMinute = 5, readinessFanOut = {},
-        readinessCacheMs = UTXO_CACHE.ttlMs, oneAtATime, now = () => Date.now(), log = console,
+        pool, user, chain, config, recipes, limit, sessionLimit, playerPerMinute = 30, mintsPerMinute = 5, burnsPerMinute = 5, cancelsPerMinute = 10,
+        rebuildsPerMinute = 5, readinessFanOut = {}, readinessCacheMs = UTXO_CACHE.ttlMs, oneAtATime, now = () => Date.now(), log = console,
     }
 ) => {
     if (!chain.enabled) {
@@ -301,11 +325,12 @@ const registerChainRoutes = (
         return tier === -1 ? null : tx.gameFeeOf(contracts.config, { tier, fee });
     };
 
-    // NOT ENOUGH ADA with what the wallet `utxos` lacks: `missing` as the build verified it (an
-    // empty wallet: the funds check's), `needed` the funds check's, at least what the wallet holds
-    // and lacks together, so that "it has X, it needs Y" is true
-    const notEnoughAda = (utxos, gameFee, built) => {
-        const funds = tx.fundsCheck({ utxos, kind: 'mint', gameFee });
+    // NOT ENOUGH ADA with what the wallet `utxos` lacks for a transaction of `kind` ('mint',
+    // 'burn'): `missing` as the build verified it (an empty wallet: the funds check's), `needed` the
+    // funds check's, at least what the wallet holds and lacks together, so that "it has X, it needs
+    // Y" is true (a burn needs nothing of its own: what the wallet holds and lacks)
+    const notEnoughAda = (utxos, gameFee, built, kind = 'mint') => {
+        const funds = tx.fundsCheck({ utxos, kind, gameFee });
         const missing = BigInt(built === undefined ? funds.missing : built);
         const holdsAndLacks = spendableLovelaceOf(utxos) + missing;
         const needed = BigInt(funds.needed) > holdsAndLacks ? BigInt(funds.needed) : holdsAndLacks;
@@ -335,10 +360,11 @@ const registerChainRoutes = (
         }
     };
 
-    // A failure of a mint as the player gets it: our checks as they are, plan B's refusals that
-    // are the player's as their code; the chain down, and anything that is a fault on our side
-    // (BAD_ITEM, BUILD_FAILED, an error nobody expected), as CHAIN UNAVAILABLE, the latter logged.
-    const refusalOf = error => {
+    // A failure of a mint (or a burn: `what` says which in the log) as the player gets it: our
+    // checks as they are, plan B's refusals that are the player's as their code; the chain down,
+    // and anything that is a fault on our side (BAD_ITEM, BUILD_FAILED, REFERENCE_NOT_FOUND, an
+    // error nobody expected), as CHAIN UNAVAILABLE, the latter logged.
+    const refusalOf = (error, what = 'a mint could not be prepared') => {
         if (error instanceof HttpError) {
             return error;
         }
@@ -352,7 +378,7 @@ const registerChainRoutes = (
             lasting.report('serverKey', 'not listed', () => log.error('chain: the server key is not in the config: minting is off until an admin adds it'));
             return unavailable();
         }
-        log.error('chain: a mint could not be prepared', reasonOf(error));
+        log.error(`chain: ${what}`, reasonOf(error));
         return unavailable();
     };
 
@@ -422,6 +448,214 @@ const registerChainRoutes = (
     });
 
     // -----------------------------------------------------------------------------------------
+    // Preparing a burn (plan E): salvaging a minted item
+
+    const burns = fixedWindowLimit({ windowMs: 60000, max: burnsPerMinute, now });
+    const burnLimit = (req, res, next) => {
+        if (!burns.allow(req.playerId)) {
+            throw new HttpError(429, ErrorCode.TOO_MANY_REQUESTS);
+        }
+        next();
+    };
+
+    // 2. The item: the player's as the ownership sync says (items.player_id: a token in a wallet
+    // that is in its hop wait, or in nobody's, is nobody's item), no open operation of it (of any
+    // kind and state: a mint prepared, sent or on its way to final), minted and not burned. Its
+    // row. A burned item is gone, as a salvaged plain item is.
+    const burnableItem = async (playerId, itemId, at) => {
+        const { rows } = await pool.query(
+            'SELECT id, player_id, item_key, serial, asset_name, minted_at, burned_at, holder_subject, holder_pay FROM items WHERE id = $1', [itemId]);
+        const item = rows[0];
+        if (!item || item.player_id !== playerId || item.burned_at !== null) {
+            throw new HttpError(400, ErrorCode.NOT_YOUR_ITEM);
+        }
+        // an open operation of the item first, of any kind and state: a mint not in a block yet
+        // leaves the asset name null, and the item is busy, not plain
+        const forItem = await ops.expireLapsed(pool, await ops.openForItem(pool, itemId), at);
+        if (forItem && ops.OPEN.includes(forItem.state)) {
+            throw chainError(ErrorCode.ITEM_BUSY);
+        }
+        if (item.asset_name === null || item.minted_at === null) {
+            throw chainError(ErrorCode.NOT_MINTED);
+        }
+        return item;
+    };
+
+    // 4. The wallet that holds the token as the sync last saw it: of its subjects the one the sync
+    // makes the owner by (decideOwner: the stake key when it is linked, else the payment key) must
+    // be linked to the player now, outside a hop wait (NOT YOUR WALLET, WALLET WAITING), and be the
+    // wallet the request names (NOT YOUR WALLET with `holder`, the player's own wallet to use). The
+    // holder's subject.
+    const holderOfItem = async (playerId, item, subject, at) => {
+        const subjects = [item.holder_subject, item.holder_pay].filter(each => each !== null);
+        const links = await linkedPlayers(pool, subjects, at);
+        const holder = subjects.find(each => links.has(each));
+        const link = holder === undefined ? undefined : links.get(holder);
+        if (!link || link.playerId !== playerId) {
+            throw chainError(ErrorCode.NOT_YOUR_WALLET);
+        }
+        if (link.waitUntil !== null) {
+            throw chainError(ErrorCode.WALLET_WAITING);
+        }
+        if (subject !== holder) {
+            throw chainError(ErrorCode.NOT_YOUR_WALLET, { holder });
+        }
+        return holder;
+    };
+
+    // The address a burn pays the store's ADA, the token's own ADA and the change to (ruling E13):
+    // always the address of the UTxO among `utxos` that holds the user token `unit`, never the
+    // richest address carrying the subject's key (ownerOf's), which can be an outsider's address
+    // with the player's stake key when the wallet named no addresses. Its payment key signs the
+    // burn anyway (the token's UTxO is spent). { keyHash, address } as buildBurn's `holder`; ITEM
+    // LEFT WALLET when none of `utxos` holds the token at an address of a key.
+    const tokenAddressOf = (utxos, unit) => {
+        const held = utxos.find(utxo => Assets.getByUnit(utxo.assets, unit) > 0n);
+        const bech32Of = utxo => {
+            try {
+                return Address.toBech32(utxo.address);
+            } catch {
+                return null;
+            }
+        };
+        const address = held === undefined ? null : bech32Of(held);
+        const pay = address === null ? null : holderOf(address).pay;
+        if (pay === null) {
+            throw chainError(ErrorCode.ITEM_LEFT_WALLET);
+        }
+        return { keyHash: pay.slice('pay:'.length), address };
+    };
+
+    // whether `subject` holds the UTxO `held` (its address's stake or payment key); an address the
+    // SDK cannot write as bech32 is nobody's here (the token has left the wallet, not moved in it)
+    const heldBy = (held, subject) => {
+        let holder;
+        try {
+            holder = holderOf(Address.toBech32(held.address));
+        } catch {
+            return false;
+        }
+        return holder.stake === subject || holder.pay === subject;
+    };
+
+    // A token the build cannot reach, as the player gets it (ruling E21, the same at the prepare and
+    // the rebuild): ITEM MOVED when the provider sees it at an address of `subject`'s key all the
+    // same (an address the wallet did not name, or, for a `pay:` subject, a base address of its
+    // payment key: never built from, the change would go to an address the wallet never named),
+    // else ITEM LEFT WALLET. One provider call, on this failure path only; a provider that cannot
+    // say is CHAIN UNAVAILABLE.
+    const notReachable = async (assetName, subject) => {
+        const held = await chain.provider.utxoByUnit(chain.policyId + assetName);
+        return chainError(held !== undefined && heldBy(held, subject) ? ErrorCode.ITEM_MOVED : ErrorCode.ITEM_LEFT_WALLET);
+    };
+
+    // 5.–6. The holder's UTxOs (only those at the addresses the wallet named, when it named any),
+    // the address the burn pays to (tokenAddressOf's), the item's store and the build. Plan B's
+    // BurnTx. Always from a fresh answer of the provider. A wallet whose addresses hold no UTxO
+    // with the token: notReachable's ITEM MOVED or ITEM LEFT WALLET.
+    const builtBurn = async ({ item, subject, contracts, wallet }) => {
+        utxoCache.forget(subject);
+        const listed = await chain.provider.utxosOf(subject);
+        const utxos = wallet ? utxosAtWallet(listed, wallet) : listed;
+        let holder;
+        try {
+            holder = tokenAddressOf(utxos, chain.policyId + item.asset_name);
+        } catch (error) {
+            throw error instanceof HttpError && error.code === ErrorCode.ITEM_LEFT_WALLET ? await notReachable(item.asset_name, subject) : error;
+        }
+        const referenceUnit = chain.policyId + rules.REFERENCE_LABEL + item.asset_name.slice(rules.USER_LABEL.length);
+        const [reference, params, tip] = await Promise.all([chain.provider.utxoByUnit(referenceUnit), chain.provider.protocolParameters(), chain.provider.tip()]);
+        try {
+            const burnTx = await tx.buildBurn({ assetName: item.asset_name, holder, utxos, reference, params, tip, contracts, serverKeyHash: chain.serverKey.keyHash });
+            return { holder, burnTx };
+        } catch (error) {
+            if (error instanceof tx.ChainTxError && error.code === 'TOKEN_NOT_HELD') {
+                throw await notReachable(item.asset_name, subject);
+            }
+            throw error.code === 'NOT_ENOUGH_ADA' && error instanceof tx.ChainTxError ? notEnoughAda(utxos, null, error.missing, 'burn') : error;
+        }
+    };
+
+    // what an operation stores of a burn's build: the address the store's ADA and the change go to,
+    // the transaction and its costs (as built); no battlechoc fee
+    const burnFieldsOf = (holder, burnTx) => ({
+        ownerKeyHash: holder.keyHash,
+        ownerAddress: holder.address,
+        requiredKeys: burnTx.requiredWitnesses,
+        assetName: burnTx.assetName,
+        txHash: burnTx.bodyHash,
+        txCbor: burnTx.cbor,
+        ttlSlot: burnTx.ttl,
+        networkFee: burnTx.networkFee,
+        gameFeeAsset: null,
+        gameFee: null,
+        // both outputs' ADA: the store's comes back to the wallet, the user token's was in it all along
+        deposit: burnTx.deposits.reference + burnTx.deposits.user,
+        depositUser: burnTx.deposits.user,
+    });
+
+    // what a burn of the item `itemKey` gives back by today's recipe table (none without a recipe)
+    const returnsOf = itemKey => {
+        const recipe = recipes.get(itemKey);
+        return recipe ? salvageReturns(recipe.amounts, { minted: true }) : {};
+    };
+
+    const prepareBurn = async ({ playerId, itemId, subject, wallet }) => {
+        const at = now();
+        try {
+            // 1. the chain (the config's pause does not stop a burn; a burn pays no battlechoc fee)
+            const contracts = await chainContracts(at);
+            const item = await burnableItem(playerId, itemId, at);
+            // 3. the recipe, for what comes back (an item whose recipe is gone gives nothing)
+            const recipe = recipes.get(item.item_key);
+            if (!recipe) {
+                throw new HttpError(400, ErrorCode.NO_RECIPE);
+            }
+            const open = await ops.expireLapsed(pool, await ops.openOf(pool, playerId), at);
+            if (open && ops.OPEN.includes(open.state)) {
+                throw chainError(ErrorCode.OPERATION_RUNNING);
+            }
+            await holderOfItem(playerId, item, subject, at);
+            const own = wallet ? ownWallet(wallet, subject) : null;
+            const { holder, burnTx } = await builtBurn({ item, subject, contracts, wallet: own });
+            // 7. the item locked, the code's hash stored
+            const { code } = newSignCode();
+            const op = await ops.insertPrepared(pool, {
+                playerId,
+                itemId,
+                kind: 'burn',
+                subject,
+                ...burnFieldsOf(holder, burnTx),
+                // the addresses came with the player's session: the owner is vouched for
+                ownerConfirmed: own !== null,
+                signUntil: at + rules.SIGN_WINDOW_MS,
+                code,
+                feeOption: null,
+                now: at,
+            });
+            const operation = ops.view(op, itemOfRow(item), at);
+            return { operation, tx: burnTx.cbor, signCode: code, costs: operation.costs, returns: returnsOf(item.item_key) };
+        } catch (error) {
+            if (error instanceof ops.OpenOperationError) {
+                // another process prepared one first (Postgres's partial unique indexes)
+                throw chainError(error.reason === 'item' ? ErrorCode.ITEM_BUSY : ErrorCode.OPERATION_RUNNING);
+            }
+            throw refusalOf(error, 'a burn could not be prepared');
+        }
+    };
+
+    // The checks run in this order (the first that fails answers), one operation of a player at a
+    // time: the chain (CHAIN UNAVAILABLE), the item (NOT YOUR ITEM, ITEM BUSY, NOT MINTED), its
+    // recipe (NO RECIPE), the player (OPERATION RUNNING), the holder's wallet (NOT YOUR WALLET,
+    // WALLET WAITING; the `addresses`, optional, NOT YOUR WALLET), the wallet's tokens, funds and
+    // the build (ITEM MOVED or ITEM LEFT WALLET, NOT ENOUGH ADA, NO COLLATERAL, WALLET TOO FULL).
+    // Salvaging has no gate of its own (no matches, no daily limit) but the one open operation.
+    app.post('/chain/burn', ...session, burnLimit, async (req, res) => {
+        const wanted = burnRequestOf(req.body, chain.network);
+        res.status(201).json(await oneAtATime(req.playerId, () => prepareBurn({ playerId: req.playerId, ...wanted })));
+    });
+
+    // -----------------------------------------------------------------------------------------
     // The player's operations
 
     // the player's operation `id` as it stands now (a lapsed sign window expired), with its item;
@@ -484,8 +718,16 @@ const registerChainRoutes = (
             throw chainError(ErrorCode.UNKNOWN_SIGN_CODE);
         }
         const { rows } = await pool.query('SELECT item_key, serial FROM items WHERE id = $1', [op.item_id]);
+        if (rows.length === 0) {
+            // the item is gone since the operation was read (cancelled and salvaged in between)
+            throw chainError(ErrorCode.UNKNOWN_SIGN_CODE);
+        }
         return { op, item: itemOfRow(rows[0]) };
     };
+
+    // the kinds of operation the server co-signs (ruling E13) and builds again from a wallet's
+    // proved addresses: any other row is refused
+    const SIGNED_KINDS = ['mint', 'burn'];
 
     // The operation's wallet still linked to its player (ruling D22: it may have been unlinked
     // since the mint): its link. Else the operation is cancelled and the answer is the 404 of a
@@ -493,7 +735,7 @@ const registerChainRoutes = (
     const stillLinked = async (op, at) => {
         const link = (await linkedPlayers(pool, [op.subject], at)).get(op.subject);
         if (!link || link.playerId !== op.player_id) {
-            if (await ops.cancel(pool, op, at)) {
+            if (await ops.cancel(pool, op, at, ops.CANCELLED_BECAUSE.WALLET_UNLINKED)) {
                 log.info('chain: an operation was cancelled: its wallet is no longer linked to its player', { operation: op.id });
             }
             throw chainError(ErrorCode.UNKNOWN_SIGN_CODE);
@@ -508,18 +750,53 @@ const registerChainRoutes = (
         return unavailable();
     };
 
-    // The order matters: the code (UNKNOWN SIGN CODE; also for a wallet no longer linked to the
-    // operation's player, which cancels the operation), an owner no wallet vouched for (ADDRESSES
+    // A burn spends the UTxO that held the user token when it was built: it is co-signed only while
+    // the provider still sees the token in that UTxO. A token that left it since is cancelled
+    // ('token-moved') and nothing is signed (a burn of a UTxO that is spent can only land if the
+    // chain rolls that spend back, and then the token would no longer be the player's to burn): ITEM
+    // MOVED when an address of the operation's subject holds it now (the wallet moved it among its
+    // own UTxOs: prepare again), else ITEM LEFT WALLET (another wallet holds it, or nobody: sold,
+    // moved away, burned outside the game). A provider that cannot say: CHAIN UNAVAILABLE, the
+    // operation as it is. A move the provider has not seen yet (in a mempool) is refused by the
+    // network at the submit: the watcher expires such a burn, the item minted as before.
+    const checkTokenHeld = async op => {
+        let held;
+        try {
+            held = await chain.provider.utxoByUnit(chain.policyId + op.asset_name);
+        } catch (error) {
+            if (error instanceof ProviderError) {
+                throw unavailable();
+            }
+            throw signingFault('the token of a burn could not be looked up', op, error);
+        }
+        if (held === undefined || !tx.inputsOf(op.tx_cbor).includes(outRef(held))) {
+            if (await ops.cancel(pool, op, now(), ops.CANCELLED_BECAUSE.TOKEN_MOVED)) {
+                log.info('chain: a burn was cancelled: its token is no longer where the burn spends it', { operation: op.id });
+            }
+            const stillOwn = held !== undefined && heldBy(held, op.subject);
+            throw chainError(stillOwn ? ErrorCode.ITEM_MOVED : ErrorCode.ITEM_LEFT_WALLET);
+        }
+    };
+
+    // The order matters: the code (UNKNOWN SIGN CODE; also for an operation of a kind the server
+    // does not sign, and for a wallet no longer linked to the operation's player, which cancels
+    // the operation), an owner no wallet vouched for (ADDRESSES
     // NEEDED: the rebuild with the wallet's proof comes first), the witness's shape (INVALID REQUEST
     // PARAMETERS), the wallet's signatures over the stored transaction (INVALID WITNESS, nothing
-    // changes), the server's key in the config (CHAIN UNAVAILABLE, nothing signed), the server's
-    // signature, the compare-and-set to submitted (OPERATION NOT OPEN when a cancel or another
-    // signature won: the signed bytes are dropped), and only then the network. A cancel that won
-    // means nothing was submitted; a submit the provider refuses is recorded for the watcher, which
-    // submits again (a rejection is decided at the safe expiry, never here).
+    // changes), the server's key in the config (CHAIN UNAVAILABLE, nothing signed), for a burn its
+    // token still where the burn spends it (ITEM MOVED or ITEM LEFT WALLET, which cancel the
+    // operation; CHAIN UNAVAILABLE), the server's signature, the compare-and-set to submitted
+    // (OPERATION NOT OPEN when a cancel or another signature won: the signed bytes are dropped),
+    // and only then the network. A cancel that won means nothing was submitted; a submit the
+    // provider refuses is recorded for the watcher, which submits again (a rejection is decided at
+    // the safe expiry, never here).
     const signAndSubmit = async (code, body) => {
         const at = now();
         const { op, item } = await signable(code, at);
+        if (!SIGNED_KINDS.includes(op.kind)) {
+            log.error('chain: a sign code names an operation of a kind the server does not sign', { operation: op.id, kind: op.kind });
+            throw chainError(ErrorCode.UNKNOWN_SIGN_CODE);
+        }
         await stillLinked(op, at);
         // an owner address the server chose alone (no wallet of the player named it) is never co-signed
         if (!op.owner_confirmed) {
@@ -544,6 +821,9 @@ const registerChainRoutes = (
         }
         // with a key the config does not list, the validator would refuse the transaction
         await listedContracts();
+        if (op.kind === 'burn') {
+            await checkTokenHeld(op);
+        }
         let signedCbor;
         try {
             signedCbor = tx.addServerWitness({ cbor: verified.cbor, bodyHash: op.tx_hash, key: chain.serverKey }).cbor;
@@ -578,11 +858,12 @@ const registerChainRoutes = (
         return { state: 'submitted', operation: ops.view(submitted, item, at) };
     };
 
-    // what the sign page shows and the wallet signs; `address` is where the token goes (the
-    // address the build chose, ownerOf's), not the wallet's reward address
+    // what the sign page shows and the wallet signs; `address` is where the token goes (a burn: the
+    // store's ADA, the token's own ADA and the change; the address of the UTxO that holds the
+    // token, tokenAddressOf's, ruling E13), not the wallet's reward address. A burn's adds `returns`: what the salvage gives back by today's recipe table.
     const signInfoOf = (op, item, at) => {
         const { costs, signUntil } = ops.view(op, item, at);
-        return {
+        const info = {
             kind: op.kind,
             operationId: op.id,
             ownerConfirmed: op.owner_confirmed === true,
@@ -594,6 +875,7 @@ const registerChainRoutes = (
             address: op.owner_address,
             signUntil,
         };
+        return op.kind === 'burn' ? { ...info, returns: returnsOf(item.item) } : info;
     };
 
     app.get('/chain/sign/:code', limit, async (req, res) => {
@@ -610,15 +892,37 @@ const registerChainRoutes = (
     // subject's key, and the owner is vouched for from then on. The same item, subject, fee option
     // and player; the wallet (still linked, as for a signature; its hop wait), the pause and the
     // server's key are checked as at the mint, the matches and the day's mints are not asked again.
-    // One compare-and-set on the prepared state and the old transaction (OPERATION NOT OPEN when a
-    // signature, a cancel or another rebuild won); the sign window and the code stay. Limited per
-    // address and operation: `rebuildsPerMinute`, within the sign routes' limit per address.
+    // A burn (plan E, the phone path of a salvage) the same, with the burn's own proof text (its
+    // purpose is the row's kind, never the request's) and built as at its prepare: the same token,
+    // from the proved addresses alone (ITEM MOVED, ITEM LEFT WALLET, NOT ENOUGH ADA, NO COLLATERAL;
+    // a pause does not stop it). One compare-and-set on the prepared state and the old transaction
+    // (OPERATION NOT OPEN when a signature, a cancel or another rebuild won); the sign window and
+    // the code stay. Limited per address and operation: `rebuildsPerMinute`, within the sign
+    // routes' limit per address.
     const rebuilds = fixedWindowLimit({ windowMs: 60000, max: rebuildsPerMinute, now });
+
+    // a mint built again: the same item, fee option and subject; the pause and the fee as at the mint
+    const rebuiltMintFields = async (op, item, contracts, own) => {
+        const gameFee = checkFee(contracts, op.fee_option, tierOf(item.item));
+        const { owner, mintTx } = await built({ item: { item_key: item.item, serial: item.serial }, subject: op.subject, fee: op.fee_option, gameFee, contracts, wallet: own });
+        return txFieldsOf(owner, mintTx);
+    };
+
+    // A burn built again (plan E): the same token and subject, from the addresses the wallet proved
+    // alone. A token none of them holds is ITEM MOVED when an address of the subject holds it (the
+    // wallet holds it at an address it did not name: prove that one too, or start again), else ITEM
+    // LEFT WALLET (builtBurn's notReachable, as at the prepare); the provider not answering that is
+    // CHAIN UNAVAILABLE.
+    const rebuiltBurnFields = async (op, contracts, own) => {
+        const { holder, burnTx } = await builtBurn({ item: { asset_name: op.asset_name }, subject: op.subject, contracts, wallet: own });
+        return burnFieldsOf(holder, burnTx);
+    };
+
     const rebuildFromWallet = async (code, body, address) => {
         const at = now();
         const { op, item } = await signable(code, at);
-        // only a mint is rebuilt here (it builds a mint): plan E's burn needs its own rebuild
-        if (op.kind !== 'mint') {
+        // a mint is built again as a mint, a burn as a burn (the kind is the row's); no other kind
+        if (!SIGNED_KINDS.includes(op.kind)) {
             throw chainError(ErrorCode.UNKNOWN_SIGN_CODE);
         }
         const link = await stillLinked(op, at);
@@ -637,15 +941,15 @@ const registerChainRoutes = (
             if (link.waitUntil !== null) {
                 throw chainError(ErrorCode.WALLET_WAITING);
             }
-            const gameFee = checkFee(contracts, op.fee_option, tierOf(item.item));
-            const { owner, mintTx } = await built({ item: { item_key: item.item, serial: item.serial }, subject: op.subject, fee: op.fee_option, gameFee, contracts, wallet: own });
-            const rebuilt = await ops.rebuildPrepared(pool, op, { ...txFieldsOf(owner, mintTx), ownerConfirmed: true }, now());
+            const fields = op.kind === 'burn' ? await rebuiltBurnFields(op, contracts, own) : await rebuiltMintFields(op, item, contracts, own);
+            const rebuilt = await ops.rebuildPrepared(pool, op, { ...fields, ownerConfirmed: true }, now());
             if (!rebuilt) {
                 throw chainError(ErrorCode.OPERATION_NOT_OPEN);
             }
             return signInfoOf(rebuilt, item, at);
         } catch (error) {
-            throw refusalOf(error);
+            // the mint's text as plan D logs it
+            throw refusalOf(error, op.kind === 'burn' ? 'a burn could not be built again' : undefined);
         }
     };
 

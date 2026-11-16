@@ -14,6 +14,7 @@ const { writeKeyFile } = require('../src/chain/keys');
 const { closeTestPools, counting, createTestPool, failingOn } = require('./helpers/db');
 const { createTestApp } = require('./helpers/api');
 const { ConfigError } = require('../src/config');
+const { createRecipeBook, SAMPLE } = require('../src/lab/recipes');
 
 afterAll(closeTestPools);
 
@@ -355,24 +356,25 @@ describe('createChain', () => {
 describe('the watcher of a running server', () => {
     const log = () => ({ info: jest.fn(), warn: jest.fn(), error: jest.fn(), log: jest.fn() });
 
-    test('chain features off: no watcher, and a stop that does nothing', () => {
+    test('chain features off: no watcher and no credit step (no recipe book needed), and a stop that does nothing', () => {
         const runtime = { chain: { enabled: false, missing: [] }, watcher: null };
         const stop = startWatcher({ chain: runtime.chain, pool: {}, intervalMs: 20000, runtime, log: log() });
         expect(runtime.watcher).toBeNull();
         expect(() => stop()).not.toThrow();
     });
 
-    test('on: the watcher is in the runtime, runs the ownership step at once, and stops', async () => {
+    test('on: the watcher is in the runtime, runs the ownership and the credit step at once, and stops', async () => {
         const pool = await createTestPool();
         const double = createChainDouble({ policyId: fixtureContracts().policyId });
-        const chain = { enabled: true, indexMaxLagMs: 600000, index: double.index(), provider: double.provider() };
+        const chain = { enabled: true, indexMaxLagMs: 600000, kFinal: 10, policyId: fixtureContracts().policyId, index: double.index(), provider: double.provider() };
         const runtime = { chain, watcher: null };
-        const stop = startWatcher({ chain, pool, intervalMs: 20000, runtime, log: log() });
+        const recipes = createRecipeBook(JSON.parse(fs.readFileSync(SAMPLE, 'utf8')).recipes);
+        const stop = startWatcher({ chain, pool, intervalMs: 20000, runtime, recipes, log: log() });
         try {
             expect(runtime.watcher).not.toBeNull();
             // the run start() began: runOnce hands out the same one
             const report = await runtime.watcher.runOnce();
-            expect(report).toMatchObject({ fresh: true, steps: { ownership: { checked: 0, changed: 0, skipped: null } } });
+            expect(report).toMatchObject({ fresh: true, steps: { ownership: { checked: 0, changed: 0, skipped: null }, credit: { credited: [], skipped: null } } });
         } finally {
             stop();
         }

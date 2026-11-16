@@ -8,12 +8,14 @@
 // through createChainApp's watcher with both steps (operations, then ownership).
 
 const crypto = require('crypto');
+const fs = require('fs');
 const request = require('supertest');
 const { chain: rules } = require('@battlechoc/battlechoc-shared-functions');
 const ops = require('../src/chain/ops');
 const players = require('../src/players');
 const { operationsStep, advanceOperations, RESUBMIT_AFTER_MS, MAX_PER_RUN } = require('../src/chain/operationsStep');
 const { startWatcher } = require('../src/server');
+const { createRecipeBook, SAMPLE } = require('../src/lab/recipes');
 const { ProviderError } = require('../src/chain/provider');
 const { IndexUnavailableError } = require('../src/chain/indexUnavailable');
 const { closeTestPools } = require('./helpers/db');
@@ -21,6 +23,7 @@ const { walletWitness } = require('./helpers/chain');
 const { describeTx } = require('./helpers/describeTx');
 const { jsonTx } = require('./chainDouble');
 const { createChainApp, K_FINAL } = require('./helpers/chainApp');
+const { mintedItem, burnRequest, signBurn } = require('./helpers/burns');
 
 afterAll(closeTestPools);
 afterEach(() => jest.restoreAllMocks());
@@ -427,6 +430,196 @@ describe('the provider asked before an expiry (the index alone never ends a mint
     });
 });
 
+describe('the provider asked before a burn\'s expiry (plan E: the mirror of a mint\'s)', () => {
+    /**
+     * Ann's minted DARK_WALLS (final), its burn prepared from her wallet's address and signed
+     * (`beforeSign(burn)` first): { itemId, assetName, burn (the 201 answer), op (its row) }.
+     */
+    const signedBurn = async (env, beforeSign = () => {}) => {
+        const { itemId, assetName, account } = await mintedItem(env, env.ann, 'DARK_WALLS');
+        const burn = (await burnRequest(account, env.ann, itemId).expect(201)).body;
+        beforeSign(burn);
+        await signBurn(env, env.ann, burn).expect(200);
+        return { itemId, assetName, burn, op: await ops.byId(env.pool, burn.operation.id) };
+    };
+    /** The runs up to the one where the index's rule would expire `op`. */
+    const upToTheExpiry = async (env, op) => {
+        await runPastTtl(env, op.ttl_slot);
+        for (let i = 1; i < K_FINAL; i++) {
+            expect(await blockAndRun(env)).toEqual(NOTHING);
+        }
+    };
+    const burnLines = env => env.log.error.mock.calls.filter(call => /index does not have a burn the provider sees/.test(call[0]));
+    const mintLines = env => env.log.error.mock.calls.filter(call => /index does not have a mint the provider sees/.test(call[0]));
+    /**
+     * The calls of the index's burnsOf that the operations step makes (other steps ask it too),
+     * through `answer(names)` (default: the index's own answer).
+     */
+    const stepBurnsOf = (env, answer = null) => {
+        const burnsOf = env.chain.index.burnsOf;
+        const calls = [];
+        jest.spyOn(env.chain.index, 'burnsOf').mockImplementation(async names => {
+            if (/operationsStep\.js/.test(new Error().stack)) {
+                calls.push(names);
+            }
+            return answer ? answer(names, burnsOf) : burnsOf(names);
+        });
+        return calls;
+    };
+    const itemRow = async (env, itemId) => (await env.pool.query('SELECT player_id, asset_name, minted_at, burned_at, holder_subject FROM items WHERE id = $1', [itemId])).rows[0];
+
+    test('the token still held (the burn never landed): expired, the item minted and usable as before, a new burn of it can be prepared', async () => {
+        const { env, ann } = await setup();
+        env.ann = ann;
+        const { itemId, assetName, burn, op } = await signedBurn(env, () => env.double.holdMempool(true));
+        const before = await itemRow(env, itemId);
+        await upToTheExpiry(env, op);
+        const byUnit = jest.spyOn(env.chain.provider, 'utxoByUnit');
+        expect(await blockAndRun(env)).toEqual({ ...NOTHING, expired: 1 });
+        expect(byUnit.mock.calls).toEqual([[env.chain.policyId + assetName]]);
+        expect(await ops.byId(env.pool, op.id)).toMatchObject({ state: 'expired', error: 'expired' });
+        expect(await itemRow(env, itemId)).toEqual(before);
+        expect((await players.itemsOf(env.pool, ann.playerId)).find(entry => entry.id === itemId).minted).toEqual({ assetName, state: 'minted' });
+        expect(burnLines(env)).toEqual([]);
+        env.double.holdMempool(false);
+        const again = (await burnRequest(await env.refreshed(ann.account), ann, itemId).expect(201)).body;
+        expect(again.operation.id).not.toBe(burn.operation.id);
+    });
+
+    test('the token gone (the burn landed and the index misses it, no burn of the token known): never expired, logged once as an error naming the burn, asked once a run; the index caught up: included and final', async () => {
+        const { env, ann } = await setup();
+        env.ann = ann;
+        // the index drops the burn (a filter that keeps nothing of it), the chain has it
+        let hidden = null;
+        const transaction = env.chain.index.transaction;
+        jest.spyOn(env.chain.index, 'transaction').mockImplementation(async hash => (hash === hidden ? null : transaction(hash)));
+        const burnsAsked = stepBurnsOf(env, async (names, burnsOf) => (await burnsOf(names)).filter(entry => entry.txHash !== hidden));
+        const { assetName, op } = await signedBurn(env, burn => {
+            hidden = burn.operation.txHash;
+        });
+        await upToTheExpiry(env, op);
+        expect(await env.chain.provider.utxoByUnit(env.chain.policyId + assetName)).toBeUndefined();
+        const byUnit = jest.spyOn(env.chain.provider, 'utxoByUnit');
+        for (let i = 0; i < 3; i++) {
+            expect(await blockAndRun(env)).toEqual(NOTHING);
+            expect(byUnit).toHaveBeenCalledTimes(i + 1);
+        }
+        expect(await ops.byId(env.pool, op.id)).toMatchObject({ state: 'submitted', error: null });
+        const lines = burnLines(env);
+        expect(lines).toHaveLength(1);
+        expect(lines[0][1]).toEqual({ operations: [op.id] });
+        expect(mintLines(env)).toEqual([]);
+        // the index asked for burns of the token only in the runs that came this far: once each
+        expect(burnsAsked).toEqual([[assetName], [assetName], [assetName]]);
+
+        hidden = null;
+        expect(await run(env)).toEqual({ ...NOTHING, included: 1, final: 1 });
+        expect(await ops.byId(env.pool, op.id)).toMatchObject({ state: 'final' });
+        expect(burnLines(env)).toHaveLength(1);
+        expect(env.log.info.mock.calls.filter(call => /the index has every burn the provider sees again/.test(call[0]))).toHaveLength(1);
+    });
+
+    test('the token gone and the index has our burn, but not yet as its transaction: no expiry and no error line that run; the next run includes it', async () => {
+        const { env, ann } = await setup();
+        env.ann = ann;
+        let hidden = null;
+        const transaction = env.chain.index.transaction;
+        jest.spyOn(env.chain.index, 'transaction').mockImplementation(async hash => (hash === hidden ? null : transaction(hash)));
+        const { op } = await signedBurn(env, burn => {
+            hidden = burn.operation.txHash;
+        });
+        await upToTheExpiry(env, op);
+        expect(await blockAndRun(env)).toEqual(NOTHING);
+        expect(await ops.byId(env.pool, op.id)).toMatchObject({ state: 'submitted', error: null });
+        expect(burnLines(env)).toEqual([]);
+        hidden = null;
+        expect(await run(env)).toEqual({ ...NOTHING, included: 1, final: 1 });
+    });
+
+    /** Ann's burn signed and held back, then dropped; the holder burns the token alone (outside the game) when `outsideBurn()` is called. */
+    const burnedElsewhere = async env => {
+        const signed = await signedBurn(env, () => env.double.holdMempool(true));
+        const outsideBurn = () => {
+            env.double.dropMempool();
+            env.double.holdMempool(false);
+            return env.double.burnToken({ assetName: signed.assetName });
+        };
+        return { ...signed, outsideBurn };
+    };
+
+    test('the token burned outside the game in another transaction, K_FINAL deep when our expiry is due: ours ends expired (burned-elsewhere), the view says so', async () => {
+        const { env, ann } = await setup();
+        env.ann = ann;
+        const { op, itemId, outsideBurn } = await burnedElsewhere(env);
+        const outside = outsideBurn();
+        // our burn can never land now: resubmits are refused, the ttl passes, K_FINAL blocks later the expiry is due
+        await upToTheExpiry(env, op);
+        const burnsAsked = stepBurnsOf(env);
+        expect(await blockAndRun(env)).toEqual({ ...NOTHING, expired: 1 });
+        expect(burnsAsked).toEqual([[op.asset_name]]);
+        const [burn] = await env.chain.index.burnsOf([op.asset_name]);
+        expect(burn.txHash).toBe(outside);
+        expect(env.double.tip().blockNo - burn.block).toBeGreaterThanOrEqual(K_FINAL);
+        const ended = await ops.byId(env.pool, op.id);
+        expect(ended).toMatchObject({ state: 'expired', error: 'burned-elsewhere' });
+        expect(ops.view(ended, { item: 'DARK_WALLS', serial: 1 }, env.now())).toMatchObject({ state: 'expired', error: 'burned-elsewhere' });
+        expect(burnLines(env)).toEqual([]);
+        // Ann is free for her next operation
+        expect(await ops.openOf(env.pool, ann.playerId)).toBeNull();
+        expect(itemId).toBeDefined();
+    });
+
+    test('the token burned outside the game, but that burn not yet K_FINAL deep when our expiry is due: no decision until it is, then expired (burned-elsewhere)', async () => {
+        const { env, ann } = await setup();
+        env.ann = ann;
+        const { op, outsideBurn } = await burnedElsewhere(env);
+        await runPastTtl(env, op.ttl_slot);
+        for (let i = 1; i < K_FINAL; i++) {
+            // the outside burn lands three blocks before our expiry is due
+            if (i === K_FINAL - 3) {
+                outsideBurn();
+            }
+            expect(await blockAndRun(env)).toEqual(NOTHING);
+        }
+        // due now: the other burn is 3 blocks deep, then 4, …: undecided until it is K_FINAL deep
+        let runs = 0;
+        for (;;) {
+            const result = await blockAndRun(env);
+            runs += 1;
+            const [burn] = await env.chain.index.burnsOf([op.asset_name]);
+            if (env.double.tip().blockNo - burn.block < K_FINAL) {
+                expect(result).toEqual(NOTHING);
+                expect(await ops.byId(env.pool, op.id)).toMatchObject({ state: 'submitted' });
+                continue;
+            }
+            expect(result).toEqual({ ...NOTHING, expired: 1 });
+            break;
+        }
+        // the first due run sees it 3 deep, the K_FINAL - 3rd after that K_FINAL deep
+        expect(runs).toBe(K_FINAL - 2);
+        expect(await ops.byId(env.pool, op.id)).toMatchObject({ state: 'expired', error: 'burned-elsewhere' });
+        expect(burnLines(env)).toEqual([]);
+    });
+
+    test('the provider cannot answer when the expiry is due: no expiry and no failure that run; it answers the token held: expired', async () => {
+        const { env, ann } = await setup();
+        env.ann = ann;
+        const { op } = await signedBurn(env, () => env.double.holdMempool(true));
+        await upToTheExpiry(env, op);
+        const byUnit = jest.spyOn(env.chain.provider, 'utxoByUnit');
+        env.double.fail({ provider: 'unavailable' });
+        expect(await blockAndRun(env)).toEqual(NOTHING);
+        expect(await run(env)).toEqual(NOTHING);
+        expect(byUnit).toHaveBeenCalledTimes(2);
+        expect(await ops.byId(env.pool, op.id)).toMatchObject({ state: 'submitted' });
+        expect(env.log.error.mock.calls.filter(call => /operations/.test(call[0]))).toEqual([]);
+        env.double.fail({});
+        expect(await run(env)).toEqual({ ...NOTHING, expired: 1 });
+        expect(await ops.byId(env.pool, op.id)).toMatchObject({ state: 'expired', error: 'expired' });
+        expect(burnLines(env)).toEqual([]);
+    });
+});
+
 describe('rollbacks', () => {
     test('the block rolled back: submitted again before the sync looks, the item plain and Ann\'s; landed again with the next block: included and minted again', async () => {
         const { env, ann } = await setup();
@@ -766,14 +959,15 @@ describe('what a failure says (lastingLog.js reasonOf, the routes\' and the watc
 });
 
 describe('in the server', () => {
-    test('startWatcher runs the operations step before the ownership step', async () => {
+    test('startWatcher runs the operations step, then the ownership sync, then the credit', async () => {
         const env = await createChainApp();
         const runtime = { chain: env.chain, watcher: null };
         const log = { info: jest.fn(), warn: jest.fn(), error: jest.fn(), log: jest.fn() };
-        const stop = startWatcher({ chain: env.chain, pool: env.pool, intervalMs: 20000, runtime, log });
+        const recipes = createRecipeBook(JSON.parse(fs.readFileSync(SAMPLE, 'utf8')).recipes);
+        const stop = startWatcher({ chain: env.chain, pool: env.pool, intervalMs: 20000, runtime, recipes, log });
         try {
             const report = await runtime.watcher.runOnce();
-            expect(Object.keys(report.steps)).toEqual(['operations', 'ownership']);
+            expect(Object.keys(report.steps)).toEqual(['operations', 'ownership', 'credit']);
             expect(report.steps.operations).toEqual(NOTHING);
         } finally {
             stop();

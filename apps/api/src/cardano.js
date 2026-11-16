@@ -17,10 +17,10 @@ const HEX = /^(?:[0-9a-f]{2})+$/i;
 // the CIP-30 name of a wallet (window.cardano.<name>), as the game sends it
 const WALLET_NAME = /^[a-z0-9]{1,24}$/;
 
-// The first line of the text a wallet signs to vouch for its addresses for a mint (shared
-// cardano.addressProofMessage): unlike every challenge's, and refused by the sign-in's verifier,
-// so a signature for the one is never taken for the other.
-const { ADDRESS_PROOF_HEADLINE } = cardano;
+// The first lines of the texts a wallet signs to vouch for its addresses for a mint and for a burn
+// (shared cardano.addressProofMessage): unlike every challenge's, and refused by the sign-in's
+// verifier, so a signature for the one is never taken for the other.
+const { ADDRESS_PROOF_HEADLINE, ADDRESS_PROOF_HEADLINES } = cardano;
 
 const invalidRequest = () => new HttpError(400, ErrorCode.INVALID_REQUEST_PARAMETERS);
 const invalidSignature = () => new HttpError(400, ErrorCode.INVALID_SIGNATURE);
@@ -126,11 +126,11 @@ const signedAddressOf = signature => {
 };
 
 /**
- * verifySignedData for the sign-in and the link (a challenge's text): a text that begins with the
- * address proof's first line is INVALID SIGNATURE, however it is signed.
+ * verifySignedData for the sign-in and the link (a challenge's text): a text that begins with an
+ * address proof's first line (a mint's or a burn's) is INVALID SIGNATURE, however it is signed.
  */
 const verifySignature = ({ message, ...signed }) => {
-    if (typeof message !== 'string' || message.split('\n')[0] === ADDRESS_PROOF_HEADLINE) {
+    if (typeof message !== 'string' || ADDRESS_PROOF_HEADLINES.includes(message.split('\n')[0])) {
         throw invalidSignature();
     }
     return verifySignedData({ ...signed, message });

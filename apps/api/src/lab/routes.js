@@ -149,12 +149,14 @@ const registerLabRoutes = (app, { pool, user, recipes, oneAtATime, triesPerHour 
         }
         res.json(await oneAtATime(req.playerId, () => withTransaction(pool, async client => {
             const player = await players.findPlayer(client, req.playerId);
-            const items = await players.itemsOf(client, req.playerId);
+            // a burning item (plan E) is not usable: it cannot be equipped (NOT YOUR ITEM), and in a
+            // slot it counts for nothing, as an item the player does not have
+            const items = (await players.itemsOf(client, req.playerId)).filter(players.isUsable);
             const equipment = JSON.parse(JSON.stringify(players.equipmentOf(player)));
             // points of all equipped items (stored equipment may be over the budget after a balance
             // change); a slot may hold an item the player does not have now (a minted item whose
-            // token is in no wallet of theirs: plan C keeps its slot), which counts for nothing, as
-            // in loadoutOf
+            // token is in no wallet of theirs: plan C keeps its slot; a burning one), which counts
+            // for nothing, as in loadoutOf
             const pointsOf = stored => Object.values(stored).flat()
                 .map(id => items.find(entry => entry.id === id))
                 .filter(entry => entry !== undefined && Items[entry.item])

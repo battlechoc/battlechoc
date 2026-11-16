@@ -574,7 +574,8 @@ describe('the wallet unlinked between the mint and the signature (ruling D22)', 
         const addServerWitness = jest.spyOn(tx, 'addServerWitness');
         const response = await request(env.app).post(`/chain/sign/${minted.signCode}`).send({ witness: walletWitness(minted.tx, [ann.keys[0].paymentKey]) });
         expect([response.status, response.body]).toEqual([404, UNKNOWN]);
-        expect(await row()).toMatchObject({ state: 'cancelled', error: 'cancelled', signed_cbor: null });
+        // an error of its own: a tab that follows the operation does not read it as the player's cancel
+        expect(await row()).toMatchObject({ state: 'cancelled', error: 'wallet-unlinked', signed_cbor: null });
         expect(addServerWitness).not.toHaveBeenCalled();
         expect(env.double.mempool()).toEqual([]);
         expect((await request(env.app).get(`/chain/sign/${minted.signCode}`).expect(404)).body).toEqual(UNKNOWN);
@@ -585,7 +586,7 @@ describe('the wallet unlinked between the mint and the signature (ruling D22)', 
         const utxosOf = jest.spyOn(env.chain.provider, 'utxosOf');
         const response = await request(env.app).post(`/chain/sign/${minted.signCode}/addresses`).send({ addresses: [ann.keys[0].baseAddressHex] });
         expect([response.status, response.body]).toEqual([404, UNKNOWN]);
-        expect(await row()).toMatchObject({ state: 'cancelled', error: 'cancelled' });
+        expect(await row()).toMatchObject({ state: 'cancelled', error: 'wallet-unlinked' });
         expect(utxosOf).not.toHaveBeenCalled();
     });
 
@@ -595,6 +596,46 @@ describe('the wallet unlinked between the mint and the signature (ruling D22)', 
         await env.link(ben, ann.keys[0]);
         const response = await request(env.app).post(`/chain/sign/${minted.signCode}`).send({ witness: walletWitness(minted.tx, [ann.keys[0].paymentKey]) });
         expect([response.status, response.body]).toEqual([404, UNKNOWN]);
-        expect((await row()).state).toBe('cancelled');
+        expect(await row()).toMatchObject({ state: 'cancelled', error: 'wallet-unlinked' });
+    });
+});
+
+describe('the carry list of plan D (plan E, Task 1)', () => {
+    test('signAndSubmit signs the kinds it names (a mint, a burn) and refuses any other: 404, logged, nothing signed or submitted', async () => {
+        const { env, minted, show, sign, annSigns, row } = await setup();
+        // a row of a kind the server does not sign (the table allows none: read back as one)
+        const byCode = ops.byCode;
+        jest.spyOn(ops, 'byCode').mockImplementation(async (...args) => {
+            const found = await byCode(...args);
+            return found && { ...found, kind: 'swap' };
+        });
+        const addServerWitness = jest.spyOn(tx, 'addServerWitness');
+        expect(errorOf(await sign(annSigns()))).toEqual([404, 'UNKNOWN SIGN CODE']);
+        expect(env.chainLog.error).toHaveBeenLastCalledWith('chain: a sign code names an operation of a kind the server does not sign', { operation: minted.operation.id, kind: 'swap' });
+        expect(addServerWitness).not.toHaveBeenCalled();
+        expect(env.double.mempool()).toEqual([]);
+        expect((await row()).state).toBe('prepared');
+        jest.restoreAllMocks();
+        // a burn's row (a mint's, relabelled by hand) passes the guard and reaches the burn's own
+        // check: its token is nowhere on the chain (the mint never landed), so nothing is signed.
+        // A real burn signed end to end: chainBurn.test.js
+        await env.pool.query("UPDATE chain_ops SET kind = 'burn' WHERE id = $1", [minted.operation.id]);
+        expect((await show().expect(200)).body.kind).toBe('burn');
+        const coSign = jest.spyOn(tx, 'addServerWitness');
+        expect(errorOf(await sign(annSigns()))).toEqual([409, 'ITEM LEFT WALLET']);
+        expect(coSign).not.toHaveBeenCalled();
+        expect(env.double.mempool()).toEqual([]);
+        expect(await row()).toMatchObject({ state: 'cancelled', error: 'token-moved' });
+    });
+
+    test('an operation whose item is gone between the two reads (a salvage in between) is 404 UNKNOWN SIGN CODE, not a 500', async () => {
+        const { env, show, sign, annSigns } = await setup();
+        const query = env.pool.query.bind(env.pool);
+        jest.spyOn(env.pool, 'query').mockImplementation((sql, ...rest) =>
+            typeof sql === 'string' && sql.startsWith('SELECT item_key, serial FROM items') ? Promise.resolve({ rows: [] }) : query(sql, ...rest)
+        );
+        expect((await show().expect(404)).body).toEqual(UNKNOWN);
+        expect(errorOf(await sign(annSigns()))).toEqual([404, 'UNKNOWN SIGN CODE']);
+        expect(env.double.mempool()).toEqual([]);
     });
 });

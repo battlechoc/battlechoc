@@ -6,6 +6,13 @@
 // the player does not have), so the item is back in its slot when it returns. Derived on every
 // run, a rollback corrects itself on the next one.
 //
+// A token that no output holds because it was burned (plan E) is BURNING, not away: the index lists
+// a burn of it (burnsOf, at any depth), or an open burn operation of the item is submitted or
+// included. Its item keeps its player and holder, no notice is written, and items.burn_tx notes the
+// burn (the index's, else the operation's transaction). Nothing of that is final: the credit step
+// (credit.js) closes the item once the burn is K_FINAL deep; until then a rollback or an expiry
+// leaves neither, burn_tx goes back to null and the rules above apply again.
+//
 // It acts only on a fresh index, and only where the index accounts for the item: it knows the
 // token's mint (a fresh index that was started with another policy, or from a slot after the mint,
 // holds no output of that token), exactly one unspent output holds the token, or none does and the
@@ -27,7 +34,8 @@ const BATCH = 500;
  * payment key (`holder.pay`), null without a holder or for a script address: with holderSubject it
  * says which of a player's keys makes them the owner (the identities' item counts).
  * - `holder` (the index's row of the unspent output holding the token: { stake, pay, blockNo }) absent:
- *   burned → nobody, and no holder (the sync asks only when the index knows the burn);
+ *   burned → nobody, and no holder (the sync asks only when the index knows a burn and the item is
+ *   not burning: no burn listed, no open burn operation);
  * - the holder is `holder.stake`, else `holder.pay` (both null for a script address: nobody);
  * - the candidate is the player `players` (Map subject → { playerId, waitUntil }, linkedPlayers)
  *   links to the stake key, else to the payment key; nobody while that link's hop wait runs
@@ -57,12 +65,12 @@ const decideOwner = ({ current, holder, tipBlockNo, players, now }) => {
  */
 const candidates = async (pool, after, limit = BATCH) => {
     const { rows } = await pool.query(
-        `SELECT id, player_id, asset_name, holder_subject, holder_pay, holder_since FROM items
+        `SELECT id, player_id, asset_name, holder_subject, holder_pay, holder_since, burn_tx FROM items
          WHERE minted_at IS NOT NULL AND burned_at IS NULL AND asset_name > $1 ORDER BY asset_name LIMIT $2`, [after === null ? '' : after, limit]);
     return rows;
 };
 
-// the players of `subjects`, in calls of at most MAX_SUBJECTS
+/** The players of `subjects` (linkedPlayers' Map subject → { playerId, waitUntil }), in calls of at most MAX_SUBJECTS. */
 const playersOf = async (pool, subjects, now) => {
     const all = [...new Set(subjects)];
     const players = new Map();
@@ -71,6 +79,45 @@ const playersOf = async (pool, subjects, now) => {
     }
     return players;
 };
+
+/**
+ * The burns that hold the items of `rows` whose token no output holds (`held`: asset name → the
+ * outputs holding it): { burning: Map item id → the burn's transaction hash, listed: Set of the
+ * asset names burnsOf lists a burn of }. The index's burn first (the lowest block; burnsOf answers
+ * by block), else an open burn operation of the item that is submitted or included (its
+ * transaction may be one the index lists no row of).
+ */
+const burnsHolding = async (pool, chain, rows, held) => {
+    const absent = rows.filter(row => held.get(row.asset_name).length === 0);
+    const burning = new Map();
+    if (absent.length === 0) {
+        return { burning, listed: new Set() };
+    }
+    const listed = new Map();
+    (await chain.index.burnsOf(absent.map(row => row.asset_name))).forEach(burn => {
+        if (!listed.has(burn.assetName)) {
+            listed.set(burn.assetName, burn.txHash);
+        }
+    });
+    const ids = absent.map(row => row.id);
+    const { rows: open } = await pool.query(
+        `SELECT item_id, tx_hash FROM chain_ops WHERE kind = 'burn' AND state IN ('submitted', 'included') AND item_id IN (${ids.map((id, i) => `$${i + 1}`).join(', ')})`, ids);
+    const operations = new Map(open.map(op => [op.item_id, op.tx_hash]));
+    absent.forEach(row => {
+        const txHash = listed.get(row.asset_name) ?? operations.get(row.id) ?? null;
+        if (txHash !== null) {
+            burning.set(row.id, txHash);
+        }
+    });
+    return { burning, listed: new Set(listed.keys()) };
+};
+
+/**
+ * Notes `burnTx` as the burn that holds `row`'s item (guarded: an item the credit closed meanwhile
+ * is left alone). Whether it changed the row. Player, holder and notices stay as they are.
+ */
+const noteBurning = async (pool, { row, burnTx }) =>
+    (await pool.query('UPDATE items SET burn_tx = $2 WHERE id = $1 AND asset_name = $3 AND burned_at IS NULL RETURNING id', [row.id, burnTx, row.asset_name])).rows.length > 0;
 
 // `column` is `value` (IS NULL for null; pg-mem knows no IS NOT DISTINCT FROM): the condition, `params` extended
 const sameAs = (column, value, params) => {
@@ -90,7 +137,7 @@ const sameAs = (column, value, params) => {
  * holder_since starts again; a move between one player's own keys writes no notice (from === to).
  * holder_pay is not part of the guard: only this sync writes it, always together with
  * holder_subject and from the same holder, so a concurrent write of it is the same value or one the
- * next run corrects.
+ * next run corrects. It clears burn_tx: an item judged by these rules is burning no more.
  */
 const move = (pool, { row, decided, now }) =>
     withTransaction(pool, async client => {
@@ -99,7 +146,7 @@ const move = (pool, { row, decided, now }) =>
         const params = [row.id, decided.playerId, decided.holderSubject, since, row.asset_name, decided.holderPay];
         const guards = [sameAs('player_id', row.player_id, params), sameAs('holder_subject', row.holder_subject, params)];
         const { rows } = await client.query(
-            `UPDATE items SET player_id = $2, holder_subject = $3, holder_since = $4, holder_pay = $6
+            `UPDATE items SET player_id = $2, holder_subject = $3, holder_since = $4, holder_pay = $6, burn_tx = NULL
              WHERE id = $1 AND asset_name = $5 AND minted_at IS NOT NULL AND burned_at IS NULL AND ${guards.join(' AND ')}
              RETURNING id`,
             params
@@ -127,7 +174,7 @@ const accountedFor = (name, events, held) => events.minted.has(name) && (held.le
 
 /**
  * The watcher step: { checked, changed, unknown, failed, skipped }. `checked`: the minted, unburned
- * items it looked at; `changed`: those it moved (or whose holder it updated); `unknown`: those it
+ * items it looked at; `changed`: those it moved (or whose holder or burn_tx it updated); `unknown`: those it
  * left alone because the index does not account for them (accountedFor); `failed`: those whose
  * transaction failed (logged, the others go on); `skipped`: 'index-stale' when the index is not
  * fresh (nothing is read or written then), else null. A failure of the index itself
@@ -142,6 +189,9 @@ const syncOwnership = async ({ pool, chain, now, tip, fresh, log = console, memo
     }
     const at = now();
     let firstFailure = null;
+    // tokens the index knows a burn of (eventsAmong) but lists no row of (burnsOf): the output the
+    // burn spent is not in the index, so the credit can never happen
+    const unlisted = [];
     let after = null;
     for (;;) {
         const rows = await candidates(pool, after, batchSize);
@@ -155,11 +205,28 @@ const syncOwnership = async ({ pool, chain, now, tip, fresh, log = console, memo
         (await chain.index.holdersOf(names)).forEach(holder => holders.get(holder.assetName)?.push(holder));
         const subjects = [...holders.values()].flat().flatMap(holder => [holder.stake, holder.pay]).filter(subject => subject !== null);
         const players = await playersOf(pool, subjects, at);
+        const { burning, listed } = await burnsHolding(pool, chain, rows, holders);
+        rows.filter(row => holders.get(row.asset_name).length === 0 && events.burned.has(row.asset_name) && !listed.has(row.asset_name)).forEach(row => unlisted.push(row.asset_name));
         for (const row of rows) {
             result.checked += 1;
             const held = holders.get(row.asset_name);
             if (!accountedFor(row.asset_name, events, held)) {
                 result.unknown += 1;
+                continue;
+            }
+            const burnTx = burning.get(row.id) ?? null;
+            if (burnTx !== null) {
+                if (burnTx === row.burn_tx) {
+                    continue;
+                }
+                try {
+                    if (await noteBurning(pool, { row, burnTx })) {
+                        result.changed += 1;
+                    }
+                } catch (error) {
+                    result.failed += 1;
+                    firstFailure = firstFailure || error;
+                }
                 continue;
             }
             const decided = decideOwner({
@@ -169,7 +236,7 @@ const syncOwnership = async ({ pool, chain, now, tip, fresh, log = console, memo
                 players,
                 now: at,
             });
-            if (decided.playerId === row.player_id && decided.holderSubject === row.holder_subject && decided.holderPay === row.holder_pay) {
+            if (decided.playerId === row.player_id && decided.holderSubject === row.holder_subject && decided.holderPay === row.holder_pay && row.burn_tx === null) {
                 continue;
             }
             try {
@@ -189,6 +256,16 @@ const syncOwnership = async ({ pool, chain, now, tip, fresh, log = console, memo
         log.info(`watcher: ownership: ${result.changed} of ${result.checked} minted items changed holder`);
     }
     const lasting = lastingLog(memory);
+    if (unlisted.length > 0) {
+        lasting.report('unlisted', unlisted.join(' '), () =>
+            log.warn(
+                "watcher: ownership: the chain index knows burns of tokens but not the outputs they spent, so they cannot be credited: check the index's filters and that it synced from before the tokens' last outputs",
+                { assetNames: unlisted }
+            )
+        );
+    } else {
+        lasting.clear('unlisted', () => log.info('watcher: ownership: the chain index lists the spent output of every burn it knows again'));
+    }
     if (result.unknown > 0) {
         lasting.report('unknown', String(result.unknown), () =>
             log.warn(
@@ -210,4 +287,4 @@ const syncOwnership = async ({ pool, chain, now, tip, fresh, log = console, memo
 
 const ownershipStep = Object.freeze({ name: 'ownership', run: syncOwnership });
 
-module.exports = { BATCH, candidates, decideOwner, ownershipStep, syncOwnership };
+module.exports = { BATCH, candidates, decideOwner, ownershipStep, playersOf, syncOwnership };

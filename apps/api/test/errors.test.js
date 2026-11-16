@@ -196,6 +196,9 @@ describe('errors', () => {
             INVALID_WITNESS: ['INVALID WITNESS', 400],
             OPERATION_NOT_OPEN: ['OPERATION NOT OPEN', 409],
             ADDRESSES_NEEDED: ['ADDRESSES NEEDED', 409],
+            NOT_MINTED: ['NOT MINTED', 409],
+            ITEM_LEFT_WALLET: ['ITEM LEFT WALLET', 409],
+            ITEM_MOVED: ['ITEM MOVED', 409],
         };
         expect(Object.isFrozen(CHAIN_STATUS)).toBe(true);
         expect(CHAIN_STATUS).toEqual(Object.fromEntries(Object.values(codes)));
@@ -215,6 +218,7 @@ describe('errors', () => {
         // CHAIN OFF of a server without chain features, for every method and path under /chain/
         const { app: off } = await createTestApp();
         await answers(request(off).post('/chain/mint'), 404, 'CHAIN OFF');
+        await answers(request(off).post('/chain/burn'), 404, 'CHAIN OFF');
         await answers(request(off).delete('/chain/operations/x'), 404, 'CHAIN OFF');
     });
 
