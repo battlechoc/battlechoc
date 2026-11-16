@@ -3,6 +3,7 @@ import {
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
+import { BUILDING_ICON, iconUrl } from "../../catalog.js";
 
 // stats where a smaller value is better for the player who owns the item
 const LOWER_IS_BETTER = new Set([
@@ -29,6 +30,19 @@ export const MINT = { gold: "#FAD25A", dark: "#8A5A00", ink: "#3A2500" };
 
 // the drop shadow under every item icon
 export const ICON_SHADOW = "0 0.1em 0.25em rgba(0, 0, 0, 0.35)";
+
+/**
+ * The plain item icon (ItemIcon.jsx), also drawn by scripts/item-pictures.mjs for the item
+ * tokens and by the item and sign pages (src/itempage, src/sign): the face in the tier's fill, the tier ring inside its edge, the building's picture in
+ * the middle and the badge across the lower right edge, as shares of the icon.
+ */
+export const ICON_LOOK = {
+  face: (tier) =>
+    `radial-gradient(circle at 35% 30%, #ffffff 0%, ${tier.fill} 70%)`,
+  ring: (tier) => `inset 0 0 0 0.18em ${tier.ring}`,
+  picture: { inset: "12%", width: "76%", height: "76%" },
+  badge: { right: "-6%", bottom: "-6%", width: "42%", height: "42%" },
+};
 
 // a share of an icon's diameter `size` (a CSS length), never thinner than `least`
 const share = (size, part, least = "1px") =>
@@ -152,11 +166,31 @@ export const badgeOf = (itemKey) => BADGES[Items[itemKey].effects[0].stat];
 
 export const itemName = (itemKey) => t(tr[`ITEM_${itemKey}`]);
 
+/**
+ * What an item's icon is drawn from, as ItemIcon.jsx draws it: the face in its tier's fill
+ * (`face`), its tier's colours (`tier`: the ring, the fill), its building's picture and its badge.
+ * Only from the fixed tables, for an item key of Items.
+ */
+export const iconPartsOf = (itemKey) => {
+  const definition = Items[itemKey];
+  const tier = TIER_COLORS[definition.tier];
+  return {
+    face: ICON_LOOK.face(tier),
+    tier,
+    building: iconUrl(BUILDING_ICON[definition.entityType]),
+    badge: badgeOf(itemKey),
+  };
+};
+
 const sign = (value) => (value > 0 ? "+" : "−");
 
-/** One line per effect: its text and whether it helps the player (green) or is the price (red). */
-export const effectLines = (itemKey) =>
-  Items[itemKey].effects.map((effect) => {
+/**
+ * One line per effect: its text and whether it helps the player (green) or is the price (red).
+ * `effects` are the item's own by default; the public item page passes the ones the API answered
+ * (today's balance on the server, which a cached page's bundle may not have yet).
+ */
+export const effectLines = (itemKey, effects = Items[itemKey].effects) =>
+  effects.map((effect) => {
     const name = t(tr[`STAT_${effect.stat}`]);
     let change;
     let text;

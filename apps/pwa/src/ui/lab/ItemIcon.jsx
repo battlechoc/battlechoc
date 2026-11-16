@@ -7,6 +7,7 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 import { features } from "../../cardano/appFeatures";
 import {
+  ICON_LOOK,
   ICON_SHADOW,
   ITEM_ICON_SHEET,
   STAMP,
@@ -53,7 +54,7 @@ const ItemIcon = ({
   const name = itemName(item);
   const label = stamped ? t(tr.ITEM_MINTED_LABEL, name, serial) : name;
   // the stamp's ring (which carries the drop shadow) and the dashed rim replace the tier ring
-  let shadow = `inset 0 0 0 0.18em ${tier.ring}, ${ICON_SHADOW}`;
+  let shadow = `${ICON_LOOK.ring(tier)}, ${ICON_SHADOW}`;
   if (stamped) {
     shadow = "none";
   } else if (away) {
@@ -71,9 +72,7 @@ const ItemIcon = ({
         height: size,
         flexShrink: 0,
         borderRadius: "50%",
-        background: away
-          ? STAMP.away.face
-          : `radial-gradient(circle at 35% 30%, #ffffff 0%, ${tier.fill} 70%)`,
+        background: away ? STAMP.away.face : ICON_LOOK.face(tier),
         boxShadow: shadow,
       }}
     >
@@ -83,9 +82,7 @@ const ItemIcon = ({
         draggable={false}
         style={{
           position: "absolute",
-          inset: "12%",
-          width: "76%",
-          height: "76%",
+          ...ICON_LOOK.picture,
           filter: away ? STAMP.away.picture : undefined,
         }}
       />
@@ -115,10 +112,7 @@ const ItemIcon = ({
           draggable={false}
           style={{
             position: "absolute",
-            right: "-6%",
-            bottom: "-6%",
-            width: "42%",
-            height: "42%",
+            ...ICON_LOOK.badge,
           }}
         />
       )}

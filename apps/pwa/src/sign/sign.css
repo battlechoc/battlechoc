@@ -23,28 +23,13 @@ body {
   color: #fad25a;
 }
 
-/* the item: its building on its tier's colours, its badge at the lower right */
+/* the item: its size and shape; its look is the game's (main.js, ICON_LOOK) */
 .sign .item {
   position: relative;
   width: 96px;
   height: 96px;
   border-radius: 50%;
   box-shadow: 0 0.1em 0.25em rgba(0, 0, 0, 0.35);
-}
-
-.sign .item img.picture {
-  position: absolute;
-  inset: 12%;
-  width: 76%;
-  height: 76%;
-}
-
-.sign .item img.badge {
-  position: absolute;
-  right: -6%;
-  bottom: -6%;
-  width: 42%;
-  height: 42%;
 }
 
 .sign .name {

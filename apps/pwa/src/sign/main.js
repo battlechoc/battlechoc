@@ -29,8 +29,12 @@ import { createSignApi } from "../api/chainClient.js";
 import { walletApiOf } from "../cardano/wallet.js";
 import { signPrepared } from "../cardano/signTx.js";
 import { networkLabel, walletLabel } from "../ui/account/safetyState.js";
-import { BUILDING_ICON, iconUrl } from "../catalog.js";
-import { badgeOf, itemName, TIER_COLORS } from "../ui/lab/itemText.js";
+import {
+  ICON_LOOK,
+  ICON_SHADOW,
+  iconPartsOf,
+  itemName,
+} from "../ui/lab/itemText.js";
 import { adaText, burnChange, walletChange } from "../ui/mint/ada.js";
 import { salvageKey } from "../ui/mint/salvageTexts.js";
 import { detailOf } from "../link/diagnosis.js";
@@ -110,23 +114,29 @@ const header = (info) => {
   ];
 };
 
-// the item (sign info's { item, serial }): its picture on its tier's colours, its name
+// a picture of the item's icon, placed in it (ICON_LOOK's shares)
+const picture = (src, className, place) => {
+  const image = element("img", null, className);
+  Object.assign(image.style, { position: "absolute" }, place);
+  image.src = src;
+  image.alt = "";
+  return image;
+};
+
+// the item (sign info's { item, serial }): its icon as the game draws it (iconPartsOf, ICON_LOOK:
+// its building on its tier's colours, its badge at the lower right), its name
 const itemNodes = (item) => {
-  const definition = item && Items[item.item];
-  if (!definition) {
+  if (!item || !Items[item.item]) {
     return [];
   }
-  const tier = TIER_COLORS[definition.tier];
+  const parts = iconPartsOf(item.item);
   const icon = element("div", null, "item");
-  icon.style.background = `radial-gradient(circle at 35% 30%, #ffffff 0%, ${tier.fill} 70%)`;
-  icon.style.boxShadow = `inset 0 0 0 0.18em ${tier.ring}, 0 0.1em 0.25em rgba(0, 0, 0, 0.35)`;
-  const picture = element("img", null, "picture");
-  picture.src = iconUrl(BUILDING_ICON[definition.entityType]);
-  picture.alt = "";
-  const badge = element("img", null, "badge");
-  badge.src = badgeOf(item.item);
-  badge.alt = "";
-  icon.append(picture, badge);
+  icon.style.background = parts.face;
+  icon.style.boxShadow = `${ICON_LOOK.ring(parts.tier)}, ${ICON_SHADOW}`;
+  icon.append(
+    picture(parts.building, "picture", ICON_LOOK.picture),
+    picture(parts.badge, "badge", ICON_LOOK.badge)
+  );
   return [
     icon,
     element(
