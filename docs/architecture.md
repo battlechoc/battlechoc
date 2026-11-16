@@ -142,8 +142,8 @@ token. The server learns that from the chain through four parts, each built on t
 - **The watcher** (`apps/api/src/chain/watcher.js`) is an interval job, like the cleanup: every
   `CHAIN_WATCH_INTERVAL_MS` (20 seconds by default) it reads the index's tip, decides whether the
   index is fresh and runs its steps in order: the operations step of minting (see
-  [Minting](#minting)), then the ownership sync; burning's step will run before the sync too. Runs
-  never overlap, and a failing step is
+  [Minting](#minting)), then the ownership sync, then the credit of burned items (see
+  [Salvaging a minted item](#salvaging-a-minted-item)). Runs never overlap, and a failing step is
   logged without stopping the others. It logs what changes and when the index stops or starts
   being fresh, never an idle run; a failure that lasts is logged when it starts, again when its
   message changes and once when it ends (`apps/api/src/chain/lastingLog.js`).
@@ -154,8 +154,13 @@ token. The server learns that from the chain through four parts, each built on t
   items the player does not have), so the item is back in its slot when it returns. Since
   everything is derived again on each run, a rollback of the chain corrects itself on the next
   one. The sync judges only items the index accounts for: it knows the token's mint, and exactly
-  one unspent output holds the token, or none does and the index knows a burn of it (then nobody
-  has the item). An index started with another policy, or from a slot after an item's mint, holds
+  one unspent output holds the token, or none does and the index knows a burn of it. A token that
+  no output holds because it was burned is **burning**, not gone, when the index lists that burn
+  (at any depth) or an open burn operation of the item is submitted or included: the item keeps
+  its player and holder, no notice is written, and `items.burn_tx` notes the burn until the credit
+  closes the item or a rollback or an expiry undoes the burn (see
+  [Salvaging a minted item](#salvaging-a-minted-item)). Otherwise nobody has the item. An index
+  started with another policy, or from a slot after an item's mint, holds
   no output of that token; one that lacks an output (a filter that kept none, a half-written
   block) or a spend (two outputs of one token) would otherwise take the item from its player or
   give it to the wrong one. Such items are left as they are, with a warning.
@@ -225,7 +230,8 @@ the chain is the section above.
 
 ### The operation
 
-Each mint is one row of `chain_ops` (migration `014_chain_ops.js`), moved through its states by
+Each mint is one row of `chain_ops` (migration `014_chain_ops.js`), and so is each burn of the
+game (see [Salvaging a minted item](#salvaging-a-minted-item)), moved through its states by
 `apps/api/src/chain/ops.js` only:
 
 ```text
@@ -234,7 +240,7 @@ prepared ──signature──▶ submitted ──in a block──▶ included �
    │                       │    └─ past its ttl, not on the chain,
    │                       │      K_FINAL blocks later ──▶ expired ('expired' or 'rejected')
    │                       └──────── block rolled back ───┘
-   ├── cancel, or its wallet unlinked ──▶ cancelled
+   ├── cancel, its wallet unlinked, or (a burn) its token moved ──▶ cancelled
    └── sign window over ──▶ expired ('not-signed')
 ```
 
@@ -244,7 +250,7 @@ prepared ──signature──▶ submitted ──in a block──▶ included �
 | `submitted` | the wallet's signature checked, the server's added, sent to the network | `POST /chain/sign/:code`; the watcher, when the block it was in is rolled back |
 | `included` | in a block: the item is a minted item (its asset name, `minted_at` and holder are set) | the watcher |
 | `final` | its block is `CHAIN_K_FINAL` deep | the watcher |
-| `cancelled` | the player cancelled before signing, or the wallet was unlinked before signing | `DELETE /chain/operations/:id`; the sign routes |
+| `cancelled` | the player cancelled before signing (`cancelled`), the wallet was unlinked before signing (`wallet-unlinked`), or a burn's token left the UTxO it spends before the signature (`token-moved`) | `DELETE /chain/operations/:id`; the sign routes |
 | `expired` | not signed in time (`not-signed`), or signed and provably unable to land (`expired`; `rejected` when the network refused it and took no later submit) | any read of a lapsed prepared one; the watcher for a submitted one |
 
 Every move is one compare-and-set (`UPDATE … WHERE id = $1 AND state = <from> RETURNING *`): of
@@ -398,7 +404,8 @@ collateral gets 400 `NO COLLATERAL`, one with too many tokens for one transactio
 ### Limits
 
 From `apps/api/src/app.js` (`CHAIN_LIMITS`), per minute: 120 requests per address in front of the
-routes with a session, then 30 per player for all of them together, and 5 mints per player on top;
+routes with a session, then 30 per player for all of them together, and 5 mints and 5 burns per
+player on top;
 30 per address for the sign routes; 60 per address for `GET /chain/status`; 5 rebuilds per address
 and operation, so a stranger with the code cannot use up the player's. Per player: 3 mints per UTC
 day (`MINTS_PER_DAY`; a mint counts once submitted, unless it expired) and 10 verified online
@@ -450,6 +457,176 @@ fixture deployment sits on the chain double, a fresh server key is written for e
 fake wallet (`apps/pwa/test/helpers/wallet.js`) signs transactions and address proofs in the test
 process. Its test routes also credit verified matches (`/test/matches`), change the on-chain
 config and reset the chain between tests (`/test/chain/config`, `/test/chain/reset`).
+
+## Salvaging a minted item
+
+A minted item is salvaged by burning its token pair: the user token from the player's wallet and
+the reference token with the store that holds it at the items contract (the policy burns only
+whole pairs). The wallet gets the store's ADA back (`deposits.reference`) and keeps the ADA that
+travelled with the user token; the burn pays the network fee and no battlechoc fee. The
+ingredients come back in the game once the burn is final: rare and legendary ones in full, the
+others as for a plain item (half, rounded down), fresh, by the recipe table as it is at the credit
+(`salvageReturns(amounts, { minted: true })`, `packages/shared/salvage.js`). Plain salvage of a
+minted item stays 409 `ITEM MINTED`.
+
+The holder can also burn the pair alone, outside the game, with any wallet: the items contract
+lets the holder burn without the server. The server credits such a burn the same way, since the
+credit is keyed by the burn on the chain, never by an operation of the game.
+
+### The burn
+
+`POST /chain/burn { itemId, subject, addresses? }` (with a session; `addresses` as for a mint) →
+201 `{ operation, tx, signCode, costs, returns }`: the prepared operation of kind `burn`
+(`ops.view`), the unsigned transaction (plan B's `buildBurn`), the sign code, shown this once,
+`costs` with `gameFee: null` and `deposits: { reference, user }`, and `returns`, what comes back by
+today's recipe table. The checks run in this order, and the first that fails answers:
+
+1. the chain: 503 `CHAIN UNAVAILABLE` for a stale index, an unreadable config or a server key the
+   config does not list; a paused config does not stop a burn;
+2. the item: 400 `NOT YOUR ITEM` for an unknown item, one that is not the player's by the
+   ownership sync, or one burned already; 409 `ITEM BUSY` for any open operation of the item, a
+   mint or a burn; 409 `NOT MINTED` for an item whose mint is not in a block;
+3. its recipe: 400 `NO RECIPE`. The game prepares no burn that would give nothing back (a burn
+   outside the game is still credited, with nothing);
+4. the player: 409 `OPERATION RUNNING` while an operation of another item is open;
+5. the wallet that holds the token as the sync last saw it: linked to this player now (400
+   `NOT YOUR WALLET`), past its hop wait (409 `WALLET WAITING`), and the request's `subject`
+   (otherwise 400 `NOT YOUR WALLET` with `holder`, the player's wallet to use); `addresses` none of
+   which carries the subject's key: 400 `NOT YOUR WALLET`;
+6. the funds and the build: when the addresses hold no UTxO with the token, 409 `ITEM MOVED` if
+   the provider sees it at an address of the subject's key all the same (an address the wallet
+   did not name, or a base address of a `pay:` subject's payment key, which the game never builds
+   from), else 409 `ITEM LEFT WALLET` (the same check as at the rebuild, one provider call on this
+   failure path only); 400 `NOT ENOUGH ADA` (with `missing` and `needed`), `NO COLLATERAL`,
+   `WALLET TOO FULL`.
+
+The operation stores the holder as its `subject`, no fee option and no battlechoc fee (migration
+`015_salvage_credits.js` made `chain_ops.fee_option` nullable for this), `deposit` as both
+outputs' ADA and `deposit_user` as the user token's. **Where the burn's outputs go** (the row's
+`owner_address`, the sign info's `address`): the store's ADA, the token's own ADA and the change
+always go to the address of the UTxO that holds the user token, on every path (with or without
+`addresses`, before and after a rebuild), never to another address under the player's stake key.
+That address's payment key signs the burn anyway, since its UTxO is spent.
+
+### Signing a burn
+
+A burn is signed through the same sign routes as a mint, with the same three signatures in the
+same order: the game's burn names the server key as a required signer, and the server signs last.
+An operation no wallet vouched for answers 409 `ADDRESSES NEEDED`, as for a mint. One more check
+comes before the server's signature: the provider must still see the user token in the UTxO the
+burn spends. If it does not, the operation is cancelled with the error `token-moved` and nothing
+is signed; the answer is 409 `ITEM MOVED` when an address of the operation's subject holds the
+token now (the wallet moved it among its own UTxOs: prepare again), else 409 `ITEM LEFT WALLET`
+(another wallet holds it, or nobody). A provider that cannot say answers `CHAIN UNAVAILABLE` and
+leaves the operation prepared.
+
+The phone path works as for a mint, with a proof text of its own (`addressProofMessage` with
+`purpose: 'burn'` in `packages/shared/cardano/message.js`): its first line says it is "for
+salvaging an item (this is not a sign-in and not a minting)", and it carries
+`Action: burn-addresses`. The purpose is the operation's kind, never the request's;
+`readAddressProof` reads exactly one purpose's text, so a mint's proof never passes for a burn nor
+the other way round, and the sign-in refuses both. The rebuild builds the burn again from the
+proved addresses alone. A token none of them holds is `ITEM MOVED` when an address of the subject
+holds it (that address must be in the list), else `ITEM LEFT WALLET`; at the rebuild both leave the
+operation prepared. A burn's `GET /chain/sign/:code` adds `returns`. A wallet without a stake key
+(a `pay:` subject) is listed by the provider at its enterprise address only, so its token at a base
+address with the same payment key cannot be burned through the game until it is moved back: the
+prepare and the rebuild both answer `ITEM MOVED` for it.
+
+### The burn on the chain
+
+The operations step moves a burn as it moves a mint (included, final, rolled back, sent again),
+but writes no item row: the item's state is derived (below), and the credit is a step of its own
+(`markFinal` of a burn only ends the operation). The safe expiry is the mirror of a mint's:
+`CHAIN_K_FINAL` blocks past the ttl, a submitted burn expires (`expired`, or `rejected`) when the
+provider still sees the user token. When it does not, the index's burns of the token decide:
+another transaction's burn at least `CHAIN_K_FINAL` deep ends ours with the error
+`burned-elsewhere` (its input is spent for good, and the credit step credits the other burn); a
+less deep one, or ours, decides nothing this run; none at all means the index misses ours: the
+operation stays submitted, and the watcher logs once "the index does not have a burn the provider
+sees".
+
+The errors an ended operation carries (`chain_ops.error`, and `error` in `ops.view`): `cancelled`
+(the player), `wallet-unlinked` (the wallet was unlinked before the signature, mints too),
+`token-moved` (a burn whose token left the UTxO it spends, found at the signature), `not-signed`,
+`expired`, `rejected` and `burned-elsewhere`.
+
+### What the game sees while a burn runs
+
+`GET /user` marks the item (`stats.items[].minted`):
+
+- a burn prepared, nothing signed: `{ assetName, state: 'minted', operationId, signing: true, kind:
+  'burn' }`; the item stays usable and can be equipped;
+- a burn signed (submitted or included), or a burn of its token that the sync sees
+  (`items.burn_tx`, also one made outside the game): `{ assetName, state: 'burning', operationId }`,
+  with `operationId` null when no burn operation of the game is open;
+- the burn expired, cancelled, or rolled back with no operation open: `{ assetName, state:
+  'minted' }` again;
+- credited: the item is in no list any more.
+
+A burning item is out of the loadout (`players.isUsable`, `loadoutOf`): a match started from then
+on goes without it, and a running match keeps the loadout it started with. `POST /user/equipment`
+refuses it with `NOT YOUR ITEM`. Its slot keeps its id, so the item is back in its slot when the
+burn is undone, unless the player filled the slot meanwhile. A game burn that was included and
+then rolled back is submitted again, so its item stays burning until the burn lands again or
+expires. The game offers Salvage for a minted item only where minting shows, never in the
+Android app; there a minted item can still be equipped.
+
+### The credit
+
+The watcher's third step, `credit` (`apps/api/src/chain/credit.js`), runs after the ownership
+sync, on a fresh index only. It goes through the minted, unburned items page by page, asks the
+index for their burns (`burnsOf`, below) and takes each token's first burn. A burn is ready once
+it is `CHAIN_K_FINAL` deep (the tip's block number minus the burn's). For a ready burn:
+
+- **Who gets it.** The holder is the address of the output the burn spent. A script address holds
+  nothing; otherwise its stake key, else its payment key, decides by plan C's rule: the player
+  linked to that key **when the credit is made**, not when the burn was. A key linked to nobody
+  (never linked, or unlinked between the burn and the credit) closes the item for nobody. A key
+  whose hop wait for its player is not over makes the credit wait: nothing is written and the
+  provider is not asked; the credit goes to that player once the wait is over.
+- **The provider first.** The server never credits on its index alone: before every credit or
+  close it asks the provider for the user token (`utxoByUnit`). Nobody holds it: the credit. A
+  holder: no credit, and a lasting error line "the index shows burns of tokens the provider still
+  sees: no credit until it does not; check the index". No answer: nothing this run, and the run
+  asks no more.
+- **Exactly once**, in one transaction per item: the item's row is locked (`SELECT … FOR UPDATE`,
+  only while `burned_at` is null) and closed by a guarded update (`burned_at`, `burn_tx`,
+  `player_id` the player credited or null, the holder columns cleared); a row goes into
+  `salvage_credits`, whose primary key is the burn and the token, with a unique index on the token
+  (once, ever); the item leaves the slots, the ingredients go into the pantry as new batches, and
+  the notices are written. A second process waits for the lock and then finds the item closed. A
+  failure anywhere rolls all of it back; the next run tries again (a lasting error line while it
+  fails).
+- **The notices.** The player credited gets a `salvaged` notice (in `GET /user`:
+  `{ id, kind: 'salvaged', item, building, at, returned }`, `building` the slot it was in). The
+  player whose item it was until then (the sync leaves a burning item with its player) gets a
+  `departed` notice in the same transaction when they are not the one credited: a token moved to
+  another player and burned there, or a key unlinked before the credit. Nobody gets both.
+- **Burns outside the game** are credited the same way: the step reads no `chain_ops`.
+
+Before `CHAIN_K_FINAL` nothing irreversible is written: `items.burn_tx` is the sync's derived
+state, so a rollback, or the same burn landing again in another block, only moves the depth the
+credit waits for.
+
+**The data** (migration `015_salvage_credits.js`). `salvage_credits` holds one row per credited
+burn: `tx_hash` and `asset_name` (the burn on the chain), `player_id` (null for nobody),
+`returned` (the ingredients; `{}` without a recipe, null for nobody) and `credited_at`. It stores
+no wallet key: who held the token is on the chain, from `tx_hash`. `items.burn_tx` is the burn
+that holds the item: the ownership sync writes and clears it at any depth until the credit closes
+the item, and the credit keeps it. A closed item's row keeps its asset name, `minted_at`,
+`burned_at`, `burn_tx` and the player credited, and is in no player's lists.
+
+**The index.** `chainIndex.burnsOf(assetNames)` (at most 500 names a call) reads the view
+`chain.item_burns` (`views.sql`): a BURN row of `item_events` joined with Yaci Store's `tx_input`
+(the burn's spend) and `item_outputs` (the spent output that held the token). It answers one entry
+per burn and user token, by block: `{ assetName, txHash, block, holder: { stake, payment,
+script } }`, the holder's keys read from the address as `addresses.keysOfAddress` reads them. A
+burn whose spent output the index does not hold has no entry, so it is not credited; the ownership
+sync then logs a lasting warning ("the chain index knows burns of tokens but not the outputs they
+spent, so they cannot be credited") and judges the item by plan C's rule, nobody has it, unless a
+submitted or included burn operation of the game holds it. The operations step reads `burnsOf`
+too, for `burned-elsewhere`.
 
 ## Releases and deployment
 
