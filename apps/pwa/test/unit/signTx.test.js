@@ -1203,3 +1203,125 @@ test("C-M8: walletAddresses reads on past a page shorter than asked, until a pag
     ...used.slice(0, 20),
   ]);
 });
+
+test("signPrepared for a salvage (kind burn): the burn's proof for exactly this operation and list is signed, then the rebuilt transaction", async () => {
+  const keys = walletKeys();
+  const proof = { signature: "84aa", key: "a5bb" };
+  const wallet = fakeWallet(keys, { prove: async () => proof });
+  const info = signInfoFor(keys, {
+    kind: "burn",
+    ownerConfirmed: false,
+    costs: {
+      networkFee: 368106,
+      gameFee: null,
+      deposit: 3710910,
+      deposits: { reference: 2448080, user: 1262830 },
+    },
+    returns: { MILK: 2, VANILLA: 2, GOLDLEAF: 1 },
+  });
+  const rebuilt = { ...info, ownerConfirmed: true, tx: NEW_TX };
+  const api = fakeSignApi(keys, info, {
+    rebuilt,
+    payloadFor: (addresses) =>
+      proofPayload(keys, info, addresses, { purpose: "burn" }),
+  });
+  const result = await signPrepared(wallet, {
+    api,
+    code: "c0de",
+    info,
+    network: preprod,
+  });
+  assert.equal(result.info, rebuilt);
+  assert.deepEqual(prompts(wallet), ["signData", "signTx"]);
+  assert.deepEqual(wallet.asked, [[NEW_TX, true]]);
+});
+
+test("the proof of the other purpose is refused before any prompt: a mint's text for a burn, a burn's for a mint, and any kind the game does not know", async () => {
+  const keys = walletKeys();
+  for (const [kind, purpose] of [
+    ["burn", "mint"],
+    ["mint", "burn"],
+    ["swap", "mint"],
+    [undefined, "mint"],
+  ]) {
+    const info = signInfoFor(keys, { kind, ownerConfirmed: false });
+    const wallet = fakeWallet(keys);
+    const api = fakeSignApi(keys, info, {
+      payloadFor: (addresses) =>
+        proofPayload(keys, info, addresses, { purpose }),
+      rebuilt: { ...info, ownerConfirmed: true, tx: NEW_TX },
+    });
+    await assert.rejects(
+      signPrepared(wallet, { api, code: "c0de", info, network: preprod }),
+      (failure) =>
+        failure instanceof UnexpectedProofTextError &&
+        ["text", "kind"].includes(failure.field),
+      `${kind} with a ${purpose} proof`
+    );
+    assert.deepEqual(prompts(wallet), [], `${kind} with a ${purpose} proof`);
+    assert.deepEqual(
+      api.calls.map(([step]) => step),
+      ["payload"]
+    );
+  }
+});
+
+test("a burn's proof text is checked as a mint's: another operation, list or domain is refused before any prompt", async () => {
+  const keys = walletKeys();
+  const other = walletKeys();
+  const info = signInfoFor(keys, { kind: "burn", ownerConfirmed: false });
+  for (const [payloadFor, field] of [
+    (addresses) =>
+      proofPayload(keys, info, addresses, {
+        purpose: "burn",
+        operationId: "a1b2c3d4-e5f6-4789-8abc-def012345678",
+      }),
+    (addresses) =>
+      proofPayload(keys, info, [...addresses, other.baseHex], {
+        purpose: "burn",
+      }),
+    (addresses) =>
+      proofPayload(keys, info, addresses, {
+        purpose: "burn",
+        domain: "battlech0c.com",
+      }),
+  ].map((make, index) => [
+    make,
+    ["operationId", "addressCount", "domain"][index],
+  ])) {
+    const wallet = fakeWallet(keys);
+    const api = fakeSignApi(keys, info, {
+      payloadFor,
+      rebuilt: { ...info, ownerConfirmed: true, tx: NEW_TX },
+    });
+    await assert.rejects(
+      signPrepared(wallet, { api, code: "c0de", info, network: preprod }),
+      (failure) =>
+        failure instanceof UnexpectedProofTextError && failure.field === field
+    );
+    assert.deepEqual(prompts(wallet), []);
+  }
+});
+
+test("signPrepared: a rebuilt answer of another kind than the operation signed for is refused before signTx", async () => {
+  const keys = walletKeys();
+  for (const [kind, other] of [
+    ["burn", "mint"],
+    ["mint", "burn"],
+  ]) {
+    const proof = { signature: "84aa", key: "a5bb" };
+    const wallet = fakeWallet(keys, { prove: async () => proof });
+    const info = signInfoFor(keys, { kind, ownerConfirmed: false });
+    const api = fakeSignApi(keys, info, {
+      rebuilt: { ...info, kind: other, ownerConfirmed: true, tx: NEW_TX },
+      payloadFor: (addresses) =>
+        proofPayload(keys, info, addresses, { purpose: kind }),
+    });
+    await assert.rejects(
+      signPrepared(wallet, { api, code: "c0de", info, network: preprod }),
+      (failure) =>
+        failure instanceof OwnerNotConfirmedError && failure.reason === "kind"
+    );
+    assert.deepEqual(prompts(wallet), ["signData"]);
+  }
+});

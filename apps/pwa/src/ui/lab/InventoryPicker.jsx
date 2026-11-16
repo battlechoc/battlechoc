@@ -9,7 +9,7 @@ import {
 import Dialog from "../dialogs/Dialog";
 import Button from "../controls/Button";
 import ItemIcon from "./ItemIcon";
-import { groupMinted, instanceToEquip } from "./itemActions";
+import { equippable, groupMinted, instanceToEquip } from "./itemActions";
 import { effectLines, itemName, labColors, TIER_COLORS } from "./itemText";
 import { bangers, gamePanel } from "../styles";
 
@@ -107,9 +107,12 @@ const InventoryPicker = ({
 
   const types = [];
   items
+    // an item being salvaged (its ingredients on the way) goes into no slot
     .filter(
       (entry) =>
-        Items[entry.item] && Items[entry.item].entityType === entityType
+        Items[entry.item] &&
+        Items[entry.item].entityType === entityType &&
+        equippable(entry)
     )
     .forEach((entry) => {
       let group = types.find((candidate) => candidate.item === entry.item);

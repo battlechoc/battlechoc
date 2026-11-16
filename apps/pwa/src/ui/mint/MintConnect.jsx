@@ -1,5 +1,10 @@
 import { lazy, Suspense, useEffect, useState } from "react";
+import {
+  translate as t,
+  translationKeys as tr,
+} from "@battlechoc/battlechoc-shared-functions";
 import ConfirmChange from "../account/ConfirmChange";
+import ChunkWaiting from "./ChunkWaiting";
 import { cardanoApi, keyStore, subjectOfWords } from "../../cardano";
 import logger from "../../helper/logger";
 import { loadChunk } from "../../helper/loadChunk";
@@ -75,7 +80,11 @@ const MintConnect = ({ onDone }) => {
   return (
     <>
       {stage === "door" ? (
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            <ChunkWaiting title={t(tr.WALLET_DOOR_TITLE)} onClose={onDone} />
+          }
+        >
           <WalletDoor
             open
             purpose="link"

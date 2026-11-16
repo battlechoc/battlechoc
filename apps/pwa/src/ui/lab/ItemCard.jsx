@@ -12,7 +12,14 @@ import Button from "../controls/Button";
 import IngredientIcon from "../ingredients/IngredientIcon";
 import ItemIcon from "./ItemIcon";
 import { features } from "../../cardano/appFeatures";
-import { cardActions, chipMarks, salvagePreview, slotOf } from "./itemActions";
+import {
+  cardActions,
+  chipMarks,
+  isBurning,
+  salvageKind,
+  salvagePreview,
+  slotOf,
+} from "./itemActions";
 import {
   effectLines,
   itemName,
@@ -148,6 +155,8 @@ const slotFor = (slot, selected) =>
  * that one: equip or take it off (`onEquip(entry)` with the chosen item), mint it and salvage it
  * after a confirmation. `mintAction` (under Equip) and `mintStatus` (the item's mark, under its
  * effects) are minting's slots: an element, or a function of the chosen item (null for none).
+ * A minted item is salvaged where minting shows (`minting`): its token is burned, which
+ * `onSalvageMinted(entry)` starts (the salvage's own dialog); one being salvaged offers nothing.
  */
 const ItemCard = ({
   open,
@@ -166,6 +175,8 @@ const ItemCard = ({
   onGone,
   mintAction,
   mintStatus,
+  minting = false,
+  onSalvageMinted = () => {},
 }) => {
   const classes = useStyles();
   const [selectedId, setSelectedId] = useState(instanceId);
@@ -179,7 +190,12 @@ const ItemCard = ({
   const selected = instances.find((entry) => entry.id === selectedId);
   const slot = selected ? slotOf(selected.id, equipment) : null;
   const preview = salvagePreview(item, book);
-  const actions = selected ? cardActions({ item: selected, online }) : {};
+  const actions = selected
+    ? cardActions({ item: selected, online, minting })
+    : {};
+  // being salvaged (its ingredients on the way): no Equip, no Salvage, only its mark
+  const burning = isBurning(selected);
+  const status = selected ? slotFor(mintStatus, selected) : null;
   // the stamp's marks (not in the Android app)
   const marks = features.showMintMarks();
 
@@ -345,7 +361,14 @@ const ItemCard = ({
                 </span>
               ))}
             </div>
-            {slotFor(mintStatus, selected)}
+            {status}
+            {burning && !status ? (
+              // minting does not show here (the server's chain off, the Android app): only that it
+              // is being salvaged, which is why it offers nothing
+              <p className={classes.note} data-testid="item-burning">
+                {t(tr.ITEM_BURNING)}
+              </p>
+            ) : null}
           </>
         ) : null}
         {instances.length > 1 || (!selected && instances.length > 0) ? (
@@ -379,12 +402,12 @@ const ItemCard = ({
             })}
           </div>
         ) : null}
-        {slot ? (
+        {slot && !burning ? (
           <div className={classes.equipped} data-testid="item-equipped">
             {t(tr.ITEM_EQUIPPED_ON, buildingName(slot.entityType))}
           </div>
         ) : null}
-        {selected ? (
+        {selected && !burning ? (
           <div className={classes.actions}>
             {slot ? (
               <Button
@@ -411,10 +434,15 @@ const ItemCard = ({
                 color="accent"
                 onClick={() => {
                   setError(undefined);
-                  setView("confirm");
+                  if (salvageKind(selected) === "minted") {
+                    onSalvageMinted(selected);
+                  } else {
+                    setView("confirm");
+                  }
                 }}
                 disabled={busy || Boolean(preview.unavailable)}
                 data-testid="item-salvage"
+                data-kind={salvageKind(selected)}
               >
                 {t(tr.ITEM_SALVAGE)}
               </Button>

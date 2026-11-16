@@ -11,6 +11,7 @@ import logger from "../../helper/logger";
 import { following } from "./operationPoll";
 import { held } from "./held";
 import useSignClock from "./useSignClock";
+import { salvageKey } from "./salvageTexts";
 
 // What the item card shows of minting (the owner's mockup, board 1): the Mint action under Equip
 // for a plain item, and the item's mark for one that is minted or being minted. Both render only
@@ -50,12 +51,30 @@ export const MintAction = ({ onMint, disabled = false }) => {
  * The mark of `item` (an entry of stats.items) on its card: minted (the wallet's name when the
  * game knows it, `wallet`), being minted, or waiting for the player's signature (Continue opens
  * the dialog: `onMint`; Cancel cancels the prepared operation, then `onChanged` reloads the
- * stats). Nothing for a plain item or a state this build does not know.
+ * stats); for a minted item's salvage (plan E), waiting for the signature (Continue: `onSalvage`)
+ * or being salvaged (its ingredients on the way). Nothing for a plain item or a state this build
+ * does not know.
  */
-const MintStatus = ({ item, wallet = null, onMint, onChanged }) => {
+const MintStatus = ({
+  item,
+  wallet = null,
+  onMint,
+  onSalvage = () => {},
+  onChanged,
+}) => {
   const classes = useStyles();
   const mark = (item && item.minted) || null;
-  const signing = Boolean(mark) && mark.state === "minting" && mark.signing;
+  // a salvage prepared, not signed: the item is still minted and usable
+  const salvage =
+    Boolean(mark) &&
+    mark.state === "minted" &&
+    mark.kind === "burn" &&
+    mark.signing === true &&
+    typeof mark.operationId === "string";
+  const signing =
+    salvage || (Boolean(mark) && mark.state === "minting" && mark.signing);
+  // the words of the salvage where minting has its own (salvageTexts.js)
+  const words = (key) => t(tr[salvage ? salvageKey(key) : key]);
   const operationId = mark && mark.operationId;
   const view = useSyncExternalStore(following.subscribe, () =>
     operationId ? following.noted(operationId) : null
@@ -73,7 +92,23 @@ const MintStatus = ({ item, wallet = null, onMint, onChanged }) => {
   if (!mark) {
     return null;
   }
-  if (mark.state === "minted") {
+  if (mark.state === "burning") {
+    // signed, in a block, or seen on the chain: no actions; a burn that waits for the network
+    // longer than usual (also after a rollback) says that nothing is lost
+    return (
+      <div
+        className={`${classes.box} ${classes.running}`}
+        data-testid="mint-status"
+        data-state="burning"
+      >
+        {t(tr.ITEM_BURNING)}
+        {view && view.slow ? (
+          <span className={classes.slow}>{` ${t(tr.SALVAGE_SLOW)}`}</span>
+        ) : null}
+      </div>
+    );
+  }
+  if (mark.state === "minted" && !salvage) {
     return (
       <div
         className={classes.box}
@@ -88,7 +123,7 @@ const MintStatus = ({ item, wallet = null, onMint, onChanged }) => {
       </div>
     );
   }
-  if (mark.state !== "minting") {
+  if (mark.state !== "minting" && !salvage) {
     return null;
   }
   if (!signing) {
@@ -117,13 +152,13 @@ const MintStatus = ({ item, wallet = null, onMint, onChanged }) => {
           const code = failure && failure.code;
           if (code === "OPERATION NOT OPEN") {
             // signed meanwhile, or over: say why the box changes
-            setError(t(tr.MINT_CANCEL_TOO_LATE));
+            setError(words("MINT_CANCEL_TOO_LATE"));
           } else if (code !== "NOT FOUND") {
-            logger.warn("cancelling a mint failed", failure);
+            logger.warn("cancelling an operation failed", failure);
             setError(
               failure && failure.status >= 400 && failure.status < 500
-                ? t(tr.MINT_FAILED)
-                : t(tr.MINT_CANCEL_ANSWER_LOST)
+                ? words("MINT_FAILED")
+                : words("MINT_CANCEL_ANSWER_LOST")
             );
           }
         }
@@ -139,17 +174,24 @@ const MintStatus = ({ item, wallet = null, onMint, onChanged }) => {
     <div
       className={`${classes.box} ${classes.running}`}
       data-testid="mint-status"
-      data-state="signing"
+      data-state={salvage ? "salvage-signing" : "signing"}
     >
       <span className={classes.title}>
         {minutes === null
-          ? t(tr.MINT_MARK_WAITING_UNTIMED)
-          : t(tr.MINT_MARK_WAITING, minutes)}
+          ? t(
+              salvage
+                ? tr.SALVAGE_MARK_WAITING_UNTIMED
+                : tr.MINT_MARK_WAITING_UNTIMED
+            )
+          : t(
+              salvage ? tr.SALVAGE_MARK_WAITING : tr.MINT_MARK_WAITING,
+              minutes
+            )}
       </span>
       <div className={classes.buttons}>
         <Button
           color="primary"
-          onClick={onMint}
+          onClick={salvage ? onSalvage : onMint}
           disabled={cancelling}
           data-testid="mint-continue"
         >

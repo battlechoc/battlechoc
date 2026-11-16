@@ -16,19 +16,24 @@ import {
   STAMP,
   TIER_COLORS,
 } from "../lab/itemText";
-import { noticeButtons } from "./notices";
+import IngredientIcon from "../ingredients/IngredientIcon";
+import { formatDuration } from "../ingredients/duration";
+import { noticeButtons, salvagedView } from "./notices";
 
 // an item that arrived in a wallet is minted (the notice has the item's key and serial only)
 const MINTED = { state: "minted" };
 
 // the item's icon in a notice (the mockup's 72 px on a phone)
 const ICON_SIZE = "4.5em";
+// a salvaged item's, large above what came back (the mockup's 104 px)
+const LARGE_ICON = "6em";
 
 // the buttons a notice can have: its label, colour and test id
 const BUTTONS = {
   choclab: ["ITEM_TO_CHOCLAB", "primary", "item-notice-choclab"],
   later: ["ITEM_LATER", "secondary", "item-notice-later"],
   ok: ["ITEM_GOT_IT", "primary", "item-notice-ok"],
+  shelf: ["SALVAGE_TO_SHELF", "primary", "item-notice-shelf"],
 };
 
 // two buttons side by side on a phone: the dialogs' button height (size normal), with a smaller
@@ -82,6 +87,31 @@ const useStyles = createUseStyles((theme) => ({
     fontWeight: 600,
     lineHeight: 1.45,
   },
+  // what came back from a salvaged item: one row per ingredient
+  rows: {
+    alignSelf: "stretch",
+    boxSizing: "border-box",
+    borderRadius: 14,
+    background: "#163F55",
+    border: "2px solid #3190C3",
+    padding: "0.6em 0.8em",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.45em",
+    textAlign: "left",
+    fontSize: theme.font.size.sm,
+    fontWeight: 700,
+  },
+  row: { display: "flex", alignItems: "center", gap: "0.5em" },
+  rowName: { flexGrow: 1 },
+  fresh: { fontWeight: 600, color: "#CFE9F7" },
+  plus: { flex: "none", whiteSpace: "nowrap" },
+  // the large stamped item of a salvage, its serial tag below it
+  large: {
+    display: "flex",
+    justifyContent: "center",
+    paddingBottom: STAMP.tagRoom(LARGE_ICON),
+  },
   // side by side while both fit on one line, else one below the other
   actions: {
     alignSelf: "stretch",
@@ -92,9 +122,108 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
+// the buttons of a notice
+const Buttons = ({ classes, buttons, onChoclab, onDone }) => (
+  <div className={classes.actions}>
+    {buttons.map((button) => {
+      const [label, color, testId] = BUTTONS[button];
+      return (
+        <Button
+          key={button}
+          color={color}
+          style={buttons.length > 1 ? PAIR.style : undefined}
+          buttonStyle={buttons.length > 1 ? PAIR.buttonStyle : undefined}
+          onClick={
+            button === "choclab" || button === "shelf" ? onChoclab : onDone
+          }
+          data-testid={testId}
+        >
+          {t(tr[label])}
+        </Button>
+      );
+    })}
+  </div>
+);
+
+// the ingredients of a salvaged minted item are back (the owner's mockup, board 2, "Zutaten sind
+// da"): the item large with its stamp, what came back, fresh ones with how long they keep
+const Salvaged = ({ classes, notice, buttons, onChoclab, onDone }) => {
+  const { item, serial } = notice.item;
+  // nothing came back (no recipe any more, or amounts too small to halve): it says so
+  const { rows, heading, nothing } = salvagedView(notice);
+  return (
+    <Dialog
+      open
+      closable={false}
+      mode="info"
+      title={
+        <span className={classes.gold}>{t(tr.SALVAGE_ARRIVED_TITLE)}</span>
+      }
+    >
+      <div
+        className={classes.body}
+        data-testid="item-notice"
+        data-kind="salvaged"
+        data-notice={notice.id}
+      >
+        <div className={classes.large} data-testid="salvage-arrived">
+          <ItemIcon
+            item={item}
+            size={LARGE_ICON}
+            large
+            minted={MINTED}
+            serial={serial}
+          />
+        </div>
+        <p className={classes.text}>
+          {heading
+            ? t(tr[heading], itemName(item), serial)
+            : `${itemName(item)} ${t(tr.ITEM_SERIAL, serial)}`}
+        </p>
+        {nothing === null ? (
+          <div className={classes.rows}>
+            {rows.map((row) => (
+              <div
+                key={row.ingredient}
+                className={classes.row}
+                data-testid="salvage-arrived-row"
+                data-ingredient={row.ingredient}
+                data-amount={row.amount}
+              >
+                <IngredientIcon id={row.ingredient} size="1.5em" />
+                <span className={classes.rowName}>
+                  {t(tr[`INGREDIENT_${row.ingredient}`])}
+                  {row.keeps ? (
+                    <span className={classes.fresh}>
+                      {` ${t(tr.SALVAGE_FRESH_FOR, formatDuration(row.keeps))}`}
+                    </span>
+                  ) : null}
+                </span>
+                <span className={classes.plus}>{`+ ${row.amount}`}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className={classes.text} data-testid="salvage-arrived-nothing">
+            {t(tr[nothing])}
+          </p>
+        )}
+        <Buttons
+          classes={classes}
+          buttons={buttons}
+          onChoclab={onChoclab}
+          onDone={onDone}
+        />
+      </div>
+    </Dialog>
+  );
+};
+
 /**
  * A notice about a minted item on the title screen (the owner's mockup "Hinweise"): `notice` is
- * one of stats.notices ({ id, kind: "arrived" | "departed", item: { id, item, serial }, building }).
+ * one of stats.notices ({ id, kind: "arrived" | "departed" | "salvaged", item: { id, item, serial
+ * }, building, returned (salvaged: { ingredient: n }) }); a salvaged item's ingredients are back
+ * (Salvaged).
  * An arrival shows the stamped item with what it does and offers the Choclab (`onChoclab`) or
  * later (`onDone`) while the Choclab is open to the player (`choclabOpen`), else only reads it;
  * a departure shows the greyed item, the building it was taken off and `onDone`. Nothing in the
@@ -106,8 +235,20 @@ const ItemNotice = ({ notice, choclabOpen = false, onChoclab, onDone }) => {
     return null;
   }
   const { item, serial } = notice.item;
+  const buttonsOf = noticeButtons(notice.kind, { choclabOpen });
+  if (notice.kind === "salvaged") {
+    return (
+      <Salvaged
+        classes={classes}
+        notice={notice}
+        buttons={buttonsOf}
+        onChoclab={onChoclab}
+        onDone={onDone}
+      />
+    );
+  }
   const arrived = notice.kind === "arrived";
-  const buttons = noticeButtons(notice.kind, { choclabOpen });
+  const buttons = buttonsOf;
   const definition = Items[item];
   return (
     <Dialog
@@ -173,23 +314,12 @@ const ItemNotice = ({ notice, choclabOpen = false, onChoclab, onDone }) => {
         <p className={classes.text}>
           {t(arrived ? tr.ITEM_ARRIVED_TEXT : tr.ITEM_DEPARTED_TEXT)}
         </p>
-        <div className={classes.actions}>
-          {buttons.map((button) => {
-            const [label, color, testId] = BUTTONS[button];
-            return (
-              <Button
-                key={button}
-                color={color}
-                style={buttons.length > 1 ? PAIR.style : undefined}
-                buttonStyle={buttons.length > 1 ? PAIR.buttonStyle : undefined}
-                onClick={button === "choclab" ? onChoclab : onDone}
-                data-testid={testId}
-              >
-                {t(tr[label])}
-              </Button>
-            );
-          })}
-        </div>
+        <Buttons
+          classes={classes}
+          buttons={buttons}
+          onChoclab={onChoclab}
+          onDone={onDone}
+        />
       </div>
     </Dialog>
   );

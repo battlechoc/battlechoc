@@ -137,22 +137,71 @@ export const salvagePreview = (itemKey, book) => {
   return { returned, rows };
 };
 
-/** What the card offers for an item: both need the server; a minted item is not salvaged here. */
-export const cardActions = ({ item, online }) => ({
-  equip: Boolean(online),
-  salvage: Boolean(online) && !item.minted,
-});
+/**
+ * Whether an item is being salvaged as a minted item (plan E): its token's burn is signed, in a
+ * block, or seen on the chain (`minted.state` "burning"), and its ingredients are on the way.
+ */
+export const isBurning = (entry) =>
+  Boolean(entry && entry.minted && entry.minted.state === "burning");
+
+/**
+ * Whether the salvage of a minted item waits for the player's signature: it stays minted and
+ * usable, and its card offers Continue and Cancel (the mark { state: "minted", operationId,
+ * signing: true, kind: "burn" }).
+ */
+export const burnWaiting = (entry) =>
+  isMinted(entry) &&
+  entry.minted.kind === "burn" &&
+  entry.minted.signing === true &&
+  typeof entry.minted.operationId === "string";
+
+/** Whether an item can go into a slot: not one being salvaged. */
+export const equippable = (entry) => !isBurning(entry);
+
+/**
+ * The equipment as the Lab shows and counts it (its slots, the budget bar, the picker): a slot
+ * whose item is away from the wallet or being salvaged is free and counts nothing, as the
+ * server's loadout and the matches have it. The server keeps the id in the slot, so the slot
+ * fills again from the stats once a burn rolls back or expires.
+ */
+export const labEquipment = (equipment, items) =>
+  withoutAwayItems(equipment || {}, items.filter(equippable));
+
+/**
+ * What the card offers for an item: both need the server. A plain item is salvaged on the card;
+ * a minted one (its token burned, plan E) only where minting shows (`minting`: the server's
+ * switch on, online, never in the Android app) and while no salvage of it waits for a
+ * signature; an item being minted, being salvaged, or in a state this build does not know is
+ * not salvaged; one being salvaged is not equipped either.
+ */
+export const cardActions = ({ item, online, minting = false }) => {
+  const mark = item.minted || null;
+  return {
+    equip: Boolean(online) && equippable(item),
+    salvage:
+      Boolean(online) &&
+      (!mark || (isMinted(item) && Boolean(minting) && !burnWaiting(item))),
+  };
+};
+
+/** How the card salvages an item: "minted" (its token is burned: SalvageMinted) or "plain". */
+export const salvageKind = (item) => (isMinted(item) ? "minted" : "plain");
 
 /**
  * Which of `instances` (one item type's, newest first) the inventory picker equips: the one the
  * item card chose (`chosenId`: minted and plain copies differ in what can be done with them),
  * else one that is not equipped anywhere (`equippedIds`), else the first (equipping it again
- * moves it).
+ * moves it); never one being salvaged (undefined when every one is).
  */
-export const instanceToEquip = (instances, equippedIds, chosenId) =>
-  instances.find((entry) => entry.id === chosenId) ||
-  instances.find((entry) => !equippedIds.has(entry.id)) ||
-  instances[0];
+export const instanceToEquip = (instances, equippedIds, chosenId) => {
+  // one being salvaged never goes into a slot
+  const candidates = instances.filter(equippable);
+  return (
+    candidates.find((entry) => entry.id === chosenId) ||
+    candidates.find((entry) => !equippedIds.has(entry.id)) ||
+    candidates[0]
+  );
+};
 
 /**
  * How an item card's serial chip shows `entry`: `chosen` (the one the card shows) and `minted`

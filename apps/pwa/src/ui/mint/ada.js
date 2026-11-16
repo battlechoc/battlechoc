@@ -6,6 +6,11 @@
 //   0.01), a balance the player holds rounded down, so it never looks larger;
 // - an exact amount (the prepared operation's costs, what the wallet will show) with every
 //   decimal it has (up to six, trailing zeros dropped), never rounded.
+// adaText is the one text of an amount that the minting dialog and the sign page show.
+import {
+  translate as t,
+  translationKeys as tr,
+} from "@battlechoc/battlechoc-shared-functions";
 
 const LOVELACE_PER_HUNDREDTH = 10000n;
 const ROUNDINGS = ["up", "down"];
@@ -83,6 +88,34 @@ export const formatAda = (
   return numberFormat(language, 2).format(decimal(hundredths, 2));
 };
 
+/** The minus of an amount that leaves the wallet, on the number itself ("−4,81"). */
+export const MINUS = "\u2212";
+
+/**
+ * `lovelace` as the text of an amount of ADA in `language`'s number format: exact
+ * (MINT_AMOUNT, "4,801234 ADA") or an estimate (MINT_ABOUT, "≈ 4,81 ADA", rounded `round`: "up"
+ * for a cost, "down" for what the player keeps); `given: true` for what leaves the wallet, its
+ * minus on the number inside the "≈" ("≈ −4,81 ADA", exact "−4,801234 ADA"); `gotten: true` for
+ * what comes into it, its plus there ("≈ +2,08 ADA", the salvage of a minted item). A TypeError
+ * as formatAda.
+ */
+export const adaText = (
+  lovelace,
+  language,
+  { exact = false, round = "up", given = false, gotten = false } = {}
+) => {
+  const number = formatAda(lovelace, language, exact ? { exact } : { round });
+  let shown = number;
+  if (given) {
+    shown = `${MINUS}${number}`;
+  } else if (gotten) {
+    shown = `+${number}`;
+  }
+  return exact
+    ? t(tr.MINT_AMOUNT, shown, "ADA")
+    : t(tr.MINT_ABOUT, shown, "ADA");
+};
+
 /**
  * What a wallet whose ADA all sits with other tokens is asked to send itself in one payment
  * (lovelace): enough for the security a minting needs on its own (COLLATERAL_LOVELACE, 2 ADA)
@@ -131,5 +164,32 @@ export const walletChange = (costs) => {
   return {
     give: sumLovelace(costs.networkFee, reference, ...fee),
     stays: user.toString(),
+  };
+};
+
+/**
+ * What the wallet shows for a built burn's `costs` (the salvage of a minted item, plan E: {
+ * networkFee, deposits: { reference, user } }, lovelace), as lovelace strings: `back`, the ADA
+ * that was locked with the item (the reference token's deposit) and comes back with the burn;
+ * `fee`, the network fee the wallet pays; their difference, what the wallet's balance changes
+ * by: `net` (never negative) and `gain` (true: + net, false: − net); `free`, the ADA that lay
+ * with the token in the wallet all along (the user token's UTxO) and is free to spend again (null
+ * without it). Null without the deposit's parts (an older server). A TypeError for amounts that
+ * are not lovelace.
+ */
+export const burnChange = (costs) => {
+  const parts = costs && costs.deposits;
+  if (!parts || parts.reference == null) {
+    return null;
+  }
+  const back = lovelaceOf(parts.reference);
+  const fee = lovelaceOf(costs.networkFee);
+  const user = amountOrNull(parts.user);
+  return {
+    back: back.toString(),
+    fee: fee.toString(),
+    net: (back >= fee ? back - fee : fee - back).toString(),
+    gain: back >= fee,
+    free: user === null ? null : user.toString(),
   };
 };

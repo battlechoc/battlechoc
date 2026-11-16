@@ -63,17 +63,26 @@ const CANCEL_BESIDE = [null, "readiness", "addresses"];
 // CIP-30 TxSignError 2: the player declined the signature itself
 const USER_DECLINED = 2;
 
-const problem = (
+/**
+ * A problem as the flows show it: { key, values, action, ends, reconnect, detail } (problemOf
+ * says what each field means). The salvage of a minted item (salvageFlow.js) builds its own with
+ * it.
+ */
+export const problem = (
   key,
   values = {},
   { action = null, ends = null, reconnect = false, detail = null } = {}
 ) => ({ key, values, action, ends, reconnect, detail });
 
-const RESUME_LOST = problem("MINT_RESUME_LOST", {}, { action: "cancel" });
+export const RESUME_LOST = problem(
+  "MINT_RESUME_LOST",
+  {},
+  { action: "cancel" }
+);
 const FEE_CHANGED = problem("MINT_FEE_CHANGED", {}, { action: "recheck" });
 const SIGNED_UNHEARD = "MINT_SIGNED_UNHEARD";
 // the poll could not tell where the operation stands (never "nothing happened": it may be signed)
-const STATUS_UNKNOWN = "MINT_STATUS_UNKNOWN";
+export const STATUS_UNKNOWN = "MINT_STATUS_UNKNOWN";
 // while one of these shows, signing is not offered (only Back, or the poll's answer)
 const NO_SIGNING = [SIGNED_UNHEARD, "MINT_ADDRESSES_NEEDED"];
 // the calls whose failure answers the request that is out (`pending`)
@@ -101,7 +110,8 @@ const named = (key, values) => {
   return { key: NAMELESS[key], values: rest };
 };
 
-const isOpen = (operation) =>
+/** Whether `operation` is open: prepared, submitted or included. */
+export const isOpen = (operation) =>
   Boolean(operation) && OPEN.includes(operation.state);
 
 const tierOf = (item) => (Items[item.item] ? Items[item.item].tier : null);
@@ -377,13 +387,15 @@ const adaLine = (readiness, candidates, picked) => {
 // the line of another item's open operation (one per player), null without one
 const operationLine = (readiness, itemId) => {
   const running = readiness.operation;
-  if (!isOpen(running) || running.itemId === itemId) {
+  const burn = Boolean(running) && running.kind === "burn";
+  if (!isOpen(running) || (running.itemId === itemId && !burn)) {
     return null;
   }
   return {
     id: "operation",
     met: false,
-    key: "MINT_CHECK_RUNNING",
+    // a salvage that runs (plan E) is another operation, never this flow's
+    key: burn ? "MINT_CHECK_RUNNING_BURN" : "MINT_CHECK_RUNNING",
     text: "MINT_CHECK_RUNNING_TEXT",
     values: { item: running.item.item, serial: running.item.serial },
     action: "goTo",
@@ -726,6 +738,27 @@ export const noSigning = (state) =>
   Boolean(state.problem) && NO_SIGNING.includes(state.problem.key);
 
 /**
+ * What the wallet step shows (D47): `prompts`, its texts, the time left and Open wallet, only
+ * with this tab's sign code and no problem that rules signing out; without them the step shows
+ * its problem (MINT_RESUME_LOST, or the poll's text while it cannot tell) and the wallet box.
+ * `back`: the step's own Back (it cancels): always beside the prompts, else only where the
+ * operation can be cancelled, no problem rules it out and the problem offers no Cancel of its own.
+ */
+export const walletStepView = (state) => {
+  const prompts = Boolean(state.signCode) && !noSigning(state);
+  if (prompts) {
+    return { prompts, back: true };
+  }
+  return {
+    prompts,
+    back:
+      canCancel(state) &&
+      !noSigning(state) &&
+      !(state.problem && state.problem.action === "cancel"),
+  };
+};
+
+/**
  * Whether Open wallet may be tapped at `now`: the wallet step, this tab's sign code, the window
  * open, and no problem that rules signing out (a signature that may have gone out unheard; an
  * operation that must be started again: MINT_ADDRESSES_NEEDED).
@@ -871,7 +904,7 @@ const API_PROBLEMS = {
 // A failure after which the server may still have done what was asked: no answer, a server
 // error (a proxy's 502 can come after the API answered), an answer that is not the API's. A
 // limit (429) or the server's own CHAIN UNAVAILABLE / CHAIN PAUSED came before anything was done.
-const unheard = (failure) => {
+export const unheard = (failure) => {
   if (failure instanceof ChainUnreachableError) {
     return failure.reason !== "busy";
   }
@@ -1094,10 +1127,15 @@ const withOperation = (state, operation) => {
     pastTxHashes: rebuilt
       ? [...state.pastTxHashes, state.operation.txHash]
       : state.pastTxHashes,
-    // an answer of the poll: it can tell where the operation stands again
+    // an answer of the poll: it can tell where the operation stands again (a prepared one this
+    // tab has no code for: that it cannot sign it, as before the poll failed)
     problem:
       state.problem && state.problem.key === STATUS_UNKNOWN
-        ? null
+        ? state.step === "wallet" &&
+          operation.state === "prepared" &&
+          !state.signCode
+          ? RESUME_LOST
+          : null
         : state.problem,
   };
   // the flow ended on a reason of its own (the item is gone, …): the operation's end keeps it
@@ -1154,14 +1192,17 @@ const withOperation = (state, operation) => {
   }
 };
 
+// a salvage of the item (kind "burn", plan E) is never this flow's operation
 const isThisItems = (state, operation) =>
-  Boolean(operation) && operation.itemId === state.item.id;
+  Boolean(operation) &&
+  operation.itemId === state.item.id &&
+  operation.kind !== "burn";
 
 // Whether `operation` is an answer that came too late: about an operation the flow has left, or
 // of a lower state than the one the flow already has for it (a poll sent before the signature
 // that arrives after it). Nothing comes after its last state. The one move back that happens
 // is a rollback: included → submitted.
-const isLate = (state, operation) => {
+export const isLate = (state, operation) => {
   if (state.pastOperations.includes(operation.id)) {
     return true;
   }
@@ -1263,7 +1304,8 @@ export const initialState = ({
   return base;
 };
 
-const validAddresses = (addresses) =>
+/** `addresses` when it is a list of addresses (non-empty strings), else null. */
+export const validAddresses = (addresses) =>
   Array.isArray(addresses) &&
   addresses.length > 0 &&
   addresses.every((address) => typeof address === "string" && address !== "")
@@ -1339,9 +1381,9 @@ const onReadiness = (state, { answer, itemId }) => {
 // a poll that failed for good (pollOperation tries the others again): for an operation the
 // flow follows, the step stays as it is; an end already shown keeps its text. An operation the
 // server no longer has for the player (its item was salvaged meanwhile) ends the flow there.
-const onPollProblem = (state, failure) => {
+const onPollProblem = (state, failure, flow) => {
   if (
-    pollTarget(state) === null ||
+    flow.pollTarget(state) === null ||
     (["nothing", "failed"].includes(state.step) && state.problem)
   ) {
     return state;
@@ -1355,7 +1397,7 @@ const onPollProblem = (state, failure) => {
       operation: null,
       operationId: null,
       pastOperations: id ? [...state.pastOperations, id] : state.pastOperations,
-      problem: problemOf(failure, { during: "operation" }),
+      problem: flow.describe(failure, { during: "operation" }),
     };
   }
   if (noSigning(state)) {
@@ -1365,7 +1407,37 @@ const onPollProblem = (state, failure) => {
   return { ...state, problem: problem(STATUS_UNKNOWN) };
 };
 
-const onProblem = (state, { failure, during, wallet, operationId }) => {
+// what problemEvent needs of a flow: the calls whose failure answers the request that is out
+// (by `pending`), the requests during which no other failure counts (`holding`), the steps on
+// which a wallet is asked, the request that prepares the operation (`prepare`), the wallet's
+// name as players read it, the poll's target and the text of a failure (`describe`: problemOf's
+// arguments)
+const MINT_PROBLEMS = {
+  callsOfPending: CALLS_OF_PENDING,
+  holding: HOLDING,
+  walletSteps: WALLET_STEPS,
+  prepare: "mint",
+  walletName: (state) => {
+    const picked = pickedWallet(state);
+    return picked ? picked.name : null;
+  },
+  pollTarget: (state) => pollTarget(state),
+  describe: (failure, context) => problemOf(failure, context),
+};
+
+/**
+ * The state after a `problem` event ({ failure, during, wallet, operationId }: see mintFlow) for
+ * the flow `flow` (the minting's by default; the salvage of a minted item passes its own: its
+ * calls, steps, poll and texts, salvageFlow.js): a late outcome of an operation the flow left or
+ * that ended is dropped, a failure beside a held request waits for that request's answer, a
+ * wallet's failure off the wallet steps is late, a poll that failed keeps the step (an operation
+ * that is gone ends it); else the problem shows, ending the flow where it says so.
+ */
+export const problemEvent = (
+  state,
+  { failure, during, wallet, operationId },
+  flow = MINT_PROBLEMS
+) => {
   if (operationId !== undefined && operationId !== state.operationId) {
     // the outcome of a signature or a cancel for an operation the flow has left
     return state;
@@ -1383,29 +1455,32 @@ const onProblem = (state, { failure, during, wallet, operationId }) => {
   const call = during || (state.step === "sign" ? "sign" : undefined);
   // whether the failed call is the request the flow waits for
   const own =
-    state.pending !== null && CALLS_OF_PENDING[state.pending].includes(call);
-  if (holding(state) && !own) {
+    state.pending !== null &&
+    (flow.callsOfPending[state.pending] || []).includes(call);
+  if (flow.holding.includes(state.pending) && !own) {
     // Mint now or a cancel is out: its answer decides, not another call's failure
     return state;
   }
   if (call === "operation") {
-    return onPollProblem(state, failure);
+    return onPollProblem(state, failure, flow);
   }
   if (call === "readiness" && !["check", "costs"].includes(state.step)) {
     // the checklist's answer is not what these steps show: the operation is
     return state.pending === "readiness" ? { ...state, pending: null } : state;
   }
-  if (isWalletFailure(failure, call) && !WALLET_STEPS.includes(state.step)) {
+  if (
+    isWalletFailure(failure, call) &&
+    !flow.walletSteps.includes(state.step)
+  ) {
     // a wallet's late answer: the flow has moved on
     return state;
   }
-  const picked = pickedWallet(state);
-  const shown = problemOf(failure, {
+  const shown = flow.describe(failure, {
     during: call,
-    wallet: walletLabel(wallet || (picked ? picked.name : null)),
+    wallet: walletLabel(wallet || flow.walletName(state)),
     network: state.network,
     readiness: state.readiness,
-    addressesSent: call === "mint" && state.addresses !== null,
+    addressesSent: call === flow.prepare && state.addresses !== null,
   });
   let step = shown.ends || state.step;
   if (!shown.ends && state.step === "sign") {
@@ -1427,7 +1502,8 @@ const onProblem = (state, { failure, during, wallet, operationId }) => {
 };
 
 // this tab's sign code for an operation the flow learned without one (sessionStorage kept it)
-const onSignCode = (state, { operationId, signCode }) => {
+/** The state with this tab's sign code `signCode` for its prepared operation `operationId` (a `signCode` event). */
+export const withSignCode = (state, { operationId, signCode }) => {
   if (
     typeof signCode !== "string" ||
     signCode === "" ||
@@ -1448,7 +1524,9 @@ const onSignCode = (state, { operationId, signCode }) => {
   };
 };
 
-const onRetry = (state) => {
+// `here`: what this device can sign with, read again by the dialog at the tap (an extension
+// enabled since the dialog opened); without it the known one stays
+const onRetry = (state, { here } = {}) => {
   if (["sign", "minting", "done"].includes(state.step)) {
     return state;
   }
@@ -1481,6 +1559,7 @@ const onRetry = (state) => {
     addresses: null,
     via: null,
     pending: null,
+    here: here === undefined ? state.here : here,
   };
 };
 
@@ -1499,6 +1578,24 @@ const onBack = (state) => {
   }
   return state;
 };
+
+/** Open wallet (`{ via, now }`, "extension" or "phone"): the sign step, where canSign allows it. */
+export const signingTap = (state, event) => {
+  if (!SIGN_PATHS.includes(event.via) || !canSign(state, event.now)) {
+    return state;
+  }
+  return { ...state, step: "sign", via: event.via, problem: null };
+};
+
+/**
+ * Open wallet again on the phone path's waiting step: back to the wallet step, the prepared
+ * operation untouched (the deep link failed, or the player came back before signing); Open
+ * wallet there as canSign says.
+ */
+export const walletAgainTap = (state) =>
+  state.step === "sign" && state.via === "phone"
+    ? { ...state, step: "wallet", via: null, problem: null }
+    : state;
 
 // the taps, which wait while Mint now or a cancel is out
 const TAPS = {
@@ -1543,19 +1640,9 @@ const TAPS = {
     return state;
   },
   back: onBack,
-  signing: (state, event) => {
-    if (!SIGN_PATHS.includes(event.via) || !canSign(state, event.now)) {
-      return state;
-    }
-    return { ...state, step: "sign", via: event.via, problem: null };
-  },
+  signing: (state, event) => signingTap(state, event),
   retry: onRetry,
-  // the phone path's waiting step: back to the wallet step, the prepared minting untouched (the
-  // deep link failed, or the player came back before signing); Open wallet there as canSign says
-  walletAgain: (state) =>
-    state.step === "sign" && state.via === "phone"
-      ? { ...state, step: "wallet", via: null, problem: null }
-      : state,
+  walletAgain: (state) => walletAgainTap(state),
 };
 
 /**
@@ -1570,7 +1657,7 @@ const TAPS = {
  * - `{ type: 'signing', via, now }`: Open wallet ("extension" or "phone");
  * - `{ type: 'walletAgain' }`: Open wallet again on the phone path's waiting step (back to the
  *   wallet step, nothing cancelled);
- * - `{ type: 'retry' }`: Check again, Try again.
+ * - `{ type: 'retry', here? }`: Check again, Try again (`here`: what the device can sign with now).
  *
  * Requests (`pending` is set to the request the dialog then sends):
  * - `{ type: 'request', what, itemId?, path? }`: "readiness" (`itemId`: the flow's item),
@@ -1652,9 +1739,9 @@ export const mintFlow = (state, event) => {
     case "operation":
       return takeOperation(state, event.operation);
     case "signCode":
-      return onSignCode(state, event);
+      return withSignCode(state, event);
     case "problem":
-      return onProblem(state, event);
+      return problemEvent(state, event);
     default:
       return state;
   }

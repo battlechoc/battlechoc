@@ -13,6 +13,7 @@ import { ChallengeDialog, ItemNotice } from "./onDemand";
 import { nextNotice, noticeAllowed, withoutNotice } from "./mint/notices";
 import { features } from "../cardano/appFeatures";
 import { markNoticesSeen } from "../api/profile";
+import { openPantryNext } from "./lab/labIntent";
 import logger from "../helper/logger";
 import { retryAssets } from "../firstLoad";
 import { isNamed } from "../helper/playerName";
@@ -436,6 +437,10 @@ const TitleScreen = (props) => {
             choclabOpen={!lockedChoclab}
             onChoclab={() => {
               answerNotice();
+              // the ingredients of a salvaged item: the Choclab opens with its pantry
+              if (notice.kind === "salvaged") {
+                openPantryNext();
+              }
               props.openChoclab();
             }}
             onDone={answerNotice}

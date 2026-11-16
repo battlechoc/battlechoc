@@ -377,6 +377,8 @@ export const statusSheet = (theme) => ({
     color: "white",
   },
   running: { borderStyle: "dashed" },
+  // a salvage that waits for the network longer than usual
+  slow: { color: MINT_LOOK.soft },
   title: {
     display: "block",
     fontFamily: theme.font.display,
@@ -397,4 +399,81 @@ export const statusSheet = (theme) => ({
     color: theme.color.gold.light,
     fontWeight: 700,
   },
+});
+
+/**
+ * What the salvage of a minted item (SalvageMinted.jsx) adds to the dialog's sheet: the rows of
+ * what comes back, the advantage box, and the two boxes of "being salvaged" (the owner's mockup,
+ * board 2).
+ */
+export const salvageSheet = (theme) => ({
+  // the confirmation's parts, one under the other as the dialog's scroll area sets them
+  confirm: {
+    alignSelf: "stretch",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "0.7em",
+    [WIDE]: { gap: "0.55em" },
+  },
+  // what comes back: one row per ingredient, a line, the deposit
+  rows: {
+    alignSelf: "stretch",
+    boxSizing: "border-box",
+    borderRadius: MINT_LOOK.radius,
+    background: MINT_LOOK.panel,
+    border: `2px solid ${MINT_LOOK.rim}`,
+    padding: "0.6em 0.8em",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.4em",
+    textAlign: "left",
+    fontSize: theme.font.size.sm,
+    fontWeight: 700,
+  },
+  row: { display: "flex", alignItems: "center", gap: "0.5em" },
+  rowName: { flexGrow: 1 },
+  // "(legendary, all of it)" in the note's gold; "(half)" soft
+  full: { fontWeight: 600, color: MINT_LOOK.note },
+  half: { fontWeight: 600, color: MINT_LOOK.soft },
+  amount: { flex: "none", whiteSpace: "nowrap" },
+  line: { height: 2, background: MINT_LOOK.rim },
+  // the advantage of the minting: a dark box with a gold rim
+  advantage: {
+    alignSelf: "stretch",
+    boxSizing: "border-box",
+    borderRadius: MINT_LOOK.radius,
+    background: MINT_LOOK.walletBox,
+    border: `2px solid ${MINT_LOOK.gold}`,
+    padding: "0.55em 0.75em",
+    margin: 0,
+    fontSize: theme.font.size.sm,
+    fontWeight: 600,
+    lineHeight: 1.4,
+    textAlign: "left",
+  },
+  // "being salvaged": signed (done), the ingredients on the way (dashed, running)
+  steps: {
+    alignSelf: "stretch",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5em",
+    textAlign: "left",
+  },
+  step: {
+    boxSizing: "border-box",
+    borderRadius: MINT_LOOK.radius,
+    background: MINT_LOOK.panel,
+    border: `2px solid ${MINT_LOOK.rim}`,
+    padding: "0.6em 0.75em",
+    display: "flex",
+    gap: "0.6em",
+    alignItems: "center",
+    fontSize: theme.font.size.sm,
+    fontWeight: 700,
+    lineHeight: 1.3,
+  },
+  stepRunning: { border: `2px dashed ${MINT_LOOK.gold}` },
+  stepIcon: { flex: "none", width: 26, height: 26 },
+  stepText: { display: "block", fontWeight: 600, color: MINT_LOOK.soft },
 });

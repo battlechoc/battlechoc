@@ -141,3 +141,54 @@ test("an arrival offers the Choclab only while it is open; else one button reads
   assert.deepEqual(noticeButtons("departed", { choclabOpen: true }), ["ok"]);
   assert.deepEqual(noticeButtons("departed", { choclabOpen: false }), ["ok"]);
 });
+
+test("plan E: a salvaged item's notice shows, offers the player's items while the Choclab is open, and lists what came back", async () => {
+  const { returnedRows } = await import("../../src/ui/mint/notices.js");
+  const salvaged = {
+    id: "n-s",
+    kind: "salvaged",
+    item: { id: "i-4", item: "TURBO_CONVEYOR", serial: 4 },
+    building: null,
+    at: "2026-11-16T10:00:00.000Z",
+    returned: { GOLDLEAF: 1, VANILLA: 2, MILK: 2 },
+  };
+  assert.equal(nextNotice([salvaged]), salvaged);
+  assert.deepEqual(noticeButtons("salvaged", { choclabOpen: true }), ["shelf"]);
+  assert.deepEqual(noticeButtons("salvaged", { choclabOpen: false }), ["ok"]);
+  const DAY = 24 * 60 * 60 * 1000;
+  assert.deepEqual(returnedRows(salvaged.returned), [
+    { ingredient: "GOLDLEAF", amount: 1, keeps: 3 * DAY },
+    { ingredient: "VANILLA", amount: 2, keeps: 7 * DAY },
+    { ingredient: "MILK", amount: 2, keeps: null },
+  ]);
+  // nothing the build does not know, nothing of 0, no list at all
+  assert.deepEqual(returnedRows({ UNOBTAINIUM: 3, MILK: 0 }), []);
+  assert.deepEqual(returnedRows(null), []);
+});
+
+test("plan E: a salvaged item's notice with nothing returned (no recipe any more, or amounts too small to halve) says so instead of an empty list", async () => {
+  const { salvagedView } = await import("../../src/ui/mint/notices.js");
+  const notice = (returned) => ({
+    id: "n-0",
+    kind: "salvaged",
+    item: { id: "i-5", item: "TURBO_CONVEYOR", serial: 5 },
+    building: null,
+    at: "2026-11-16T10:00:00.000Z",
+    returned,
+  });
+  for (const returned of [{}, { MILK: 0 }, { UNOBTAINIUM: 2 }, null]) {
+    assert.deepEqual(salvagedView(notice(returned)), {
+      rows: [],
+      heading: null,
+      nothing: "SALVAGE_ARRIVED_NOTHING",
+    });
+  }
+  // something came back: the heading and its rows, no "nothing"
+  const some = salvagedView(notice({ VANILLA: 2 }));
+  assert.equal(some.heading, "SALVAGE_ARRIVED_FROM");
+  assert.equal(some.nothing, null);
+  assert.deepEqual(
+    some.rows.map((row) => [row.ingredient, row.amount]),
+    [["VANILLA", 2]]
+  );
+});

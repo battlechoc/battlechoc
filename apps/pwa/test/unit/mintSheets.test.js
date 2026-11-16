@@ -11,6 +11,7 @@ import {
   checklistSheet,
   costsSheet,
   dialogSheet,
+  salvageSheet,
   statusSheet,
 } from "../../src/ui/mint/mintSheets.js";
 import { ITEM_ICON_SHEET } from "../../src/ui/lab/itemText.js";
@@ -26,6 +27,7 @@ test("every sheet of minting's components builds with JSS's default preset", () 
     checklist: checklistSheet(theme),
     costs: costsSheet(theme),
     status: statusSheet(theme),
+    salvage: salvageSheet(theme),
     itemIcon: ITEM_ICON_SHEET,
   };
   for (const [name, styles] of Object.entries(sheets)) {

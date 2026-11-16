@@ -42,12 +42,14 @@ import LabIntro, {
 } from "./LabIntro";
 import { effectLines, labColors } from "./itemText";
 import MintStatus, { MintAction } from "../mint/MintStatus";
+import ChunkWaiting from "../mint/ChunkWaiting";
 import useChainEnabled, { useMintingSwitch } from "../mint/useChainEnabled";
 import { reloadItems } from "../mint/reloadItems";
+import { takePantryRequest } from "./labIntent";
 import { mintedWalletName } from "../mint/mintedWallet";
 import { cardanoApi } from "../../api/cardano";
 import { loadChunk } from "../../helper/loadChunk";
-import { shelfGroups, withoutAwayItems } from "./itemActions";
+import { labEquipment, shelfGroups, slotOf } from "./itemActions";
 import { bangers, outlined, rise } from "../styles";
 
 // loaded with the lab, like the game's scene: Babylon stays out of the first bundle
@@ -55,6 +57,10 @@ const MeshPreview = React.lazy(() => import("../../3d/MeshPreview"));
 // the minting dialog, with the flow and the wallet code: loaded when it opens, and asked for again
 // until it arrives (a lost request never throws into the Hud: helper/loadChunk.js)
 const MintDialog = React.lazy(loadChunk(() => import("../mint/MintDialog")));
+// the salvage of a minted item (its token burned), with its flow: loaded when it opens
+const SalvageMinted = React.lazy(
+  loadChunk(() => import("../mint/SalvageMinted"))
+);
 
 // the buildings that can be equipped, in the order of the carousel
 const BUILDINGS = Object.keys(SpecialIngredient).filter((type) =>
@@ -282,6 +288,12 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const [pickerChoice, setPickerChoice] = useState(undefined);
   const [bookOpen, setBookOpen] = useState(false);
   const [pantryOpen, setPantryOpen] = useState(false);
+  // sent here for the pantry (the notice of a salvaged item's ingredients): it opens at once
+  useEffect(() => {
+    if (takePantryRequest()) {
+      setPantryOpen(true);
+    }
+  }, []);
   const [busy, setBusy] = useState(false);
   const [crafted, setCrafted] = useState(undefined);
   // the bottom panel: "table" (the lab table) or "items" (the item shelf)
@@ -296,6 +308,10 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const mintSwitch = useMintingSwitch();
   // what the minting dialog says of itself: { running, signing } (null before it says)
   const [mintPhase, setMintPhase] = useState(null);
+  // the salvage of a minted item: the item (as the card had it) while its dialog is open, and
+  // what that dialog says of itself ({ running, signing })
+  const [salvageFor, setSalvageFor] = useState(undefined);
+  const [salvagePhase, setSalvagePhase] = useState(null);
   // the name of the linked wallet holding the player's minted items, for the card's mark
   const [mintedWallet, setMintedWallet] = useState(null);
   // the step of the first-visit intro, undefined when it is not shown
@@ -308,8 +324,8 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const pantry = stats.pantry || {};
   const items = stats.items || [];
   // a slot that points to an item the player does not have (a minted item away from the wallet)
-  // is free here, as it is in matches
-  const equipment = withoutAwayItems(stats.equipment || {}, items);
+  // or one being salvaged is free here, as it is in matches
+  const equipment = labEquipment(stats.equipment, items);
   const loadout = stats.loadout || {};
   const special = SpecialIngredient[entityType];
   const bowls = [special, ...picked];
@@ -475,6 +491,24 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
     }
   }, [mintFor]);
 
+  // a salvage that runs keeps its dialog as a minting does (through a blip; only the server's
+  // switch closes it, and nothing is cancelled then)
+  const keepSalvageDialog =
+    Boolean(salvagePhase) &&
+    (salvagePhase.signing || (salvagePhase.running && mintSwitch));
+  const salvageDialogShown =
+    Boolean(salvageFor) && (minting || keepSalvageDialog);
+  useEffect(() => {
+    if (salvageFor && !salvageDialogShown) {
+      setSalvageFor(undefined);
+    }
+  }, [salvageFor, salvageDialogShown]);
+  useEffect(() => {
+    if (!salvageFor) {
+      setSalvagePhase(null);
+    }
+  }, [salvageFor]);
+
   // a minted item's card names the linked wallet that holds it (the account's identities)
   const cardMinted =
     minting &&
@@ -512,9 +546,19 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
     setMintFor(undefined);
     refreshStats();
   };
+  // the salvage of a minted item (`entry`, the card's chosen one) instead of the card, and back
+  const openSalvage = (entry) => {
+    setCard(undefined);
+    setSalvageFor(entry);
+  };
+  const closeSalvage = () => {
+    setSalvageFor(undefined);
+    refreshStats();
+  };
   const openCardOf = (itemId) => {
     const entry = items.find((candidate) => candidate.id === itemId);
     setMintFor(undefined);
+    setSalvageFor(undefined);
     if (entry) {
       setCard({ item: entry.item, instanceId: entry.id });
     }
@@ -647,6 +691,12 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const mintingEntry = mintFor
     ? items.find((candidate) => candidate.id === mintFor.id) || mintFor
     : undefined;
+  // the item being salvaged: as the stats have it now, else as the card had it (once its
+  // ingredients arrived it is gone from the stats)
+  const salvageEntry = salvageFor
+    ? items.find((candidate) => candidate.id === salvageFor.id) || salvageFor
+    : undefined;
+  const salvageSlot = salvageEntry ? slotOf(salvageEntry.id, equipment) : null;
   // the player's items of the type the item card shows
   const cardGroup = card
     ? shelfGroups(items).find((group) => group.item === card.item)
@@ -828,6 +878,8 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
           onTakeOff={({ entityType: type, slot }) => putItem(type, slot, null)}
           onSalvaged={salvaged}
           onGone={refreshStats}
+          minting={minting}
+          onSalvageMinted={openSalvage}
           mintAction={(entry) =>
             minting && entry && !entry.minted ? (
               <MintAction onMint={() => openMint(entry)} disabled={busy} />
@@ -841,6 +893,7 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
                 item={entry}
                 wallet={mintedWallet}
                 onMint={() => openMint(entry)}
+                onSalvage={() => openSalvage(entry)}
                 onChanged={refreshStats}
               />
             ) : null
@@ -848,7 +901,11 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
         />
       ) : null}
       {mintDialogShown ? (
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            <ChunkWaiting title={t(tr.MINT_CHECK_TITLE)} onClose={closeMint} />
+          }
+        >
           <MintDialog
             open
             item={mintingEntry}
@@ -857,6 +914,24 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
             onChanged={refreshStats}
             onGoTo={openCardOf}
             onPhase={setMintPhase}
+          />
+        </Suspense>
+      ) : null}
+      {salvageDialogShown ? (
+        <Suspense
+          fallback={
+            <ChunkWaiting title={t(tr.ITEM_SALVAGE)} onClose={closeSalvage} />
+          }
+        >
+          <SalvageMinted
+            open
+            item={salvageEntry}
+            book={book}
+            slotName={salvageSlot ? buildingName(salvageSlot.entityType) : null}
+            onClose={closeSalvage}
+            onToItem={() => openCardOf(salvageFor.id)}
+            onChanged={refreshStats}
+            onPhase={setSalvagePhase}
           />
         </Suspense>
       ) : null}
