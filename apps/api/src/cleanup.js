@@ -1,6 +1,7 @@
 // Deletes what is kept only for a while: spoiled and used-up ingredient batches, problem
-// reports after 60 days, sign-in challenges nobody used in time, and the notices of minted items
-// 30 days after they were seen (180 days at most). One failing cleanup does not stop the others.
+// reports after 60 days, sign-in challenges nobody used in time, the notices of minted items
+// 30 days after they were seen (180 days at most), and chain operations (mints, burns) 90 days
+// after they ended. One failing cleanup does not stop the others.
 //
 // Matches are kept for ever by default. Only when the operator sets a retention
 // (MATCH_RETENTION_DAYS, config.js) the logged actions and the snapshot of a match are removed
@@ -12,6 +13,7 @@ const { createMatchStore } = require('./live/store');
 const { cleanupChallenges } = require('./cardano');
 const { cleanupLinkCodes } = require('./linkCodes');
 const { cleanupNotices } = require('./chain/notices');
+const { cleanupEnded: cleanupOperations } = require('./chain/ops');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -33,6 +35,7 @@ const scheduleCleanup = (pool, { intervalMs = 60 * 60 * 1000, log = console, mat
         challenges: cleanupChallenges,
         linkCodes: cleanupLinkCodes,
         notices: cleanupNotices,
+        operations: cleanupOperations,
         ...(matchRetentionDays > 0 ? { matches: trimMatches(matchRetentionDays, log) } : {}),
     };
     const run = () => Promise.all(Object.entries(cleanups).map(([name, cleanup]) =>

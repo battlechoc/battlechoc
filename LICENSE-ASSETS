@@ -12,6 +12,7 @@ reproduced in full below.
 This applies to the following paths:
 
 - apps/pwa/public/images/
+- apps/pwa/public/items/ (the item pictures, rendered from apps/pwa/public/images/ by apps/pwa/scripts/item-pictures.mjs)
 - apps/pwa/public/models/
 - apps/pwa/public/music/
 - apps/pwa/public/sound/

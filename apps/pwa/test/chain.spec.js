@@ -306,8 +306,8 @@ test("Account safety names the wallet and counts its items", async ({
     page.getByText("Your wallet is now linked to this player.")
   ).toBeVisible({ timeout: 15000 });
 
-  // nothing minted yet: the wallet row reads as it did before minting, and no link to a guide
-  // the website does not serve yet
+  // nothing minted yet: the wallet row reads as it did before minting; the guide's wallet
+  // section is linked below it (src/cardano/guide.js)
   await page.goto("/", { waitUntil: "networkidle" });
   await titleScreen(page);
   await openProfile(page);
@@ -318,7 +318,10 @@ test("Account safety names the wallet and counts its items", async ({
     "Your minted items live here."
   );
   await expect(page.getByTestId("wallet-items")).toHaveCount(0);
-  await expect(page.getByTestId("wallet-guide")).toHaveCount(0);
+  await expect(page.getByTestId("wallet-guide")).toHaveAttribute(
+    "href",
+    "/guide/#wallet-en"
+  );
 
   const item = await craftBarrel(request, mira);
   await chainMinted(request, {
@@ -343,8 +346,57 @@ test("Account safety names the wallet and counts its items", async ({
   await expect(items).toHaveText("1 minted item");
   await expect(entry.getByTestId("wallet-remove-note")).toBeVisible();
   await expect(entry.getByTestId("wallet-wait")).toHaveCount(0);
-  await expect(page.getByTestId("wallet-guide")).toHaveCount(0);
+  await expect(page.getByTestId("wallet-guide")).toHaveAttribute(
+    "href",
+    "/guide/#wallet-en"
+  );
   await mira.context.close();
+});
+
+// the answer to "is minting on?" (GET /chain/status), which the profile's guide link asks
+const statusAnswer = (page) =>
+  page.waitForResponse(
+    (answer) => new URL(answer.url()).pathname === "/chain/status"
+  );
+
+test("Account safety links the guide only while the server's minting is on", async ({
+  browser,
+  request,
+}) => {
+  const nia = await newPlayer(browser, request, "NiaGuide");
+  const { page } = nia;
+
+  // the server's switch off: once its answer is in and the row has rendered, no link
+  await page.route("**/chain/status", (route) =>
+    route.fulfill({ json: { enabled: false } })
+  );
+  let status = statusAnswer(page);
+  await page.goto("/", { waitUntil: "networkidle" });
+  await titleScreen(page);
+  await openProfile(page);
+  await manage(page);
+  expect(await (await status).json()).toEqual({ enabled: false });
+  await expect(page.getByTestId("safety-wallet")).toBeVisible();
+  // the link's component marks when the switch is decided (useMintingDecided)
+  await expect(page.getByTestId("wallet-guide-decided")).toHaveAttribute(
+    "data-minting",
+    "false"
+  );
+  await expect(page.getByTestId("wallet-guide")).toHaveCount(0);
+
+  // the server's own answer (on): the link to the guide's wallet section
+  await page.unroute("**/chain/status");
+  status = statusAnswer(page);
+  await page.goto("/", { waitUntil: "networkidle" });
+  await titleScreen(page);
+  await openProfile(page);
+  await manage(page);
+  expect(await (await status).json()).toEqual({ enabled: true });
+  await expect(page.getByTestId("wallet-guide")).toHaveAttribute(
+    "href",
+    "/guide/#wallet-en"
+  );
+  await nia.context.close();
 });
 
 test("a notice waits while the Info dialog is open", async ({

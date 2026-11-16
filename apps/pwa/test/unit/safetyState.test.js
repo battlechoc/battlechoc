@@ -259,10 +259,11 @@ test("a wallet's name as players know it", () => {
   assert.equal(walletLabel(undefined), null);
 });
 
-test("no guide link while the guide is not on the website", () => {
-  assert.equal(GUIDE_ONLINE, false);
-  assert.equal(guideLink("wallet", "de"), null);
-  assert.equal(guideLink("ada"), null);
+test("the guide is on the website: the wallet row links it", () => {
+  assert.equal(GUIDE_ONLINE, true);
+  assert.equal(guideLink("wallet", "de"), "/guide/#wallet-de");
+  // the current language (English here)
+  assert.equal(guideLink("ada"), "/guide/#ada-en");
 });
 
 test("the guide's section in German or English, once it is online", () => {

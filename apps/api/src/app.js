@@ -15,6 +15,7 @@ const { createConfigReader } = require('./chain/config');
 const { UTXO_CACHE } = require('./chain/readiness');
 const { registerLabRoutes } = require('./lab/routes');
 const { registerPlayRoutes } = require('./playPage');
+const { registerItemRoutes } = require('./routes/items');
 const { loadRecipes } = require('./lab/recipes');
 const { createKeyedQueue } = require('./queue');
 
@@ -22,6 +23,9 @@ const { createKeyedQueue } = require('./queue');
 // limit per address is far above that, also for many players behind one address (a school, a
 // mobile network); it only stops a client that hammers the endpoint.
 const TOKENS_PER_MINUTE = 120;
+// The public data of a minted item (GET /items/:assetName), per address and minute: the item page
+// asks it once per view; anyone can ask it, and each request takes a query.
+const ITEMS_PER_MINUTE = 60;
 // The routes of the items on the chain, per minute. The game asks for the readiness when the
 // player opens the mint dialog and after a wallet change, and for an operation while it waits: a
 // few times a minute per player (`perPlayer`, one bucket for a player's /chain routes; a readiness
@@ -71,6 +75,8 @@ const createApp = ({
     chainReadinessFanOut = {},
     chainReadinessCacheMs = UTXO_CACHE.ttlMs,
     chainLog = console,
+    // requests per minute and address to the public data of a minted item
+    itemsPerMinute = ITEMS_PER_MINUTE,
 }) => {
     const app = express();
     // purchases and equipment changes of one player run one at a time
@@ -81,6 +87,9 @@ const createApp = ({
     app.use(cors(corsOrigins));
     // whether minting is on: before any body parser, so it reads none
     registerChainStatus(app, { chain, statusLimit: rateLimit({ windowMs: 60000, max: chainStatusPerMinute, now }) });
+    // the item page's data: no session, with the chain features on or off; before any body parser,
+    // so a GET with a body is never read
+    registerItemRoutes(app, { pool, limit: rateLimit({ windowMs: 60000, max: itemsPerMinute, now }) });
     // the sign routes have no session: their body is bounded more tightly, before it is read, and
     // what the parser refuses is a 400 (with the chain off they are CHAIN OFF, whatever the body)
     if (chain.enabled) {

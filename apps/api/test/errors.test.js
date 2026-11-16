@@ -222,6 +222,16 @@ describe('errors', () => {
         await answers(request(off).delete('/chain/operations/x'), 404, 'CHAIN OFF');
     });
 
+    test('the public item page (minting plan F): UNKNOWN ITEM, 404, not a chain code', async () => {
+        expect(ErrorCode.UNKNOWN_ITEM).toBe('UNKNOWN ITEM');
+        // the item page answers with the chain features off too: none of CHAIN_STATUS's codes
+        expect(CHAIN_STATUS).not.toHaveProperty(ErrorCode.UNKNOWN_ITEM);
+        expect(() => chainError(ErrorCode.UNKNOWN_ITEM)).toThrow(TypeError);
+        const { app } = await createTestApp();
+        await answers(request(app).get(`/items/000de140${'0'.repeat(56)}`), 404, 'UNKNOWN ITEM');
+        await answers(request(app).get('/items/nope'), 404, 'UNKNOWN ITEM');
+    });
+
     test('an HttpError with details: the body carries them after the code (NOT ENOUGH ADA\'s missing and needed)', async () => {
         const error = chainError(ErrorCode.NOT_ENOUGH_ADA, { missing: '1234567', needed: '9210000' });
         expect(error).toMatchObject({ status: 400, code: 'NOT ENOUGH ADA', details: { missing: '1234567', needed: '9210000' } });

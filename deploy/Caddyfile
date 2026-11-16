@@ -1,3 +1,13 @@
+# No logs at all: Caddy's own lines can name a client's address and a request's path (an error
+# when the API cannot be reached), and the privacy policy promises no access logs and no stored
+# IP addresses (deploy/README.md, "Looking after it"); the site has no `log` directive, so no
+# access log either. To debug certificate problems, remove this block knowingly, then restore it.
+{
+	log {
+		output discard
+	}
+}
+
 # TLS certificates are obtained automatically; WebSocket upgrades are proxied as well.
 {$API_DOMAIN} {
 	encode gzip

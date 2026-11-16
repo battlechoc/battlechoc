@@ -74,6 +74,9 @@ const ErrorCode = Object.freeze({
     // the operation's owner address was chosen by the server alone: the wallet must name (and,
     // without the player's session, sign for) its addresses first
     ADDRESSES_NEEDED: 'ADDRESSES NEEDED',
+    // the public item page (minting plan F, routes/items.js), 404 with the chain on or off: no
+    // minted item has that name (never existed, still minting, malformed); not one of CHAIN_STATUS's
+    UNKNOWN_ITEM: 'UNKNOWN ITEM',
     // a burn (plan E) of an item that is not minted (409: a plain item is salvaged by /lab/salvage)
     NOT_MINTED: 'NOT MINTED',
     // a burn of an item whose token is no longer where the player's wallet holds it (409: nothing

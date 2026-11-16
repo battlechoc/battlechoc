@@ -70,6 +70,108 @@ test('notices (plan C) go 30 days after they were seen, unseen ones after 180 da
     }
 });
 
+describe('chain operations (minting plan F)', () => {
+    const ops = require('../src/chain/ops');
+    const { cleanupEnded, ENDED_KEEP_MS } = ops;
+
+    // an operation of its own player and item (Postgres allows one open operation per player and
+    // per item); `endedAt` null for an open one
+    const operation = async (id, { state, createdAt, endedAt }) => {
+        const owner = await players.createPlayer(pool);
+        await pool.query('INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ($1, $2, \'LIGHT_BARREL\', 1, $2)', [`item-${id}`, owner]);
+        await pool.query(
+            `INSERT INTO chain_ops (id, player_id, item_id, kind, state, subject, owner_key_hash, owner_address, required_keys, asset_name,
+                tx_hash, tx_cbor, ttl_slot, sign_until, fee_option, network_fee, deposit, deposit_user, included_block, created_at, ended_at)
+             VALUES ($1, $2, $3, 'mint', $4, 's', 'k', 'a', '[]', $5, 't', '84', 1, $6, 0, '1', '1', '1', $7, $6, $8)`,
+            [id, owner, `item-${id}`, state, `000de140${id}`, new Date(createdAt), state === 'included' ? 1 : null, endedAt === null ? null : new Date(endedAt)]);
+    };
+    const ids = async () => (await pool.query('SELECT id FROM chain_ops ORDER BY id')).rows.map(row => row.id);
+
+    test('keeps an ended operation for 90 days', () => {
+        expect(ENDED_KEEP_MS).toBe(90 * DAY);
+    });
+
+    test('deletes ended operations 90 days after they ended, keeps younger ones, never an open one', async () => {
+        await operation('final-91-days', { state: 'final', createdAt: NOW - 92 * DAY, endedAt: NOW - 91 * DAY });
+        await operation('cancelled-91-days', { state: 'cancelled', createdAt: NOW - 91 * DAY, endedAt: NOW - 91 * DAY });
+        await operation('expired-91-days', { state: 'expired', createdAt: NOW - 91 * DAY, endedAt: NOW - 91 * DAY });
+        await operation('final-89-days', { state: 'final', createdAt: NOW - 400 * DAY, endedAt: NOW - 89 * DAY });
+        await operation('expired-yesterday', { state: 'expired', createdAt: NOW - DAY, endedAt: NOW - DAY });
+        // open ones, however old; one even with an old end time, which no step writes: the state decides
+        await operation('prepared-old', { state: 'prepared', createdAt: NOW - 400 * DAY, endedAt: null });
+        await operation('submitted-old', { state: 'submitted', createdAt: NOW - 400 * DAY, endedAt: null });
+        await operation('included-old', { state: 'included', createdAt: NOW - 400 * DAY, endedAt: NOW - 400 * DAY });
+        await cleanupEnded(pool, NOW);
+        expect(await ids()).toEqual(['expired-yesterday', 'final-89-days', 'included-old', 'prepared-old', 'submitted-old']);
+        // a second run finds nothing more to delete
+        await cleanupEnded(pool, NOW);
+        expect(await count('chain_ops')).toBe(5);
+    });
+
+    test('a burn (plan E) that ends in any of its ways is ended for the cleanup too, and goes 90 days later', async () => {
+        const MINUTE = 60 * 1000;
+        const END = NOW;
+        let serial = 0;
+        // a prepared burn of its own player and item, as the burn route stores it (no fee option,
+        // no battlechoc fee); `signUntil` decides whether it can still be signed at END
+        const burn = async (signUntil = END + 10 * MINUTE) => {
+            serial += 1;
+            const owner = await players.createPlayer(pool);
+            const itemId = `burned-${serial}`;
+            await pool.query('INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ($1, $2, \'LIGHT_BARREL\', $3, $2)', [itemId, owner, serial]);
+            return ops.insertPrepared(pool, {
+                playerId: owner, itemId, kind: 'burn', subject: 's', ownerKeyHash: 'k', ownerAddress: 'a', requiredKeys: [],
+                assetName: `000de140${serial}`, txHash: `tx-${serial}`, txCbor: '84', ttlSlot: 1, signUntil, code: `code-${serial}`,
+                feeOption: null, networkFee: '410000', gameFeeAsset: null, gameFee: null, deposit: '3700000', depositUser: '1250000', now: END - 5 * MINUTE,
+            });
+        };
+        const submitted = async () => {
+            const op = await burn();
+            return ops.markSubmitted(pool, op, { signedCbor: '84', now: END - MINUTE });
+        };
+        const ended = [
+            await ops.cancel(pool, await burn(), END),
+            await ops.cancel(pool, await burn(), END, ops.CANCELLED_BECAUSE.WALLET_UNLINKED),
+            await ops.cancel(pool, await burn(), END, ops.CANCELLED_BECAUSE.TOKEN_MOVED),
+            await ops.expireUnsigned(pool, await burn(END - MINUTE), END),
+            await ops.expireSubmitted(pool, await submitted(), END),
+            await ops.expireSubmitted(pool, await submitted(), END, { because: ops.BURNED_ELSEWHERE }),
+            await ops.markFinal(pool, await ops.markIncluded(pool, await submitted(), { blockNo: 7, now: END - MINUTE }), END),
+        ];
+        expect(ended.map(op => [op.kind, op.state, op.error])).toEqual([
+            ['burn', 'cancelled', 'cancelled'],
+            ['burn', 'cancelled', 'wallet-unlinked'],
+            ['burn', 'cancelled', 'token-moved'],
+            ['burn', 'expired', 'not-signed'],
+            ['burn', 'expired', 'expired'],
+            ['burn', 'expired', 'burned-elsewhere'],
+            ['burn', 'final', null],
+        ]);
+        ended.forEach(op => expect(op.ended_at).toEqual(new Date(END)));
+        await cleanupEnded(pool, END + ENDED_KEEP_MS - DAY);
+        expect(await count('chain_ops')).toBe(ended.length);
+        await cleanupEnded(pool, END + ENDED_KEEP_MS + DAY);
+        expect(await count('chain_ops')).toBe(0);
+    });
+
+    test('with no operations (the chain features off) it does nothing and fails nothing', async () => {
+        await cleanupEnded(pool, NOW);
+        expect(await count('chain_ops')).toBe(0);
+    });
+
+    test('the scheduled cleanup deletes them too', async () => {
+        await operation('final-long-ago', { state: 'final', createdAt: Date.now() - 100 * DAY, endedAt: Date.now() - 91 * DAY });
+        await operation('final-recently', { state: 'final', createdAt: Date.now() - 2 * DAY, endedAt: Date.now() - DAY });
+        const stop = scheduleCleanup(pool, { intervalMs: 60 * 60 * 1000 });
+        try {
+            await until(async () => (await count('chain_ops')) === 1, 'the chain operations cleanup');
+            expect(await ids()).toEqual(['final-recently']);
+        } finally {
+            stop();
+        }
+    });
+});
+
 test('the scheduled cleanup runs right away and then periodically, until stopped', async () => {
     const left = async () => (await count('pantry')) + (await count('reports'));
     // waits on real time until everything is gone: on Postgres in CI a cleanup can take longer
