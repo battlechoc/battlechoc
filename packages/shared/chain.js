@@ -63,6 +63,9 @@ const TIER_ORDER = Object.freeze(['COMMON', 'RARE', 'EPIC']);
 const REFERENCE_LABEL = '000643b0';
 const USER_LABEL = '000de140';
 
+// An item key is never renamed or removed once it may have been minted; retire an item by its
+// recipe, never its key (equipment.js). `kebab` never changes: every token's picture URL is the
+// key in kebab case, in its datum for good.
 const kebab = key => key.toLowerCase().replace(/_/g, '-');
 
 /** The picture of an item: DARK_WALLS → https://battlechoc.com/items/dark-walls.png */

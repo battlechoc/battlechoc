@@ -64,6 +64,27 @@ describe('the minting constants', () => {
     });
 });
 
+// Every item key that may have been minted: a token's datum names its key and its picture's URL
+// (the key in kebab case) for good, so a key is never renamed or removed and `kebab` never
+// changes (equipment.js). This list may only grow: add a new item's key, never take one out.
+const MINTABLE_KEYS = [
+    'DARK_WALLS', 'TURBO_CONVEYOR', 'NUT_BRICKS', 'SECOND_SHIFT', 'SUGAR_FERTILIZER', 'DEEP_ROOTS',
+    'HEAVY_BARREL', 'LIGHT_BARREL', 'CHERRY_BOMB', 'JUICY_RELOAD', 'MARZIPAN_CARROTS', 'LONG_EARS',
+    'CINNAMON_LURE', 'HOT_BOILER', 'THICK_SHIELD', 'WIDE_SPRAY', 'SPRINKLE_SORTER', 'GLAZED_OVEN',
+];
+
+describe('item keys are permanent', () => {
+    test('every key that may have been minted is still an item', () => {
+        const missing = MINTABLE_KEYS.filter(key => !Object.prototype.hasOwnProperty.call(Items, key));
+        expect(missing).toEqual([]);
+    });
+
+    test('a new item key is added to the list of keys that may have been minted', () => {
+        const unlisted = Object.keys(Items).filter(key => !MINTABLE_KEYS.includes(key));
+        expect(unlisted).toEqual([]);
+    });
+});
+
 describe('the URLs a minted item names', () => {
     test('the image is the item key in kebab case', () => {
         expect(chain.itemImageUrl('DARK_WALLS')).toBe('https://battlechoc.com/items/dark-walls.png');

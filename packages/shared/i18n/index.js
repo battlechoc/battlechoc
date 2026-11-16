@@ -145,6 +145,8 @@ const placeholders = Object.freeze({
     MINT_GET_DEPOSIT: ['amount'],
     MINT_SIGN_NOT_ENOUGH_ADA: ['needAda', 'missingAda'],
     MINT_SIGN_BAD_SIGNATURE: ['wallet'],
+    ITEM_PAGE_MINTED_ON: ['date'],
+    ITEM_PAGE_BUILDING: ['building'],
     // the salvage of a minted item (plan E); its variants of minting's texts fill the same names
     SALVAGE_MINTED_COMPARE: ['list'],
     SALVAGE_MINTED_WALLET: ['fee'],
