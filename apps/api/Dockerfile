@@ -6,7 +6,7 @@
 # The dependencies are plain JavaScript (no install scripts, nothing compiled), so they are
 # installed once on the build machine's own platform and copied into every target platform:
 # an arm64 image needs no emulation.
-FROM --platform=$BUILDPLATFORM node:22.23.4-alpine3.24 AS deps
+FROM --platform=$BUILDPLATFORM node:22.23.5-alpine3.24 AS deps
 WORKDIR /app
 # workspace manifests first for a cached dependency layer
 COPY package.json package-lock.json ./
@@ -16,7 +16,7 @@ COPY apps/pwa/package.json ./apps/pwa/package.json
 RUN npm ci --omit=dev --workspace apps/api --ignore-scripts
 
 # the same Node as above: Dependabot raises both lines together
-FROM node:22.23.4-alpine3.24
+FROM node:22.23.5-alpine3.24
 LABEL org.opencontainers.image.title="battlechoc API" \
       org.opencontainers.image.description="Backend of battlechoc: REST API and the live match WebSocket, on Postgres" \
       org.opencontainers.image.source="https://github.com/battlechoc/battlechoc" \
